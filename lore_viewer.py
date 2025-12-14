@@ -85,7 +85,9 @@ class Wwl:
 
                 case n if i.startswith("FADE"):
                     dial = i.split(" ")
-                    label.append({"action": "FADE", "dat": dial[0]})
+                    if len(dial) < 2:
+                        dial.append(1)
+                    label.append({"action": "FADE", "type": dial[0], "time": float(dial[1])})
 
                 case n if i.startswith("SCENE"):
                     dial = i.split(" ")

@@ -1,4 +1,5 @@
 import arcade
+from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 from arcade import gui as agui
 from typing import Optional, List, Tuple
@@ -11,7 +12,15 @@ import random
 
 from lore_viewer import Wwl
 
+with open("./other/splashes.json", "r", encoding="UTF-8") as splashes:
+    splashes = json.load(splashes)
+splash = str(random.choice(splashes))
+if splash.startswith(">"):
+    splash = splash.format(username=str(os.getenv("USERNAME") or os.getenv("USER")))[1:]
+
 wwl = Wwl()
+
+text_anchor = "left"
 
 WINDOW_WIDTH = 1920
 WINDOW_HEIGHT = 1080
@@ -24,7 +33,7 @@ WINDOW_TITLE = f"Game name"
 TEXT_SPEED = 40
 last_talk = threading.Event()
 
-dialog_text_text = ""
+dialog_text_text: list[str] = []
 cname_text_text = ""
 
 cname_text_colour = arcade.color.BLACK
@@ -35,6 +44,9 @@ class GameView(arcade.View):
     def __init__(self):
         super().__init__()
         self.scene = arcade.Scene()
+
+        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+        self.window.set_mouse_visible(False)
 
         self.background_color = arcade.color.WHITE
 
@@ -49,6 +61,8 @@ class GameView(arcade.View):
         self.scene.add_sprite_list("characters")
         self.scene.add_sprite_list("fade")
         self.scene.add_sprite_list("gui")
+
+        self.is_mouse_pressed = False
 
         self.last_text = " "
 
@@ -78,10 +92,11 @@ class GameView(arcade.View):
         create_dialog_fade()
         create_dialog_window()
 
-        self.talk_manager()
+        time.sleep(2)
 
-        # If you have sprite lists, you should create them here,
-        # and set them to None
+        self.start_trigger: bool = True
+
+        self.talk_manager()
 
 
     def talk_manager(self):
@@ -115,7 +130,9 @@ class GameView(arcade.View):
                 case "SAY":
                     self.dialog_texts = []
 
+                    self.start_trigger = False
                     pon = lc.get_character(now["character"]).talk(str(now["args"]))
+
                     return "END"
 
                 case "PLAY":
@@ -197,34 +214,59 @@ class GameView(arcade.View):
                     return "NEXT"
 
                 case "FADE":
-                    match now["dat"]:
+                    match now["type"]:
                         case "FADEIN":
                             def editing_alpha():
                                 global wait_trigger
                                 wait_trigger = True
-                                alpha = 0
-                                while alpha <= 255:
-                                    
+                                start_time = time.time()
+                                duration = now["time"]
+
+                                while True:
+
+                                    elapsed = time.time() - start_time
+
+                                    if elapsed >= duration:
+                                        self.scene["fade"][0].alpha = 255
+                                        break
+
+                                    progress = elapsed / duration
+                                    alpha = int(progress * 255)
+
                                     if not wait_trigger:
                                         wait_trigger = True
 
-                                    alpha += 3
                                     self.scene["fade"][0].alpha = alpha
+
                                     time.sleep(0.01)
+
                                 wait_trigger = False
                             threading.Thread(target=editing_alpha).start()
                         case "FADEOUT":
                             def editing_alpha():
                                 global wait_trigger
                                 wait_trigger = True
-                                alpha = 255
-                                while alpha >= 0:
+                                start_time = time.time()
+                                duration = now["time"]
+
+                                while True:
+
+                                    elapsed = time.time() - start_time
+
+                                    if elapsed >= duration:
+                                        alpha = 0
+                                        if not wait_trigger:
+                                            wait_trigger = True
+                                        break
+
+                                    progress = elapsed / duration
+                                    alpha = 255 - int(progress * 255)
 
                                     if not wait_trigger:
                                         wait_trigger = True
 
-                                    alpha -= 2
                                     self.scene["fade"][0].alpha = alpha
+
                                     time.sleep(0.01)
                                 wait_trigger = False
 
@@ -251,12 +293,16 @@ class GameView(arcade.View):
                     return "NEXT"
 
                 case "END":
+                    self.window.close()
+
                     wwl.label = "label main"
                     wwl.pose = 0
 
-                    dialog_text_text = ""
+                    dialog_text_text = [" "]
                     cname_text_text = ""
-                    self.window.show_view(GameMenu())
+
+                    game = GameMenu(width=1024, height=786, title=f"{WINDOW_TITLE} | {splash}")
+                    game.run()
                     return "END"
 
 
@@ -268,10 +314,12 @@ class GameView(arcade.View):
         Render the screen.
         """
 
-        self.clear()
-        self.scene.draw()
-        self.create_main_windows()
-        self.dialog_text_batch.draw()
+        if not self.start_trigger:
+            self.clear()
+            self.scene.draw()
+            self.create_main_windows()
+            self.dialog_text_batch.draw()
+            arcade.draw_sprite(self.cursor_texture)
 
 
     def on_update(self, delta_time):
@@ -289,62 +337,86 @@ class GameView(arcade.View):
                 self.talk_manager()
 
     def on_mouse_release(self, x, y, button, modifiers):
+        self.is_mouse_pressed = False
         if int(button) == 1:
             if not wait_trigger:
                 self.talk_manager()
+
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
+        self.is_mouse_pressed = True
 
     def create_main_windows(self):
 
         def create_dialog_text():
 
-            def wrap_text_px(text: str, font_size: int=30, max_width: int=1250):
+            def split_by_length(text, max_length):
+                if len(text) <= max_length:
+                    return [text]
 
-                def get_text_width(text: str, font_size: int) -> int:
-                    """Возвращает ширину текста в пикселях."""
-                    temp = arcade.Text(
-                        text=text,
-                        x=0,
-                        y=0,
-                        font_size=font_size,
-                        font_name="Kurale"
-                    )
-                    return temp.content_width
-
+                parts = []
                 words = text.split(" ")
-                lines = []
-                current = ""
+                current_line = []
 
                 for word in words:
-                    test = word if current == "" else current + " " + word
+                    if len(word) > max_length:
+                        if current_line:
+                            parts.append(" ".join(current_line))
+                            current_line = []
 
-                    if get_text_width(test, font_size) > max_width:
-                        lines.append(current)
-                        current = word
+                        for i in range(0, len(word), max_length):
+                            parts.append(word[i:i + max_length])
                     else:
-                        current = test
+                        test_line = " ".join(current_line + [word])
+                        if len(test_line) <= max_length:
+                            current_line.append(word)
+                        else:
+                            if current_line:
+                                parts.append(" ".join(current_line))
+                            current_line = [word]
 
-                if current:
-                    lines.append(current)
+                if current_line:
+                    parts.append(" ".join(current_line))
 
-                return lines
-
-            #TODO: wrapped = wrap_text_px(dialog_text_text)
+                return parts
 
 
-            #for i, line in enumerate(dialog_text_text):
-            t = arcade.Text(
-                text=dialog_text_text,
-                x=self.width * 0.18,
-                y=(self.height * 0.2) - 0 * (30 + 10),
-                font_size=30,
-                color=dialog_text_colour,
-                batch=self.dialog_text_batch,
-                width=1250,
-                multiline=True,
-                font_name="Kurale"
-            )
+            for i, line in enumerate(dialog_text_text):
+                for e, sline in enumerate(split_by_length(line, 60)):
+                    if text_anchor == "left":
+                        t = arcade.Text(
+                            text=sline,
+                            x=self.width * 0.18,
+                            y=(self.height * 0.2) - (i+e) * (30 + 10),
+                            font_size=30,
+                            color=dialog_text_colour,
+                            batch=self.dialog_text_batch,
+                            font_name="Kurale",
+                            anchor_x=text_anchor
+                        )
+                    elif text_anchor == "center":
+                        t = arcade.Text(
+                            text=sline,
+                            x=self.width // 2,
+                            y=(self.height * 0.2) - (i + e) * (30 + 10),
+                            font_size=30,
+                            color=dialog_text_colour,
+                            batch=self.dialog_text_batch,
+                            font_name="Kurale",
+                            anchor_x=text_anchor
+                        )
+                    elif text_anchor == "right":
+                        t = arcade.Text(
+                            text=sline,
+                            x=self.width * 0.82,
+                            y=(self.height * 0.2) - (i + e) * (30 + 10),
+                            font_size=30,
+                            color=dialog_text_colour,
+                            batch=self.dialog_text_batch,
+                            font_name="Kurale",
+                            anchor_x=text_anchor
+                        )
 
-            self.dialog_text_batch.draw()
+                    self.dialog_text_batch.draw()
 
         def create_cname_text():
             self.cname_text = arcade.Text(
@@ -361,6 +433,9 @@ class GameView(arcade.View):
 
         create_dialog_text()
         create_cname_text()
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
+        self.cursor_texture.position = (x, y)
 
     class Move():
         @staticmethod
@@ -383,9 +458,20 @@ class GameView(arcade.View):
 
             threading.Thread(target=move).start()
 
-class GameMenu(arcade.View):
-    def __init__(self):
-        super().__init__()
+
+class GameMenu(arcade.Window):
+    def __init__(self, width, height, title):
+        super().__init__(width=width, height=height, title=title, resizable=False)
+
+
+        self.loading_screen = arcade.Sprite("images/gui/JE3000_logo-export.png", 1)
+        self.loading_screen.position = (int(self.center_x), int(self.center_y))
+        self.loading_screen_fade = arcade.Sprite("images/gui/blackscreen.png")
+        self.loading_screen_fade.position = (int(self.center_x), int(self.center_y))
+        self.loading_screen_fade.alpha = 0
+
+        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+        self.set_mouse_visible(False)
 
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
@@ -396,9 +482,33 @@ class GameMenu(arcade.View):
 
         self.show_main_windows()
 
+        self.is_mouse_pressed = False
+
         am.stop_music()
         am.stop_voice()
         am.stop_sound()
+
+        self.show_ls()
+
+
+    def show_ls(self):
+
+        def show():
+            self.loading_screen_fade.alpha = 255
+            time.sleep(0.4)
+            for i in range(0, 255):
+                if self.is_mouse_pressed:
+                    self.loading_screen_fade.alpha = 0
+                    break
+                self.loading_screen_fade.alpha = 255-i
+                time.sleep(0.01)
+            time.sleep(1.9)
+            self.loading_screen_fade.alpha = 255
+            self.loading_screen.alpha = 0
+            time.sleep(0.1)
+            self.loading_screen_fade.alpha = 0
+
+        threading.Thread(target=show).start()
 
 
     def on_draw(self):
@@ -408,6 +518,10 @@ class GameMenu(arcade.View):
 
         self.clear()
         self.manager.draw()
+        arcade.draw_sprite(self.cursor_texture)
+        arcade.draw_sprite(self.loading_screen)
+        arcade.draw_sprite(self.loading_screen_fade, pixelated=True)
+
 
 
     def on_update(self, delta_time):
@@ -418,6 +532,15 @@ class GameMenu(arcade.View):
         """
         pass
 
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
+        self.cursor_texture.position = (x, y)
+
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
+        self.is_mouse_pressed = True
+
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
+        self.is_mouse_pressed = False
+
     def on_hide_view(self):
         self.manager.disable()
 
@@ -425,19 +548,33 @@ class GameMenu(arcade.View):
 
         def create_menu_buttons():
 
+            def start_game(event=None):
+                self.close()
+                window = arcade.Window(1920, 1080, f"{WINDOW_TITLE} | {splash}", resizable=False, fullscreen=True)
+                game = GameView()
+                window.show_view(game)
+                arcade.run()
+
             start_button = arcade.gui.widgets.buttons.UIFlatButton(
                 text="Начать игру",
                 width=200
             )
-            start_button.on_click = lambda event: self.window.show_view(GameView())
+            start_button.on_click = start_game
             self.v_box.add(start_button)
 
             settings_button = arcade.gui.widgets.buttons.UIFlatButton(
+                text="Настройки",
+                width=200
+            )
+            settings_button.on_click = lambda event: self.show_view(GameView())
+            self.v_box.add(settings_button)
+
+            exit_button = arcade.gui.widgets.buttons.UIFlatButton(
                 text="Выход",
                 width=200
             )
-            settings_button.on_click = lambda event: arcade.exit()
-            self.v_box.add(settings_button)
+            exit_button.on_click = lambda event: arcade.exit()
+            self.v_box.add(exit_button)
 
             ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
             ui_anchor_layout.add(child=self.v_box, anchor_x="center_x", anchor_y="center_y")
@@ -446,6 +583,8 @@ class GameMenu(arcade.View):
 
         create_menu_buttons()
 
+class SettingsMenu(arcade.Window):
+    pass
 
 
 class Work_with_jpy:
@@ -456,7 +595,7 @@ class Work_with_jpy:
 class Character():
     active_threads = []
 
-    def __init__(self, name, char_id: Optional[str] = None, colour: str = "", name_colour: str = "", c_scale: float = 1.0):
+    def __init__(self, name, char_id: Optional[str] = None, colour: str = "", name_colour: str = "", c_scale: float = 1.0, text_anch: str = "left"):
         super().__init__()
 
         def hex_to_rgb(hex_color: str):
@@ -502,25 +641,49 @@ class Character():
         if self.char_id is not None:
             self.sprites = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"])
 
+        self.text_anch = text_anch
+
 
     def talk(self, text: str):
         global dialog_text_colour, cname_text_colour
         global dialog_text_text, cname_text_text
+        global text_anchor
 
+        def replace_char_by_index(text, index, new_char):
+            if index < 0 or index >= len(text):
+                return text
+            return text[:index] + new_char + text[index + 1:]
+
+
+        dialog_text_text_alt = [" "]
+        string_index_alt = 0
+        _text_alt = []
+        for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', text):
+            char = str(char)
+
+            if char == r"\n ":
+                string_index_alt += 1
+                _text_alt = []
+                continue
+
+            if not char.startswith("{") and not str(char).endswith("}"):
+                if char != r"\n ":
+                    if char != " ":
+                        _text_alt.append(" ")
+                    else:
+                        _text_alt.append(" ")
+                    if len(dialog_text_text_alt)-1 != string_index_alt:
+                        dialog_text_text_alt.insert(string_index_alt, "".join(_text_alt))
+                    else:
+                        dialog_text_text_alt[string_index_alt] = "".join(_text_alt)
+
+
+        text_anchor = self.text_anch
 
         am.stop_voice()
 
         dialog_text_colour = self.colour
         cname_text_colour = self.name_colour
-
-        if self.action == "talk" and False:
-
-            for stop_event, thread in Character.active_threads:
-                stop_event.set()
-                #thread.join()
-                dialog_text_text = text
-
-            return True
 
         self.action = None
 
@@ -528,25 +691,35 @@ class Character():
             stop_event.set()
             thread.join()
 
-        dialog_text_text = ""
+        dialog_text_text = dialog_text_text_alt.copy()
         cname_text_text = ""
 
 
         stop_event = threading.Event()
 
         def _talk():
-            fast = False
-            self.action = "talk"
             global dialog_text_text, cname_text_text
+            string_index = 0
+            fast = False
+
+            self.action = "talk"
 
             while True:
+                i = -1
                 if not wait_trigger:
                     self.last_text = text
 
                     _text = []
                     index = 0
-                    for char in re.findall(r'\{[^}]*\}|\S|\s', text):
+                    for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', text):
+                        i += 1
                         char = str(char)
+
+                        if char == r"\n ":
+                            string_index += 1
+                            i = -1
+                            _text = []
+                            continue
 
                         cname_text_text = self.c_name
 
@@ -554,8 +727,14 @@ class Character():
                             return False
 
                         if not char.startswith("{") and not str(char).endswith("}"):
-                            _text.append(char)
-                            dialog_text_text = "".join(_text)
+                            if char != r"\n ":
+                                _text.append(char)
+                                dialog_text_text[string_index] = replace_char_by_index(dialog_text_text[string_index], i, char)
+                                print("\n")
+                                print(i)
+                                print(char)
+                                print(dialog_text_text)
+                                print(dialog_text_text_alt)
 
                         index += 1
 
@@ -582,8 +761,10 @@ class Character():
                             char = char[1:][:-1]
 
                             if char.startswith("w"):
+                                i -= 1
                                 time.sleep(float(char.split("=")[-1]))
                             if char.startswith("f"):
+                                i -= 1
                                 fast = True
 
                         if stop_event.is_set():
@@ -602,6 +783,7 @@ class Character():
         Character.active_threads = [(stop_event, thread)]
         thread.start()
 
+
     def show(self, sprite: str, scale: Optional[int] = None) -> arcade.Sprite:
         if scale is None:
             scale = self.c_scale
@@ -614,7 +796,7 @@ class ListCharacters:
             "j" : Character("Джопа", "j", name_colour="#D2691E", colour="#CD853F"),
             "aj": Character("АнтиДжек", "aj", name_colour="#3f87cd", c_scale=0.5, colour="#2167C4"),
             "sj": Character("ГлупоДжек", "sj", name_colour="#D1D0CF", c_scale=0.5, colour="#D4D4D4"),
-            "narr" : Character(" ", None)
+            "narr" : Character(" ", None, text_anch="center")
         }
     def get_character(self, char_id: str):
         return self.characters[char_id]
@@ -706,24 +888,9 @@ class AudioManager:
 am = AudioManager()
 
 def main():
+    game = GameMenu(width=1024, height=786, title=f"{WINDOW_TITLE} | {splash}")
 
-    """ Main function """
-    # Create a window class. This is what actually shows up on screen
-    with open("./other/splashes.json", "r", encoding="UTF-8") as splashes:
-        splashes = json.load(splashes)
-    splash = str(random.choice(splashes))
-    if splash.startswith(">"):
-        splash = splash.format(username=str(os.getenv("USERNAME") or os.getenv("USER")))[1:]
-    window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, f"{WINDOW_TITLE} | {splash}", resizable=True)
-
-    # Create and setup the GameView
-    game = GameMenu()
-
-    # Show GameView on screen
-    window.show_view(game)
-
-    # Start the arcade game loop
-    arcade.run()
+    game.run()
 
 
 
