@@ -9,6 +9,7 @@ import re
 import os
 import json
 import random
+import json
 
 from lore_viewer import Wwl
 
@@ -17,6 +18,9 @@ with open("./other/splashes.json", "r", encoding="UTF-8") as splashes:
 splash = str(random.choice(splashes))
 if splash.startswith(">"):
     splash = splash.format(username=str(os.getenv("USERNAME") or os.getenv("USER")))[1:]
+
+with open("data.JSON", "r", encoding="UTF-8") as data:
+    data = json.load(data)
 
 wwl = Wwl()
 
@@ -43,6 +47,9 @@ class GameView(arcade.View):
 
     def __init__(self):
         super().__init__()
+        global am
+        am = AudioManager()
+
         self.scene = arcade.Scene()
 
         self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
@@ -61,6 +68,10 @@ class GameView(arcade.View):
         self.scene.add_sprite_list("characters")
         self.scene.add_sprite_list("fade")
         self.scene.add_sprite_list("gui")
+
+        self.menu_manager = arcade.gui.UIManager()
+        self.menu_manager.disable()
+        self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
         self.is_mouse_pressed = False
 
@@ -92,8 +103,6 @@ class GameView(arcade.View):
         create_dialog_fade()
         create_dialog_window()
 
-        time.sleep(2)
-
         self.start_trigger: bool = True
 
         self.talk_manager()
@@ -101,27 +110,34 @@ class GameView(arcade.View):
 
     def talk_manager(self):
 
-        now = wwl.get_thing()
-        res = self.talk(now)
+        if not wait_trigger:
+            now = wwl.get_thing()
+            res = self.talk(now)
 
-
-        match res:
-            case "NEXT":
-                self.talk_manager()
-            case "REPEAT":
-                #self.talk(now)
-                return None
-            case "END":
-                return None
+            match res:
+                case "NEXT":
+                    self.talk_manager()
+                case "REPEAT":
+                    #self.talk(now)
+                    return None
+                case "END":
+                    return None
+                case "CHANEL":
+                    self.window.set_fullscreen(False)
+                    self.window.size = (1024, 786)
+                    game = GameMenu(False)
+                    self.window.show_view(game)
 
 
 
     def talk(self, now):
         global dialog_text_text, cname_text_text
+        global wait_trigger
 
         while True:
 
             if now is None:
+                print("ponn")
                 return None
 
 
@@ -217,7 +233,6 @@ class GameView(arcade.View):
                     match now["type"]:
                         case "FADEIN":
                             def editing_alpha():
-                                global wait_trigger
                                 wait_trigger = True
                                 start_time = time.time()
                                 duration = now["time"]
@@ -244,7 +259,6 @@ class GameView(arcade.View):
                             threading.Thread(target=editing_alpha).start()
                         case "FADEOUT":
                             def editing_alpha():
-                                global wait_trigger
                                 wait_trigger = True
                                 start_time = time.time()
                                 duration = now["time"]
@@ -276,9 +290,20 @@ class GameView(arcade.View):
                 case "JUMP":
 
                     wwl.pose = 0
-                    wwl.label = f"label {now["label"]}"
+                    wwl.label = now["label"]
 
                     return "NEXT"
+
+                case "MENU":
+                    global dialog_text_text, cname_text_text
+
+                    dialog_text_text = [" "]
+                    cname_text_text = ""
+
+                    self.show_menu(now['data'])
+                    #wait_trigger = True
+
+                    return "END"
 
                 case "WAIT":
 
@@ -293,17 +318,13 @@ class GameView(arcade.View):
                     return "NEXT"
 
                 case "END":
-                    self.window.close()
 
-                    wwl.label = "label main"
+                    wwl.label = main
                     wwl.pose = 0
 
                     dialog_text_text = [" "]
                     cname_text_text = ""
-
-                    game = GameMenu(width=1024, height=786, title=f"{WINDOW_TITLE} | {splash}")
-                    game.run()
-                    return "END"
+                    return "CHANEL"
 
 
                 case _:
@@ -319,7 +340,32 @@ class GameView(arcade.View):
             self.scene.draw()
             self.create_main_windows()
             self.dialog_text_batch.draw()
+            self.menu_manager.draw()
             arcade.draw_sprite(self.cursor_texture)
+
+    def show_menu(self, data):
+        def jump(label: str):
+            global wait_trigger
+            wwl.pose = 0
+            wwl.label = label
+            self.menu_manager.clear()
+            self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+            wait_trigger = False
+            self.talk_manager()
+
+        for k, v in data.items():
+            button = arcade.gui.widgets.buttons.UIFlatButton(
+                text=k,
+                width=200
+            )
+            button.on_click = lambda event: jump(v)
+            print(v)
+            self.menu_v_box.add(button)
+
+        ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
+        ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y")
+
+        self.menu_manager.add(ui_anchor_layout)
 
 
     def on_update(self, delta_time):
@@ -329,7 +375,7 @@ class GameView(arcade.View):
         need it.
         """
         self.scene.update(delta_time)
-        #self
+        self.menu_manager.enable()
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER:
@@ -437,6 +483,12 @@ class GameView(arcade.View):
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
         self.cursor_texture.position = (x, y)
 
+    def on_close(self):
+        self.window.set_fullscreen(False)
+        self.window.size = (1024, 786)
+        game = GameMenu()
+        self.window.show_view(game)
+
     class Move():
         @staticmethod
         def move_towards(sprite, target_x, target_y, speed):
@@ -459,40 +511,44 @@ class GameView(arcade.View):
             threading.Thread(target=move).start()
 
 
-class GameMenu(arcade.Window):
-    def __init__(self, width, height, title):
-        super().__init__(width=width, height=height, title=title, resizable=False)
-
+class GameMenu(arcade.View):
+    def __init__(self, show_lc: bool = True):
+        super().__init__()
 
         self.loading_screen = arcade.Sprite("images/gui/JE3000_logo-export.png", 1)
         self.loading_screen.position = (int(self.center_x), int(self.center_y))
         self.loading_screen_fade = arcade.Sprite("images/gui/blackscreen.png")
         self.loading_screen_fade.position = (int(self.center_x), int(self.center_y))
         self.loading_screen_fade.alpha = 0
+        self.loading_screen_fade.size = (2500, 2500)
+        self.loading_screen.alpha = 0
 
         self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
-        self.set_mouse_visible(False)
+        self.window.set_mouse_visible(False)
+        self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
 
         self.manager = arcade.gui.UIManager()
-        self.manager.enable()
+        self.manager.disable()
 
         self.background_color = arcade.color.WHITE
 
         self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
         self.show_main_windows()
-
+        self.is_loading = False
         self.is_mouse_pressed = False
 
         am.stop_music()
         am.stop_voice()
         am.stop_sound()
 
-        self.show_ls()
+        if show_lc:
+            self.show_ls()
 
 
     def show_ls(self):
-
+        self.loading_screen.alpha = 255
+        self.is_loading = True
         def show():
             self.loading_screen_fade.alpha = 255
             time.sleep(0.4)
@@ -507,9 +563,9 @@ class GameMenu(arcade.Window):
             self.loading_screen.alpha = 0
             time.sleep(0.1)
             self.loading_screen_fade.alpha = 0
+            self.is_loading = False
 
         threading.Thread(target=show).start()
-
 
     def on_draw(self):
         """
@@ -522,15 +578,14 @@ class GameMenu(arcade.Window):
         arcade.draw_sprite(self.loading_screen)
         arcade.draw_sprite(self.loading_screen_fade, pixelated=True)
 
-
-
     def on_update(self, delta_time):
         """
         All the logic to move, and the game logic goes here.
         Normally, you'll call update() on the sprite lists that
         need it.
         """
-        pass
+        if not self.is_loading:
+            self.manager.enable()
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
         self.cursor_texture.position = (x, y)
@@ -549,11 +604,15 @@ class GameMenu(arcade.Window):
         def create_menu_buttons():
 
             def start_game(event=None):
-                self.close()
-                window = arcade.Window(1920, 1080, f"{WINDOW_TITLE} | {splash}", resizable=False, fullscreen=True)
+                self.window.size = (1920, 1080)
+                self.window.set_fullscreen(True)
+                self.manager.disable()
                 game = GameView()
-                window.show_view(game)
-                arcade.run()
+                self.window.show_view(game)
+
+            def open_settings(event=None):
+                settings = SettingsMenu()
+                self.window.show_view(settings)
 
             start_button = arcade.gui.widgets.buttons.UIFlatButton(
                 text="Начать игру",
@@ -566,7 +625,7 @@ class GameMenu(arcade.Window):
                 text="Настройки",
                 width=200
             )
-            settings_button.on_click = lambda event: self.show_view(GameView())
+            settings_button.on_click = open_settings
             self.v_box.add(settings_button)
 
             exit_button = arcade.gui.widgets.buttons.UIFlatButton(
@@ -583,8 +642,122 @@ class GameMenu(arcade.Window):
 
         create_menu_buttons()
 
-class SettingsMenu(arcade.Window):
-    pass
+    def on_close(self):
+        arcade.exit()
+
+class SettingsMenu(arcade.View):
+    def __init__(self):
+        super().__init__()
+
+        self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+        self.manager = arcade.gui.UIManager()
+        self.manager.enable()
+        self.other_buttons = []
+
+        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+        self.window.set_mouse_visible(False)
+        self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
+
+        self.music_volume_slider: Optional[agui.UISlider] = None
+        self.sound_volume_slider: Optional[agui.UISlider] = None
+        self.voice_volume_slider: Optional[agui.UISlider] = None
+
+        self.background_color = arcade.color.WHITE
+
+        self.show_main_windows()
+
+    def on_draw(self):
+        self.clear()
+        self.manager.draw()
+        arcade.draw_sprite(self.cursor_texture)
+
+    def on_update(self, delta_time: float) -> bool | None:
+        if self.window.visible:
+            am.music.default_volume = self.music_volume_slider.value / 100
+            am.sound.default_volume = self.sound_volume_slider.value / 100
+            am.voice.default_volume = self.voice_volume_slider.value / 100
+
+            with open("data.JSON", "r", encoding="UTF-8") as data:
+                data = json.load(data)
+
+            data['options']['volume']["music"] = round(self.music_volume_slider.value / 100, 2)
+            data['options']['volume']["sound"] = round(self.sound_volume_slider.value / 100, 2)
+            data['options']['volume']["voice"] = round(self.voice_volume_slider.value / 100, 2)
+
+            with open("data.JSON", "w", encoding="UTF-8") as data_old:
+                json.dump(data, data_old, indent=4, ensure_ascii=False)
+
+    def show_main_windows(self):
+
+        def create_menu_buttons():
+            volumes = data['options']['volume']
+
+            def return_to_main_menu(event=None):
+                game = GameMenu(False)
+                self.window.show_view(game)
+
+            return_button = arcade.gui.UIFlatButton(
+                text="Назад",
+                width=300,
+                height=50
+            )
+            return_button.on_click = return_to_main_menu
+            self.v_box.add(return_button)
+
+            self.music_volume_label = agui.UILabel(
+                "Музыка",
+                text_color=arcade.color.BLACK
+            )
+            self.v_box.add(self.music_volume_label)
+
+            self.music_volume_slider = agui.UISlider(
+                value=volumes["music"]*100,  # начальное значение
+                min_value=0,
+                max_value=200,
+                width=300,
+                height=20
+            )
+            self.v_box.add(self.music_volume_slider)
+
+            self.sound_volume_label = agui.UILabel(
+                "Звуки",
+                text_color=arcade.color.BLACK
+            )
+            self.v_box.add(self.sound_volume_label)
+
+            self.sound_volume_slider = agui.UISlider(
+                value=volumes["sound"]*100,  # начальное значение
+                min_value=0,
+                max_value=200,
+                width=300,
+                height=20
+            )
+            self.v_box.add(self.sound_volume_slider)
+
+            self.voice_volume_label = agui.UILabel(
+                "Голос",
+                text_color=arcade.color.BLACK
+            )
+            self.v_box.add(self.voice_volume_label)
+
+            self.voice_volume_slider = agui.UISlider(
+                value=volumes["voice"]*100,  # начальное значение
+                min_value=0,
+                max_value=200,
+                width=300,
+                height=20
+            )
+            self.v_box.add(self.voice_volume_slider)
+
+            ui_anchor_layout = agui.widgets.layout.UIAnchorLayout()
+            ui_anchor_layout.add(child=self.v_box, anchor_x="center_x", anchor_y="center_y")
+
+            self.manager.add(ui_anchor_layout)
+
+        create_menu_buttons()
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
+        self.cursor_texture.position = (x, y)
 
 
 class Work_with_jpy:
@@ -623,7 +796,7 @@ class Character():
                     for file in files:
                         if file.lower().endswith(i.lower()):
                             full_path = os.path.join(root, file)
-                            results[file.split(".")[0]] = full_path.replace("\\", "/")
+                            results[file.split(".")[0]] = arcade.Sprite(full_path.replace("\\", "/"))
 
             return results
 
@@ -730,11 +903,6 @@ class Character():
                             if char != r"\n ":
                                 _text.append(char)
                                 dialog_text_text[string_index] = replace_char_by_index(dialog_text_text[string_index], i, char)
-                                print("\n")
-                                print(i)
-                                print(char)
-                                print(dialog_text_text)
-                                print(dialog_text_text_alt)
 
                         index += 1
 
@@ -787,7 +955,8 @@ class Character():
     def show(self, sprite: str, scale: Optional[int] = None) -> arcade.Sprite:
         if scale is None:
             scale = self.c_scale
-        now_sprite = arcade.Sprite(self.sprites[sprite], scale=scale)
+        now_sprite = self.sprites[sprite]
+        now_sprite.scale = scale
         return now_sprite
 
 class ListCharacters:
@@ -839,21 +1008,23 @@ class AudioChannel:
 
 class AudioManager:
     def __init__(self):
-        self.music = AudioChannel()
-        self.sound = AudioChannel()
-        self.voice = AudioChannel()
+        volumes = data['options']['volume']
+        self.music = AudioChannel(volumes['music'])
+        self.sound = AudioChannel(volumes['sound'])
+        self.voice = AudioChannel(volumes['voice'])
 
     # Удобные сокращения
     def play_music(self, path, loop=False, volume=1.0):
-        self.music.play(path, loop=loop, volume=volume)
+        self.music.play(path, loop=loop, volume=self.music.default_volume * volume)
 
     def play_sound(self, path, loop=False, volume=1.0):
-        self.sound.play(path, loop=loop, volume=volume)
+        self.sound.play(path, loop=loop, volume=self.sound.default_volume * volume)
 
     def play_voice(self, path, loop=False, volume=2.0):
-        self.voice.play(path, loop=loop, volume=volume, speed=random.randint(99, 101) / 100)
+        self.voice.play(path, loop=loop, volume=self.voice.default_volume * volume, speed=random.randint(99, 101) / 100)
 
     def stop_music(self, effect: Optional[str] = None):
+        old_volume = self.music.default_volume
         if effect is not None:
             match effect:
                 case "FADE":
@@ -863,15 +1034,17 @@ class AudioManager:
                             self.music.set_volume(self.music.default_volume)
                             time.sleep(0.005)
                         self.music.stop()
+                        self.music.set_volume(old_volume)
                         return None
                     threading.Thread(target=fadeout_music).start()
 
-                case _:
-                    self.music.stop()
-        else:
-            self.music.stop()
+                case N:
+                    print(N)
+        self.music.stop()
+        self.music.set_volume(old_volume)
 
     def stop_sound(self, effect: Optional[str] = None):
+        old_volume = self.sound.default_volume
         if effect is not None:
             match effect:
                 case "FADE":
@@ -880,20 +1053,19 @@ class AudioManager:
                 case N:
                     print(N)
         self.sound.stop()
+        self.sound.set_volume(old_volume)
 
     def stop_voice(self):
         self.voice.stop()
 
 
-am = AudioManager()
-
 def main():
-    game = GameMenu(width=1024, height=786, title=f"{WINDOW_TITLE} | {splash}")
-
-    game.run()
-
-
+    window = arcade.Window(width=1024, height=786, title=f"{WINDOW_TITLE} | {splash}", resizable=False)
+    game = GameMenu()
+    window.show_view(game)
+    arcade.run()
 
 if __name__ == "__main__":
+    am = AudioManager()
     lc = ListCharacters()
     main()

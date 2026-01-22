@@ -15,17 +15,22 @@ class Wwl:
                 for file in files:
                     if file.lower().endswith(extension.lower()):
                         full_path = os.path.join(root, file)
-                        results[file] = {"path" : full_path.replace("\\", "/"), "content" : None}
+                        results[file] = {"path" : full_path.replace("\\", "/"), "content" : {}}
             return results
 
         self.files = find_files(".arl")
 
         for e, i in self.files.items():
             with open(i["path"], "r", encoding="UTF-8") as f:
-                self.files[e]["content"] = f.read()
+                f = f.read()
+                for o, p in enumerate(f.split("\n")):
+                    p = p.strip("\n ")
+                    if p.startswith("label"):
+                        p =  p.split(" ")
+                        self.files[e]["content"][p[1]] = "\n".join(f.split("\n")[o:])
 
         self.pose = 0
-        self.label = "label main"
+        self.label = "main"
         self.lore = self._get_lore()
 
     def _get_lore(self):
@@ -35,8 +40,8 @@ class Wwl:
                 start_label = e
 
         label = []
-        for i in self.files[start_label]["content"].split("\n"):
-            i = str(i).replace("    ", "")
+        for i in self.files[start_label]["content"][self.label].split("\n"):
+            i = str(i).strip()
             match i:
                 case "label main":
                     continue
@@ -105,8 +110,24 @@ class Wwl:
 
                     label.append({"action": "JUMP", "label"  : i.split(' ')[1]})
 
+                case n if i.startswith("MENU"):
+                    dial = i.split(" ")
+                    data = {}
+                    for i in dial[1:]:
+                        if i.startswith("\"") and i.endswith("\""):
+                            data[i.strip("\"")] = None
+                            LAST = i.strip("\"")
+                            continue
+                        else:
+                            data[LAST] = str(i)
+
+                    label.append({"action": dial[0], "data": data})
+
                 case n if i.startswith("END"):
                     label.append({"action": "END"})
+
+                case n if i.startswith("#"):
+                    continue
 
         return label
 
