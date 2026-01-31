@@ -18,7 +18,7 @@ class Wwl:
                         results[file] = {"path" : full_path.replace("\\", "/"), "content" : {}}
             return results
 
-        self.files = find_files(".arl")
+        self.files = find_files(".jpy")
 
         for e, i in self.files.items():
             with open(i["path"], "r", encoding="UTF-8") as f:
@@ -40,28 +40,46 @@ class Wwl:
                 start_label = e
 
         label = []
-        for i in self.files[start_label]["content"][self.label].split("\n"):
-            i = str(i).strip()
+        index = 0
+        files = self.files[start_label]["content"][self.label].split("\n")
+        while len(files) > index:
+            index += 1
+            i = files[index-1].strip()
             match i:
-                case "label main":
-                    continue
 
                 case n if i.startswith("<"):
                     dial = re.split(r"[<>]", i)
                     dial = [x for x in dial if x]
 
-                    text = "".join(dial[1:])[1:]
+                    text = "".join(dial[1:])[1:].strip("\"")
 
                     label.append({"action" : "SAY", "character" : str(dial[0]), "args" : text})
 
                 case n if i.startswith("PLAY"):
                     dial = i.split(" ")
-                    label.append({"action": dial[0], "play_what" : dial[1], "args" : dial[2:]})
+                    dial = dial + [None]*(6 - len(dial)) # 6 - макс кол-во аргументов
+
+                    if dial[4] == "False":
+                        dial.pop(4)
+                        dial.insert(4, False)
+                    elif dial[4] == "True":
+                        dial.pop(4)
+                        dial.insert(4, True)
+                    else:
+                        dial.pop(4)
+                        if dial[1] == "MUSIC":
+                            dial.insert(4, True)
+                        else:
+                            dial.insert(4, False)
+
+                    if not isinstance(dial[5], (str, type(None))):
+                        dial.insert(5, None)
+
+                    label.append({"action": dial[0], "play_what" : dial[1], "path" : dial[2], "volume" : dial[3], "loop": dial[4],  "effect": dial[5], "args": dial[6:]})
 
                 case n if i.startswith("STOP"):
                     dial = i.split(" ")
-                    if len(dial) < 3:
-                        dial.insert(2, None)
+                    dial = dial + [None]*(6 - len(dial)) # 6 - макс кол-во аргументов
                     label.append({"action": dial[0], "what": dial[1], "effect": dial[2], "args": dial[3:]})
 
                 case n if i.startswith("SHOW"):
@@ -111,23 +129,39 @@ class Wwl:
                     label.append({"action": "JUMP", "label"  : i.split(' ')[1]})
 
                 case n if i.startswith("MENU"):
-                    dial = i.split(" ")
+                    dial = []
+                    for o in i[4:].split(","):
+                        dial = dial + [match.group(0) for match in re.finditer(r'"[^"]+"|\S+', o)]
                     data = {}
-                    for i in dial[1:]:
-                        if i.startswith("\"") and i.endswith("\""):
+                    for i in dial:
+                        if i.startswith("\"") or i.endswith("\""):
                             data[i.strip("\"")] = None
                             LAST = i.strip("\"")
                             continue
                         else:
                             data[LAST] = str(i)
-
-                    label.append({"action": dial[0], "data": data})
+                    label.append({"action": "MENU", "data": data})
 
                 case n if i.startswith("END"):
                     label.append({"action": "END"})
 
                 case n if i.startswith("#"):
                     continue
+
+
+                case n if i.startswith("$"):
+                    label.append({"action": "EXECUTE", "data" : i.strip("$ ")})
+
+                case n if i.startswith("PYTHON"):
+                    data = ""
+                    while True:
+                        i = files[index][8:]
+                        data = f"{data}\n{i}"
+                        index += 1
+                        if files[index].strip() == "}":
+                            break
+
+                    label.append({"action": "EXECUTE", "data": data})
 
         return label
 

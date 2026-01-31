@@ -19,10 +19,24 @@ splash = str(random.choice(splashes))
 if splash.startswith(">"):
     splash = splash.format(username=str(os.getenv("USERNAME") or os.getenv("USER")))[1:]
 
-with open("data.JSON", "r", encoding="UTF-8") as data:
-    data = json.load(data)
-
 wwl = Wwl()
+
+
+
+class Persistent:
+
+    def __setattr__(self, name, value):
+        sm.persistent.set_persistent(name, value)
+        super().__setattr__(name, value)
+
+    def __getattribute__(self, item):
+        super().__setattr__(item, sm.persistent.get_persistent(item))
+        return sm.persistent.get_persistent(item)
+
+
+NAMESPACE = {
+    "persistent" : Persistent()
+}
 
 text_anchor = "left"
 
@@ -34,7 +48,6 @@ arcade.load_font("fonts/Kurale-Regular.ttf")
 wait_trigger: bool = False
 
 WINDOW_TITLE = f"Game name"
-TEXT_SPEED = 40
 last_talk = threading.Event()
 
 dialog_text_text: list[str] = []
@@ -47,13 +60,13 @@ class GameView(arcade.View):
 
     def __init__(self):
         super().__init__()
-        global am
+        global am, wwl
         am = AudioManager()
+        wwl = Wwl()
 
         self.scene = arcade.Scene()
 
         self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
-        self.window.set_mouse_visible(False)
 
         self.background_color = arcade.color.WHITE
 
@@ -107,11 +120,21 @@ class GameView(arcade.View):
 
         self.talk_manager()
 
+    def format_text(self, text: str):
+        global NAMESPACE
+        pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
+        text = re.split(pattern, str(text))
+        for e, i in enumerate(text):
+            if i.startswith("[") and i.endswith("]"):
+                text[e] = NAMESPACE.get(i.strip("[]"), "NONE")
+        text = "".join(text).replace("\\\\", "\\")
+        return text
 
     def talk_manager(self):
 
         if not wait_trigger:
             now = wwl.get_thing()
+            print(now)
             res = self.talk(now)
 
             match res:
@@ -121,6 +144,8 @@ class GameView(arcade.View):
                     #self.talk(now)
                     return None
                 case "END":
+                    return None
+                case "END_text":
                     return None
                 case "CHANEL":
                     self.window.set_fullscreen(False)
@@ -137,9 +162,7 @@ class GameView(arcade.View):
         while True:
 
             if now is None:
-                print("ponn")
                 return None
-
 
             match now['action']:
 
@@ -147,27 +170,17 @@ class GameView(arcade.View):
                     self.dialog_texts = []
 
                     self.start_trigger = False
-                    pon = lc.get_character(now["character"]).talk(str(now["args"]))
+                    pon = lc.get_character(now["character"]).talk(self.format_text(now["args"]))
 
-                    return "END"
+                    return "END_text"
 
                 case "PLAY":
                     match now["play_what"]:
                         case "MUSIC":
-                            if len(now["args"]) < 2:
-                                now["args"].append(1)
-                            if len(now["args"]) < 3:
-                                now["args"].append(True)
-
-                            am.play_music(f"music/{now["args"][0]}", bool(now["args"][2]), float(now["args"][1]))
+                            am.play_music(f"music/{now['path']}", now["loop"], float(now["volume"]), effect=now["effect"])
 
                         case "SOUND":
-                            if len(now["args"]) < 2:
-                                now["args"].append(1)
-                            if len(now["args"]) < 3:
-                                now["args"].append(False)
-
-                            am.play_sound(f"sounds/{now["args"][0]}", bool(now["args"][2]), float(now["args"][1]))
+                            am.play_sound(f"sounds/{now['path']}", bool(now["loop"]), float(now["volume"]), effect=now["effect"])
                     return "NEXT"
 
                 case "STOP":
@@ -233,6 +246,7 @@ class GameView(arcade.View):
                     match now["type"]:
                         case "FADEIN":
                             def editing_alpha():
+                                global wait_trigger
                                 wait_trigger = True
                                 start_time = time.time()
                                 duration = now["time"]
@@ -259,30 +273,22 @@ class GameView(arcade.View):
                             threading.Thread(target=editing_alpha).start()
                         case "FADEOUT":
                             def editing_alpha():
-                                wait_trigger = True
                                 start_time = time.time()
                                 duration = now["time"]
 
                                 while True:
 
                                     elapsed = time.time() - start_time
-
                                     if elapsed >= duration:
                                         alpha = 0
-                                        if not wait_trigger:
-                                            wait_trigger = True
-                                        break
+                                        return None
 
                                     progress = elapsed / duration
                                     alpha = 255 - int(progress * 255)
 
-                                    if not wait_trigger:
-                                        wait_trigger = True
-
                                     self.scene["fade"][0].alpha = alpha
 
                                     time.sleep(0.01)
-                                wait_trigger = False
 
                             threading.Thread(target=editing_alpha).start()
                     return "NEXT"
@@ -301,7 +307,7 @@ class GameView(arcade.View):
                     cname_text_text = ""
 
                     self.show_menu(now['data'])
-                    #wait_trigger = True
+                    wait_trigger = True
 
                     return "END"
 
@@ -327,6 +333,11 @@ class GameView(arcade.View):
                     return "CHANEL"
 
 
+                case "EXECUTE":
+                    global NAMESPACE
+                    exec(now["data"], NAMESPACE)
+                    return "NEXT"
+
                 case _:
                     return None
 
@@ -344,6 +355,7 @@ class GameView(arcade.View):
             arcade.draw_sprite(self.cursor_texture)
 
     def show_menu(self, data):
+
         def jump(label: str):
             global wait_trigger
             wwl.pose = 0
@@ -358,8 +370,7 @@ class GameView(arcade.View):
                 text=k,
                 width=200
             )
-            button.on_click = lambda event: jump(v)
-            print(v)
+            button.on_click = lambda event, label=v: jump(label)
             self.menu_v_box.add(button)
 
         ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
@@ -379,14 +390,12 @@ class GameView(arcade.View):
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER:
-            if not wait_trigger:
-                self.talk_manager()
+            self.talk_manager()
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.is_mouse_pressed = False
         if int(button) == 1:
-            if not wait_trigger:
-                self.talk_manager()
+            self.talk_manager()
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
         self.is_mouse_pressed = True
@@ -482,6 +491,7 @@ class GameView(arcade.View):
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
         self.cursor_texture.position = (x, y)
+        self.window.set_mouse_visible(False)
 
     def on_close(self):
         self.window.set_fullscreen(False)
@@ -604,6 +614,7 @@ class GameMenu(arcade.View):
         def create_menu_buttons():
 
             def start_game(event=None):
+                self.window.set_fullscreen(False)
                 self.window.size = (1920, 1080)
                 self.window.set_fullscreen(True)
                 self.manager.disable()
@@ -673,23 +684,19 @@ class SettingsMenu(arcade.View):
 
     def on_update(self, delta_time: float) -> bool | None:
         if self.window.visible:
-            am.music.default_volume = self.music_volume_slider.value / 100
-            am.sound.default_volume = self.sound_volume_slider.value / 100
-            am.voice.default_volume = self.voice_volume_slider.value / 100
+            am.music.default_volume = round(self.music_volume_slider.value / 100, 2)
+            am.sound.default_volume = round(self.sound_volume_slider.value / 100, 2)
+            am.voice.default_volume = round(self.voice_volume_slider.value / 100, 2)
 
-            with open("data.JSON", "r", encoding="UTF-8") as data:
-                data = json.load(data)
-
-            data['options']['volume']["music"] = round(self.music_volume_slider.value / 100, 2)
-            data['options']['volume']["sound"] = round(self.sound_volume_slider.value / 100, 2)
-            data['options']['volume']["voice"] = round(self.voice_volume_slider.value / 100, 2)
-
-            with open("data.JSON", "w", encoding="UTF-8") as data_old:
-                json.dump(data, data_old, indent=4, ensure_ascii=False)
+            sm.volume.set_music(round(self.music_volume_slider.value / 100, 2))
+            sm.volume.set_sound(round(self.sound_volume_slider.value / 100, 2))
+            sm.volume.set_voice(round(self.voice_volume_slider.value / 100, 2))
 
     def show_main_windows(self):
 
         def create_menu_buttons():
+            with open("data.JSON", "r", encoding="UTF-8") as data:
+                data = json.load(data)
             volumes = data['options']['volume']
 
             def return_to_main_menu(event=None):
@@ -759,23 +766,15 @@ class SettingsMenu(arcade.View):
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
         self.cursor_texture.position = (x, y)
 
-
-class Work_with_jpy:
-    def __init__(self):
-        self.file_format = ".jpy"
-        self.start_label = "main"
-
 class Character():
     active_threads = []
 
-    def __init__(self, name, char_id: Optional[str] = None, colour: str = "", name_colour: str = "", c_scale: float = 1.0, text_anch: str = "left"):
-        super().__init__()
-
+    def __init__(self, name: str, char_id: Optional[str] = None, colour: str = "", name_colour: str = "", c_scale: float = 1.0, text_anch: str = "left", lps: int = 60):
         def hex_to_rgb(hex_color: str):
             if hex_color:
                 hex_color = hex_color.lstrip("#")
                 if len(hex_color) not in (6, 8):
-                    raise ValueError("Hex должен быть в формате RRGGBB или RRGGBBAA")
+                    raise ValueError("Hex должен быть в формате RRGGBB")
 
                 r = int(hex_color[0:2], 16)
                 g = int(hex_color[2:4], 16)
@@ -805,6 +804,7 @@ class Character():
         self.colour = hex_to_rgb(colour)
         self.name_colour = hex_to_rgb(name_colour)
         self.c_scale = c_scale
+        self.lps = lps
 
         self.action = None
         self.last_text = " "
@@ -897,6 +897,7 @@ class Character():
                         cname_text_text = self.c_name
 
                         if stop_event.is_set():
+                            self.action = None
                             return False
 
                         if not char.startswith("{") and not str(char).endswith("}"):
@@ -917,7 +918,8 @@ class Character():
                             return None
 
                         if ((index % 3 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
-                            threading.Thread(target=talk_sound).start()
+                            if os.path.isdir(f"./sounds/character_voice/{self.char_id}"):
+                                threading.Thread(target=talk_sound).start()
 
                         if char == ".":
                             if not fast:
@@ -936,15 +938,16 @@ class Character():
                                 fast = True
 
                         if stop_event.is_set():
+                            self.action = None
                             return False
 
                         if not fast:
-                            time.sleep(1 / TEXT_SPEED)
+                            time.sleep(1 / self.lps)
                     self.action = None
                     return False
                 else:
                     if not fast:
-                        time.sleep(1 / TEXT_SPEED)
+                        time.sleep(1 / self.lps)
                     continue
 
         thread = threading.Thread(target=_talk)
@@ -973,7 +976,7 @@ class ListCharacters:
 
 
 class AudioChannel:
-    def __init__(self, default_volume=1.0):
+    def __init__(self, default_volume: float=1.0):
         self.sound = None
         self.player = None
         self.default_volume = default_volume
@@ -1008,16 +1011,45 @@ class AudioChannel:
 
 class AudioManager:
     def __init__(self):
-        volumes = data['options']['volume']
-        self.music = AudioChannel(volumes['music'])
-        self.sound = AudioChannel(volumes['sound'])
-        self.voice = AudioChannel(volumes['voice'])
+
+        self.music = AudioChannel(sm.volume.get_music())
+        self.sound = AudioChannel(sm.volume.get_sound())
+        self.voice = AudioChannel(sm.volume.get_voice())
 
     # Удобные сокращения
-    def play_music(self, path, loop=False, volume=1.0):
+    def play_music(self, path: str, loop: Optional[bool]=False, volume: float=1.0, effect: Optional[str] = None):
+
+        old_volume = self.music.default_volume
+        match effect:
+            case "FADE":
+                def fadeout_music():
+                    self.music.default_volume = 0.0
+                    self.music.set_volume(0.0)
+                    while self.music.default_volume < old_volume:
+                        self.music.default_volume += 0.002
+                        self.music.set_volume(self.music.default_volume)
+                        time.sleep(0.005)
+                    self.music.set_volume(old_volume)
+                    return None
+
+                threading.Thread(target=fadeout_music).start()
         self.music.play(path, loop=loop, volume=self.music.default_volume * volume)
 
-    def play_sound(self, path, loop=False, volume=1.0):
+    def play_sound(self, path, loop=False, volume=1.0, effect: Optional[str] = None):
+
+        old_volume = self.sound.default_volume
+        match effect:
+            case "FADE":
+                def fadeout_music():
+                    int_volume = int(round(self.music.default_volume, 2) * 100)
+                    for i in range(int_volume):
+                        self.music.default_volume = i/100
+                        self.music.set_volume(self.music.default_volume)
+                        time.sleep(0.001)
+                    self.music.set_volume(old_volume)
+                    return None
+
+                threading.Thread(target=fadeout_music).start()
         self.sound.play(path, loop=loop, volume=self.sound.default_volume * volume)
 
     def play_voice(self, path, loop=False, volume=2.0):
@@ -1029,34 +1061,122 @@ class AudioManager:
             match effect:
                 case "FADE":
                     def fadeout_music():
-                        while self.music.default_volume >= 0.0:
-                            self.music.default_volume -= 0.002
+                        int_volume = int(round(self.music.default_volume, 2)*100)
+                        for i in range(int_volume):
+                            self.music.default_volume = round((int_volume - i)/100, 2)
                             self.music.set_volume(self.music.default_volume)
-                            time.sleep(0.005)
+                            time.sleep(0.01)
                         self.music.stop()
                         self.music.set_volume(old_volume)
                         return None
                     threading.Thread(target=fadeout_music).start()
 
-                case N:
-                    print(N)
-        self.music.stop()
-        self.music.set_volume(old_volume)
+                case None:
+                    self.music.stop()
 
     def stop_sound(self, effect: Optional[str] = None):
         old_volume = self.sound.default_volume
         if effect is not None:
             match effect:
                 case "FADE":
-                    for i in range(int(self.sound.default_volume*10), 0):
-                        self.sound.set_volume(i)
-                case N:
-                    print(N)
-        self.sound.stop()
-        self.sound.set_volume(old_volume)
+                    def fadeout_music():
+                        int_volume = int(round(self.sound.default_volume, 2) * 100)
+                        for i in range(int_volume):
+                            self.sound.default_volume = round((int_volume - i) / 100, 2)
+                            self.sound.set_volume(self.sound.default_volume)
+                            time.sleep(0.005)
+                        self.sound.stop()
+                        self.sound.set_volume(old_volume)
+                        return None
+
+                    threading.Thread(target=fadeout_music).start()
+                case None:
+                    self.sound.stop()
 
     def stop_voice(self):
         self.voice.stop()
+
+
+class Saves_manager:
+    def  __init__(self):
+
+        if not os.path.exists("./data.JSON"):
+            with open("./data.JSON",  "w", encoding="UTF-8") as file:
+                data = {
+                    "saves": {},
+                    "persistent" : {},
+                    "options": {
+                        "volume": {
+                            "music": 1.51,
+                            "sound": 0.44,
+                            "voice": 0.37
+                        }
+                    }
+                }
+                json.dump(data, file, indent=4, ensure_ascii=False)
+
+    class persistent:
+        @staticmethod
+        def get_persistent(name: str):
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file = dict(json.load(file))
+            return file["persistent"].get(name, None)
+
+        @staticmethod
+        def set_persistent(name: str, data: any):
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file_data_old = dict(json.load(file))
+            file_data = file_data_old.copy()
+            file_data["persistent"][name] = data
+            with open("./data.JSON", "w", encoding="UTF-8") as file:
+                json.dump(file_data, file, indent=4, ensure_ascii=False)
+
+    class volume:
+        @staticmethod
+        def set_music(value: float):
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file_data_old = dict(json.load(file))
+            file_data = file_data_old.copy()
+            file_data["options"]["volume"]["music"] = value
+            with open("./data.JSON", "w", encoding="UTF-8") as file:
+                json.dump(file_data, file, indent=4, ensure_ascii=False)
+
+        @staticmethod
+        def set_sound(value: float):
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file_data_old = dict(json.load(file))
+            file_data = file_data_old.copy()
+            file_data["options"]["volume"]["sound"] = value
+            with open("./data.JSON", "w", encoding="UTF-8") as file:
+                json.dump(file_data, file, indent=4, ensure_ascii=False)
+
+        @staticmethod
+        def set_voice(value: float):
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file_data_old = dict(json.load(file))
+            file_data = file_data_old.copy()
+            file_data["options"]["volume"]["voice"] = value
+            with open("./data.JSON", "w", encoding="UTF-8") as file:
+                json.dump(file_data, file, indent=4, ensure_ascii=False)
+
+
+        @staticmethod
+        def get_music():
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file = dict(json.load(file))
+            return file["options"]["volume"].get("music", None)
+
+        @staticmethod
+        def get_sound():
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file = dict(json.load(file))
+            return file["options"]["volume"].get("sound", None)
+
+        @staticmethod
+        def get_voice():
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file = dict(json.load(file))
+            return file["options"]["volume"].get("voice", None)
 
 
 def main():
@@ -1066,6 +1186,7 @@ def main():
     arcade.run()
 
 if __name__ == "__main__":
+    sm = Saves_manager()
     am = AudioManager()
     lc = ListCharacters()
     main()
