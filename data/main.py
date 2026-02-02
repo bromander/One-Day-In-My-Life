@@ -153,8 +153,6 @@ class GameView(arcade.View):
                     game = GameMenu(False)
                     self.window.show_view(game)
 
-
-
     def talk(self, now):
         global dialog_text_text, cname_text_text
         global wait_trigger
@@ -520,6 +518,33 @@ class GameView(arcade.View):
 
             threading.Thread(target=move).start()
 
+class Map(arcade.View):
+    def __init__(self):
+        super().__init__()
+
+        self.scene = arcade.Scene()
+        self.background_color = arcade.color.WHITE
+        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+
+    def on_draw(self):
+        self.clear()
+        self.scene.draw()
+        arcade.draw_sprite(self.cursor_texture)
+
+
+
+    def on_update(self, delta_time: float) -> bool | None:
+        self.scene.update(delta_time)
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
+        self.cursor_texture.position = (x, y)
+        self.window.set_mouse_visible(False)
+
+    def on_close(self):
+        self.window.set_fullscreen(False)
+        self.window.size = (1024, 786)
+        game = GameMenu()
+        self.window.show_view(game)
 
 class GameMenu(arcade.View):
     def __init__(self, show_lc: bool = True):
