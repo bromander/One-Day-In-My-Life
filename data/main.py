@@ -1132,9 +1132,9 @@ class Saves_manager:
                     "persistent" : {},
                     "options": {
                         "volume": {
-                            "music": 1.51,
-                            "sound": 0.44,
-                            "voice": 0.37
+                            "music": 1.0,
+                            "sound": 1.0,
+                            "voice": 1.0
                         }
                     }
                 }
