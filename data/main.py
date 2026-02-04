@@ -66,6 +66,8 @@ class GameView(arcade.View):
 
         self.scene = arcade.Scene()
 
+        self.delta_time = 0.0
+
         self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
 
         self.background_color = arcade.color.WHITE
@@ -86,7 +88,7 @@ class GameView(arcade.View):
         self.menu_manager.disable()
         self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
-        self.is_mouse_pressed = False
+        self.waiting_dialogue = True
 
         self.last_text = " "
 
@@ -118,8 +120,6 @@ class GameView(arcade.View):
 
         self.start_trigger: bool = True
 
-        self.talk_manager()
-
     def format_text(self, text: str):
         global NAMESPACE
         pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
@@ -131,27 +131,27 @@ class GameView(arcade.View):
         return text
 
     def talk_manager(self):
+        now = wwl.get_thing()
+        print(now)
+        res = self.talk(now)
 
-        if not wait_trigger:
-            now = wwl.get_thing()
-            print(now)
-            res = self.talk(now)
+        match res:
+            case "NEXT":
+                self.talk_manager()
+            case "REPEAT":
+                # self.talk(now)
+                return None
+            case "END":
+                return None
+            case "END_text":
+                return None
+            case "CHANEL":
+                self.window.set_fullscreen(False)
+                self.window.size = (1024, 786)
+                game = GameMenu(False)
+                self.window.show_view(game)
 
-            match res:
-                case "NEXT":
-                    self.talk_manager()
-                case "REPEAT":
-                    #self.talk(now)
-                    return None
-                case "END":
-                    return None
-                case "END_text":
-                    return None
-                case "CHANEL":
-                    self.window.set_fullscreen(False)
-                    self.window.size = (1024, 786)
-                    game = GameMenu(False)
-                    self.window.show_view(game)
+
 
     def talk(self, now):
         global dialog_text_text, cname_text_text
@@ -271,6 +271,8 @@ class GameView(arcade.View):
                             threading.Thread(target=editing_alpha).start()
                         case "FADEOUT":
                             def editing_alpha():
+                                global wait_trigger
+                                wait_trigger = True
                                 start_time = time.time()
                                 duration = now["time"]
 
@@ -279,6 +281,7 @@ class GameView(arcade.View):
                                     elapsed = time.time() - start_time
                                     if elapsed >= duration:
                                         alpha = 0
+                                        wait_trigger = False
                                         return None
 
                                     progress = elapsed / duration
@@ -287,7 +290,6 @@ class GameView(arcade.View):
                                     self.scene["fade"][0].alpha = alpha
 
                                     time.sleep(0.01)
-
                             threading.Thread(target=editing_alpha).start()
                     return "NEXT"
 
@@ -383,20 +385,22 @@ class GameView(arcade.View):
         Normally, you'll call update() on the sprite lists that
         need it.
         """
+        if self.waiting_dialogue:
+            if not wait_trigger:
+                self.talk_manager()
+                self.waiting_dialogue = False
+
+        self.delta_time = delta_time
         self.scene.update(delta_time)
         self.menu_manager.enable()
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER:
-            self.talk_manager()
+            self.waiting_dialogue = True
 
     def on_mouse_release(self, x, y, button, modifiers):
-        self.is_mouse_pressed = False
         if int(button) == 1:
-            self.talk_manager()
-
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
-        self.is_mouse_pressed = True
+            self.waiting_dialogue = True
 
     def create_main_windows(self):
 
