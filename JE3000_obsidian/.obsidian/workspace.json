@@ -1,0 +1,190 @@
+{
+  "main": {
+    "id": "c4906452fbbfb3bd",
+    "type": "split",
+    "children": [
+      {
+        "id": "7f1184356c1453c4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1e982f8e35a29707",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "Новая вкладка"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "89e20171d48de285",
+    "type": "split",
+    "children": [
+      {
+        "id": "a8604bf0510de616",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1603bae9317b5aef",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Файловый менеджер"
+            }
+          },
+          {
+            "id": "26aa370be810cb27",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Поиск"
+            }
+          },
+          {
+            "id": "f182f3ead87e5ab2",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Закладки"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "997fbfec55df3211",
+    "type": "split",
+    "children": [
+      {
+        "id": "05494441dea9694b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "aae2cebfb4b29339",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "JopaEngine3000 doc/jpy синтаксис/Проигрывание музыки.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Обратные ссылки для Проигрывание музыки"
+            }
+          },
+          {
+            "id": "4ffe7aa201671646",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "JopaEngine3000 doc/jpy синтаксис/Проигрывание музыки.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Исходящие ссылки из Проигрывание музыки"
+            }
+          },
+          {
+            "id": "0b38a97f25071693",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Теги"
+            }
+          },
+          {
+            "id": "7dc376bc3700ab9a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Все свойства"
+            }
+          },
+          {
+            "id": "b97fcdc828219783",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "JopaEngine3000 doc/jpy синтаксис/Проигрывание музыки.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Структура Проигрывание музыки"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Меню быстрого перехода": false,
+      "graph:Граф": false,
+      "canvas:Создать новый холст": false,
+      "daily-notes:Сегодняшняя заметка": false,
+      "templates:Вставить шаблон": false,
+      "command-palette:Открыть палитру команд": false,
+      "bases:Создать новую базу": false
+    }
+  },
+  "active": "1e982f8e35a29707",
+  "lastOpenFiles": [
+    "JopaEngine3000 doc/jpy синтаксис/Проигрывание музыки.md",
+    "JopaEngine3000 doc/jpy синтаксис/Персонажи.md",
+    "JopaEngine3000 doc/jpy синтаксис/Меню.md",
+    "JopaEngine3000 doc/Файлы/main.py/class Character & class ListCharacters.md",
+    "JopaEngine3000 doc/Файлы/main.py/class GameView.md"
+  ]
+}

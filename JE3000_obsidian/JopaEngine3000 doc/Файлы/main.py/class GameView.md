@@ -48,7 +48,7 @@ class GameView(arcade.View):
         self.scene.add_sprite_list("fade")  
         self.scene.add_sprite_list("gui")  
   
-        self.menu_manager = arcade.gui.UIManager()  
+        self.menu_manager = agui.UIManager()  
         self.menu_manager.disable()  
         self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)  
   
@@ -340,7 +340,7 @@ class GameView(arcade.View):
             self.talk_manager()  
   
         for k, v in data.items():  
-            button = arcade.gui.widgets.buttons.UIFlatButton(  
+            button = agui.widgets.buttons.UIFlatButton(  
                 text=k,  
                 width=200  
             )  

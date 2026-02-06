@@ -1,7 +1,9 @@
 import arcade
+import pyglet
 from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
-from arcade import gui as agui
+import arcade.gui as agui
+import arcade.gui.widgets.layout
 from typing import Optional, List, Tuple
 import threading
 import time
@@ -10,6 +12,7 @@ import os
 import json
 import random
 import json
+import uuid
 
 from lore_viewer import Wwl
 
@@ -58,13 +61,27 @@ dialog_text_colour = arcade.color.BLACK
 
 class GameView(arcade.View):
 
-    def __init__(self):
+    def __init__(self, session_id: Optional[str] = None) -> None:
         super().__init__()
         global am, wwl
         am = AudioManager()
         wwl = Wwl()
 
+        if session_id is None:
+            self.session_id = str(uuid.uuid4())
+        else:
+            self.session_id = session_id
+            self.save = sm.save.get_save(self.session_id)
+            wwl.label = self.save["label"]
+            wwl.pose = self.save["position"]
+        print(self.session_id)
+
         self.scene = arcade.Scene()
+        self.settings_scene = arcade.Scene()
+
+        self.settings_manager = agui.UIManager()
+        self.settings_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
+        self.settings_v_box.visible = False
 
         self.delta_time = 0.0
 
@@ -72,7 +89,7 @@ class GameView(arcade.View):
 
         self.background_color = arcade.color.WHITE
 
-        self.dialog_window = None
+        self.dialog_window: Optional[arcade.Sprite] = None
         self.dialog_text_batch = Batch()
         self.dialog_texts: list = []
         self.cname_text: Optional[arcade.Text] = None
@@ -84,15 +101,17 @@ class GameView(arcade.View):
         self.scene.add_sprite_list("fade")
         self.scene.add_sprite_list("gui")
 
-        self.menu_manager = arcade.gui.UIManager()
+        self.menu_manager = agui.UIManager()
         self.menu_manager.disable()
         self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
         self.waiting_dialogue = True
+        self.waiting_settings = False
 
         self.last_text = " "
 
-        def create_dialog_window():
+        def create_widgets():
+            # dialog window
             texture = arcade.load_texture("images/gui/dialog_window.png")
 
             self.dialog_window = arcade.Sprite(
@@ -101,22 +120,113 @@ class GameView(arcade.View):
                 center_x=self.width * 0.5,
                 center_y=self.height * 0.13
             )
-            self.scene.add_sprite("gui", self.dialog_window)
 
-        def create_dialog_fade():
+            #blackscreen
             texture = arcade.load_texture("images/gui/blackscreen.png")
 
-            fade = arcade.Sprite(
+            sprite = arcade.Sprite(
                 texture,
                 scale=50,
                 center_x=self.width * 0.5,
                 center_y=self.height * 0.5
             )
-            fade.alpha = 0
-            self.scene.add_sprite("fade", fade)
+            sprite.alpha = 0
+            self.scene.add_sprite("fade", sprite)
 
-        create_dialog_fade()
-        create_dialog_window()
+            #settings bg
+            def create_settings():
+                texture = arcade.load_texture("images/gui/in_game_settings.png")
+
+                sprite = arcade.Sprite(
+                    texture,
+                    center_x=self.width * 0.5,
+                    center_y=self.height * 0.5
+                )
+                self.settings_scene.add_sprite("in_game_settings", sprite)
+                self.settings_scene["in_game_settings"].alpha = 0
+
+                def create_settings_buttons():
+                    with open("data.JSON", "r", encoding="UTF-8") as data:
+                        data = json.load(data)
+                    volumes = data['options']['volume']
+
+                    def return_to_main_menu(event=None):
+                        am.stop_sound()
+                        am.stop_music()
+                        am.stop_voice()
+                        self.window.set_fullscreen(False)
+                        self.window.size = (1024, 786)
+                        game = GameMenu()
+                        self.window.show_view(game)
+
+                    return_button = agui.UIFlatButton(
+                        text="Главное меню",
+                        width=300,
+                        height=50
+                    )
+                    return_button.on_click = return_to_main_menu
+                    self.settings_v_box.add(return_button)
+                    self.settings_v_box.add(arcade.gui.UISpace(width=10, height=10))
+
+                    music_volume_label = agui.UILabel(
+                        "Музыка",
+                        text_color=arcade.color.WHITE,
+                        font_size=20
+                    )
+                    self.settings_v_box.add(music_volume_label)
+
+                    music_volume_slider = agui.UISlider(
+                        value=volumes["music"] * 100,  # начальное значение
+                        min_value=0,
+                        max_value=200,
+                        width=300,
+                        height=20
+                    )
+                    self.settings_v_box.add(music_volume_slider)
+                    self.settings_v_box.add(arcade.gui.UISpace(width=10, height=10))
+
+                    sound_volume_label = agui.UILabel(
+                        "Звуки",
+                        text_color=arcade.color.WHITE,
+                        font_size=20
+                    )
+                    self.settings_v_box.add(sound_volume_label)
+
+                    sound_volume_slider = agui.UISlider(
+                        value=volumes["sound"] * 100,  # начальное значение
+                        min_value=0,
+                        max_value=200,
+                        width=300,
+                        height=20
+                    )
+                    self.settings_v_box.add(sound_volume_slider)
+                    self.settings_v_box.add(arcade.gui.UISpace(width=10, height=10))
+
+                    voice_volume_label = agui.UILabel(
+                        "Голос",
+                        text_color=arcade.color.WHITE,
+                        font_size=20
+                    )
+                    self.settings_v_box.add(voice_volume_label)
+
+                    voice_volume_slider = agui.UISlider(
+                        value=volumes["voice"] * 100,  # начальное значение
+                        min_value=0,
+                        max_value=200,
+                        width=300,
+                        height=20
+                    )
+                    self.settings_v_box.add(voice_volume_slider)
+
+                    ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
+                    ui_anchor_layout.add(child=self.settings_v_box, anchor_x="left", align_x=300)
+
+                    self.settings_manager.add(ui_anchor_layout)
+
+                create_settings_buttons()
+
+            create_settings()
+        create_widgets()
 
         self.start_trigger: bool = True
 
@@ -131,6 +241,7 @@ class GameView(arcade.View):
         return text
 
     def talk_manager(self):
+        print(wwl.pose, wwl.label)
         now = wwl.get_thing()
         print(now)
         res = self.talk(now)
@@ -150,7 +261,6 @@ class GameView(arcade.View):
                 self.window.size = (1024, 786)
                 game = GameMenu(False)
                 self.window.show_view(game)
-
 
 
     def talk(self, now):
@@ -231,13 +341,13 @@ class GameView(arcade.View):
                     for i in self.characters_sprites.values():
                         i.remove_from_sprite_lists()
                     texture = arcade.load_texture(f"images/scenes/{now['filename']}")
-                    self.dialog_window = arcade.Sprite(
+                    sprite = arcade.Sprite(
                         texture,
                         scale=float(now['scale']),
                         center_x=self.width * 0.5,
                         center_y=self.height * 0.5
                     )
-                    self.scene.add_sprite("bg", self.dialog_window)
+                    self.scene.add_sprite("bg", sprite)
                     return "NEXT"
 
                 case "FADE":
@@ -349,9 +459,12 @@ class GameView(arcade.View):
         if not self.start_trigger:
             self.clear()
             self.scene.draw()
-            self.create_main_windows()
+            arcade.draw_sprite(self.dialog_window)
+            self.update_main_windows()
             self.dialog_text_batch.draw()
             self.menu_manager.draw()
+            self.settings_scene.draw()
+            self.settings_manager.draw()
             arcade.draw_sprite(self.cursor_texture)
 
     def show_menu(self, data):
@@ -366,7 +479,7 @@ class GameView(arcade.View):
             self.talk_manager()
 
         for k, v in data.items():
-            button = arcade.gui.widgets.buttons.UIFlatButton(
+            button = agui.widgets.buttons.UIFlatButton(
                 text=k,
                 width=200
             )
@@ -377,6 +490,27 @@ class GameView(arcade.View):
         ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y")
 
         self.menu_manager.add(ui_anchor_layout)
+
+    def show_settings(self, state: Optional[bool] = None):
+        settings = self.settings_scene["in_game_settings"]
+
+        if state is True:
+            self.waiting_settings = True
+            self.settings_v_box.visible = True
+            settings.alpha = 255
+        elif state is False:
+            self.waiting_settings = False
+            self.settings_v_box.visible = False
+            settings.alpha = 0
+        else:
+            if settings.alpha > 0:
+                self.waiting_settings = False
+                self.settings_v_box.visible = False
+                settings.alpha = 0
+            else:
+                self.waiting_settings = True
+                self.settings_v_box.visible = True
+                settings.alpha = 255
 
 
     def on_update(self, delta_time):
@@ -392,17 +526,33 @@ class GameView(arcade.View):
 
         self.delta_time = delta_time
         self.scene.update(delta_time)
+        self.settings_scene.update(delta_time)
         self.menu_manager.enable()
 
+        if self.waiting_settings:
+            self.settings_manager.enable()
+        else:
+            self.settings_manager.disable()
+
+        if self.waiting_settings:
+            am.music.set_volume(round(self.settings_v_box.children[3].value / 100, 2))
+            am.sound.set_volume(round(self.settings_v_box.children[6].value / 100, 2))
+            am.voice.set_volume(round(self.settings_v_box.children[9].value / 100, 2))
+
+        self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
+
+
     def on_key_press(self, key, modifiers):
-        if key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER:
+        if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.waiting_settings:
             self.waiting_dialogue = True
+        if key == arcade.key.S:
+            self.show_settings()
 
     def on_mouse_release(self, x, y, button, modifiers):
-        if int(button) == 1:
+        if (int(button) == 1) and not self.waiting_settings:
             self.waiting_dialogue = True
 
-    def create_main_windows(self):
+    def update_main_windows(self):
 
         def create_dialog_text():
 
@@ -492,14 +642,7 @@ class GameView(arcade.View):
         create_cname_text()
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
-        self.cursor_texture.position = (x, y)
         self.window.set_mouse_visible(False)
-
-    def on_close(self):
-        self.window.set_fullscreen(False)
-        self.window.size = (1024, 786)
-        game = GameMenu()
-        self.window.show_view(game)
 
     class Move():
         @staticmethod
@@ -554,6 +697,10 @@ class GameMenu(arcade.View):
     def __init__(self, show_lc: bool = True):
         super().__init__()
 
+        global am, wwl
+        am = AudioManager()
+        wwl = Wwl()
+
         self.loading_screen = arcade.Sprite("images/gui/JE3000_logo-export.png", 1)
         self.loading_screen.position = (int(self.center_x), int(self.center_y))
         self.loading_screen_fade = arcade.Sprite("images/gui/blackscreen.png")
@@ -566,7 +713,7 @@ class GameMenu(arcade.View):
         self.window.set_mouse_visible(False)
         self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
 
-        self.manager = arcade.gui.UIManager()
+        self.manager = agui.UIManager()
         self.manager.disable()
 
         self.background_color = arcade.color.WHITE
@@ -654,21 +801,21 @@ class GameMenu(arcade.View):
                 settings = SettingsMenu()
                 self.window.show_view(settings)
 
-            start_button = arcade.gui.widgets.buttons.UIFlatButton(
+            start_button = agui.widgets.buttons.UIFlatButton(
                 text="Начать игру",
                 width=200
             )
             start_button.on_click = start_game
             self.v_box.add(start_button)
 
-            settings_button = arcade.gui.widgets.buttons.UIFlatButton(
+            settings_button = agui.widgets.buttons.UIFlatButton(
                 text="Настройки",
                 width=200
             )
             settings_button.on_click = open_settings
             self.v_box.add(settings_button)
 
-            exit_button = arcade.gui.widgets.buttons.UIFlatButton(
+            exit_button = agui.widgets.buttons.UIFlatButton(
                 text="Выход",
                 width=200
             )
@@ -682,15 +829,12 @@ class GameMenu(arcade.View):
 
         create_menu_buttons()
 
-    def on_close(self):
-        arcade.exit()
-
 class SettingsMenu(arcade.View):
     def __init__(self):
         super().__init__()
 
         self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
-        self.manager = arcade.gui.UIManager()
+        self.manager = agui.UIManager()
         self.manager.enable()
         self.other_buttons = []
 
@@ -713,13 +857,9 @@ class SettingsMenu(arcade.View):
 
     def on_update(self, delta_time: float) -> bool | None:
         if self.window.visible:
-            am.music.default_volume = round(self.music_volume_slider.value / 100, 2)
-            am.sound.default_volume = round(self.sound_volume_slider.value / 100, 2)
-            am.voice.default_volume = round(self.voice_volume_slider.value / 100, 2)
-
-            sm.volume.set_music(round(self.music_volume_slider.value / 100, 2))
-            sm.volume.set_sound(round(self.sound_volume_slider.value / 100, 2))
-            sm.volume.set_voice(round(self.voice_volume_slider.value / 100, 2))
+            am.music.set_volume(round(self.music_volume_slider.value / 100, 2))
+            am.sound.set_volume(round(self.sound_volume_slider.value / 100, 2))
+            am.voice.set_volume(round(self.voice_volume_slider.value / 100, 2))
 
     def show_main_windows(self):
 
@@ -732,7 +872,7 @@ class SettingsMenu(arcade.View):
                 game = GameMenu(False)
                 self.window.show_view(game)
 
-            return_button = arcade.gui.UIFlatButton(
+            return_button = agui.UIFlatButton(
                 text="Назад",
                 width=300,
                 height=50
@@ -785,7 +925,7 @@ class SettingsMenu(arcade.View):
             )
             self.v_box.add(self.voice_volume_slider)
 
-            ui_anchor_layout = agui.widgets.layout.UIAnchorLayout()
+            ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
             ui_anchor_layout.add(child=self.v_box, anchor_x="center_x", anchor_y="center_y")
 
             self.manager.add(ui_anchor_layout)
@@ -794,6 +934,7 @@ class SettingsMenu(arcade.View):
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
         self.cursor_texture.position = (x, y)
+        self.window.set_mouse_visible(False)
 
 class Character():
     active_threads = []
@@ -1005,10 +1146,11 @@ class ListCharacters:
 
 
 class AudioChannel:
-    def __init__(self, default_volume: float=1.0):
-        self.sound = None
-        self.player = None
-        self.default_volume = default_volume
+    def __init__(self, default_volume: float=1.0, volume_type: Optional[str] = None):
+        self.sound: Optional[arcade.sound.Sound] = None
+        self.player: Optional[pyglet.media.player.Player] = None
+        self.default_volume: float = default_volume
+        self.volume_type: Optional[str] = volume_type
 
     def play(self, path, loop=False, volume=None, speed=1.0):
         self.sound = arcade.load_sound(path)
@@ -1019,7 +1161,8 @@ class AudioChannel:
 
     def stop(self):
         if self.player:
-            self.player.pause()
+            self.sound.stop(self.player)
+            self.sound = None
             self.player.delete()
             self.player = None
 
@@ -1032,8 +1175,16 @@ class AudioChannel:
             self.player.play()
 
     def set_volume(self, vol):
-        if self.player:
+        if self.player is not None:
             self.player.volume = vol
+            self.default_volume = vol
+
+        if self.volume_type == "music":
+            sm.volume.set_music(vol)
+        elif self.volume_type == "sound":
+            sm.volume.set_sound(vol)
+        elif self.volume_type == "voice":
+            sm.volume.set_voice(vol)
 
     def is_playing(self):
         return bool(self.player and self.player.playing)
@@ -1041,9 +1192,9 @@ class AudioChannel:
 class AudioManager:
     def __init__(self):
 
-        self.music = AudioChannel(sm.volume.get_music())
-        self.sound = AudioChannel(sm.volume.get_sound())
-        self.voice = AudioChannel(sm.volume.get_voice())
+        self.music = AudioChannel(sm.volume.get_music(), "music")
+        self.sound = AudioChannel(sm.volume.get_sound(), "sound")
+        self.voice = AudioChannel(sm.volume.get_voice(), "voice")
 
     # Удобные сокращения
     def play_music(self, path: str, loop: Optional[bool]=False, volume: float=1.0, effect: Optional[str] = None):
@@ -1086,41 +1237,39 @@ class AudioManager:
 
     def stop_music(self, effect: Optional[str] = None):
         old_volume = self.music.default_volume
-        if effect is not None:
-            match effect:
-                case "FADE":
-                    def fadeout_music():
-                        int_volume = int(round(self.music.default_volume, 2)*100)
-                        for i in range(int_volume):
-                            self.music.default_volume = round((int_volume - i)/100, 2)
-                            self.music.set_volume(self.music.default_volume)
-                            time.sleep(0.01)
-                        self.music.stop()
-                        self.music.set_volume(old_volume)
-                        return None
-                    threading.Thread(target=fadeout_music).start()
-
-                case None:
+        match effect:
+            case "FADE":
+                def fadeout_music():
+                    int_volume = int(round(self.music.default_volume, 2)*100)
+                    for i in range(int_volume):
+                        self.music.default_volume = round((int_volume - i)/100, 2)
+                        self.music.set_volume(self.music.default_volume)
+                        time.sleep(0.01)
                     self.music.stop()
+                    self.music.set_volume(old_volume)
+                    return None
+                threading.Thread(target=fadeout_music).start()
+
+            case _:
+                self.music.stop()
 
     def stop_sound(self, effect: Optional[str] = None):
         old_volume = self.sound.default_volume
-        if effect is not None:
-            match effect:
-                case "FADE":
-                    def fadeout_music():
-                        int_volume = int(round(self.sound.default_volume, 2) * 100)
-                        for i in range(int_volume):
-                            self.sound.default_volume = round((int_volume - i) / 100, 2)
-                            self.sound.set_volume(self.sound.default_volume)
-                            time.sleep(0.005)
-                        self.sound.stop()
-                        self.sound.set_volume(old_volume)
-                        return None
-
-                    threading.Thread(target=fadeout_music).start()
-                case None:
+        match effect:
+            case "FADE":
+                def fadeout_music():
+                    int_volume = int(round(self.sound.default_volume, 2) * 100)
+                    for i in range(int_volume):
+                        self.sound.default_volume = round((int_volume - i) / 100, 2)
+                        self.sound.set_volume(self.sound.default_volume)
+                        time.sleep(0.005)
                     self.sound.stop()
+                    self.sound.set_volume(old_volume)
+                    return None
+
+                threading.Thread(target=fadeout_music).start()
+            case _:
+                self.sound.stop()
 
     def stop_voice(self):
         self.voice.stop()
@@ -1143,6 +1292,8 @@ class Saves_manager:
                     }
                 }
                 json.dump(data, file, indent=4, ensure_ascii=False)
+
+        self.defines = {}
 
     class persistent:
         @staticmethod
@@ -1206,6 +1357,27 @@ class Saves_manager:
             with open("./data.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             return file["options"]["volume"].get("voice", None)
+
+    class save:
+
+        @staticmethod
+        def create_save(session_id: str, defines: dict, position: int, label: str):
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file_data_old = dict(json.load(file))
+            file_data = file_data_old.copy()
+            file_data["saves"][session_id] = {
+                "position" : position,
+                "label" : label,
+                "defines" : defines
+            }
+            with open("./data.JSON", "w", encoding="UTF-8") as file:
+                json.dump(file_data, file, indent=4, ensure_ascii=False)
+
+        @staticmethod
+        def get_save(session_id: str) -> dict:
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file_data = dict(json.load(file))
+            return file_data["saves"][session_id]
 
 
 def main():
