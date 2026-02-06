@@ -340,9 +340,10 @@ class GameView(arcade.View):
             self.talk_manager()  
   
         for k, v in data.items():  
-            button = agui.widgets.buttons.UIFlatButton(  
+            button = agui.UIFlatButton(  
                 text=k,  
-                width=200  
+                width=200,
+                font_name=FONT_NAME
             )  
             button.on_click = lambda event, label=v: jump(label)  
             self.menu_v_box.add(button)  

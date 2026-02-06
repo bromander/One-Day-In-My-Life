@@ -5,6 +5,7 @@ from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
 from typing import Optional, List, Tuple
+from gui import SpriteButton
 import threading
 import time
 import re
@@ -27,7 +28,6 @@ wwl = Wwl()
 
 
 class Persistent:
-
     def __setattr__(self, name, value):
         sm.persistent.set_persistent(name, value)
         super().__setattr__(name, value)
@@ -47,10 +47,33 @@ WINDOW_WIDTH = 1920
 WINDOW_HEIGHT = 1080
 
 arcade.load_font("fonts/Kurale-Regular.ttf")
+FONT_NAME = "Kurale"
+STYLE_DEFAULT_BUTTON = {
+    "normal": arcade.gui.UIFlatButton.UIStyle(
+        font_size=16,
+        font_name=(FONT_NAME, ),
+        font_color=arcade.color.WHITE,
+        bg=(44, 62, 80)
+    ),
+    "hover": arcade.gui.UIFlatButton.UIStyle(
+        font_size=16,
+        font_name=(FONT_NAME, ),
+        font_color=arcade.color.LIGHT_SKY_BLUE,
+        bg=(24, 37, 49)
+    ),
+    "press": arcade.gui.UIFlatButton.UIStyle(
+        font_size=16,
+        font_name=(FONT_NAME, ),
+        font_color=arcade.color.LIGHT_STEEL_BLUE,
+        bg=(44, 62, 80)
+    ),
+}
+
 
 wait_trigger: bool = False
 
 WINDOW_TITLE = f"Game name"
+GAME_NAME = "Game name"
 last_talk = threading.Event()
 
 dialog_text_text: list[str] = []
@@ -162,16 +185,18 @@ class GameView(arcade.View):
                     return_button = agui.UIFlatButton(
                         text="Главное меню",
                         width=300,
-                        height=50
+                        height=50,
+                        style=STYLE_DEFAULT_BUTTON
                     )
                     return_button.on_click = return_to_main_menu
                     self.settings_v_box.add(return_button)
-                    self.settings_v_box.add(arcade.gui.UISpace(width=10, height=10))
+                    self.settings_v_box.add(arcade.gui.UISpace(height=20))
 
                     music_volume_label = agui.UILabel(
                         "Музыка",
                         text_color=arcade.color.WHITE,
-                        font_size=20
+                        font_size=20,
+                        font_name=FONT_NAME
                     )
                     self.settings_v_box.add(music_volume_label)
 
@@ -183,12 +208,13 @@ class GameView(arcade.View):
                         height=20
                     )
                     self.settings_v_box.add(music_volume_slider)
-                    self.settings_v_box.add(arcade.gui.UISpace(width=10, height=10))
+                    self.settings_v_box.add(arcade.gui.UISpace(height=10))
 
                     sound_volume_label = agui.UILabel(
                         "Звуки",
                         text_color=arcade.color.WHITE,
-                        font_size=20
+                        font_size=20,
+                        font_name=FONT_NAME
                     )
                     self.settings_v_box.add(sound_volume_label)
 
@@ -200,12 +226,13 @@ class GameView(arcade.View):
                         height=20
                     )
                     self.settings_v_box.add(sound_volume_slider)
-                    self.settings_v_box.add(arcade.gui.UISpace(width=10, height=10))
+                    self.settings_v_box.add(arcade.gui.UISpace(height=10))
 
                     voice_volume_label = agui.UILabel(
                         "Голос",
                         text_color=arcade.color.WHITE,
-                        font_size=20
+                        font_size=20,
+                        font_name=FONT_NAME
                     )
                     self.settings_v_box.add(voice_volume_label)
 
@@ -479,9 +506,11 @@ class GameView(arcade.View):
             self.talk_manager()
 
         for k, v in data.items():
-            button = agui.widgets.buttons.UIFlatButton(
+            button = agui.UIFlatButton(
                 text=k,
-                width=200
+                width=200,
+                font_name=FONT_NAME,
+                style=STYLE_DEFAULT_BUTTON
             )
             button.on_click = lambda event, label=v: jump(label)
             self.menu_v_box.add(button)
@@ -597,7 +626,7 @@ class GameView(arcade.View):
                             font_size=30,
                             color=dialog_text_colour,
                             batch=self.dialog_text_batch,
-                            font_name="Kurale",
+                            font_name=FONT_NAME,
                             anchor_x=text_anchor
                         )
                     elif text_anchor == "center":
@@ -608,7 +637,7 @@ class GameView(arcade.View):
                             font_size=30,
                             color=dialog_text_colour,
                             batch=self.dialog_text_batch,
-                            font_name="Kurale",
+                            font_name=FONT_NAME,
                             anchor_x=text_anchor
                         )
                     elif text_anchor == "right":
@@ -619,7 +648,7 @@ class GameView(arcade.View):
                             font_size=30,
                             color=dialog_text_colour,
                             batch=self.dialog_text_batch,
-                            font_name="Kurale",
+                            font_name=FONT_NAME,
                             anchor_x=text_anchor
                         )
 
@@ -634,7 +663,7 @@ class GameView(arcade.View):
                 multiline=True,
                 width=1150,
                 color=cname_text_colour,
-                font_name="Kurale"
+                font_name=FONT_NAME
             )
             self.cname_text.draw()
 
@@ -801,23 +830,37 @@ class GameMenu(arcade.View):
                 settings = SettingsMenu()
                 self.window.show_view(settings)
 
-            start_button = agui.widgets.buttons.UIFlatButton(
+            main_lebel = agui.UILabel(
+                GAME_NAME,
+                text_color=arcade.color.MIDNIGHT_BLUE,
+                font_name=FONT_NAME,
+                align="center",
+                width=self.window.width,
+                y=self.window.height * 0.7,
+                font_size=70
+            )
+            self.manager.add(main_lebel)
+
+            start_button = agui.UIFlatButton(
                 text="Начать игру",
-                width=200
+                width=200,
+                style=STYLE_DEFAULT_BUTTON
             )
             start_button.on_click = start_game
             self.v_box.add(start_button)
 
-            settings_button = agui.widgets.buttons.UIFlatButton(
+            settings_button = agui.UIFlatButton(
                 text="Настройки",
-                width=200
+                width=200,
+                style=STYLE_DEFAULT_BUTTON
             )
             settings_button.on_click = open_settings
             self.v_box.add(settings_button)
 
-            exit_button = agui.widgets.buttons.UIFlatButton(
+            exit_button = agui.UIFlatButton(
                 text="Выход",
-                width=200
+                width=200,
+                style=STYLE_DEFAULT_BUTTON
             )
             exit_button.on_click = lambda event: arcade.exit()
             self.v_box.add(exit_button)
@@ -833,7 +876,7 @@ class SettingsMenu(arcade.View):
     def __init__(self):
         super().__init__()
 
-        self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+        self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=0)
         self.manager = agui.UIManager()
         self.manager.enable()
         self.other_buttons = []
@@ -875,14 +918,17 @@ class SettingsMenu(arcade.View):
             return_button = agui.UIFlatButton(
                 text="Назад",
                 width=300,
-                height=50
+                height=50,
+                style=STYLE_DEFAULT_BUTTON
             )
             return_button.on_click = return_to_main_menu
             self.v_box.add(return_button)
+            self.v_box.add(arcade.gui.UISpace(height=40))
 
             self.music_volume_label = agui.UILabel(
                 "Музыка",
-                text_color=arcade.color.BLACK
+                text_color=arcade.color.BLACK,
+                font_name=FONT_NAME
             )
             self.v_box.add(self.music_volume_label)
 
@@ -894,10 +940,12 @@ class SettingsMenu(arcade.View):
                 height=20
             )
             self.v_box.add(self.music_volume_slider)
+            self.v_box.add(arcade.gui.UISpace(height=20))
 
             self.sound_volume_label = agui.UILabel(
                 "Звуки",
-                text_color=arcade.color.BLACK
+                text_color=arcade.color.BLACK,
+                font_name=FONT_NAME
             )
             self.v_box.add(self.sound_volume_label)
 
@@ -909,10 +957,12 @@ class SettingsMenu(arcade.View):
                 height=20
             )
             self.v_box.add(self.sound_volume_slider)
+            self.v_box.add(arcade.gui.UISpace(height=20))
 
             self.voice_volume_label = agui.UILabel(
                 "Голос",
-                text_color=arcade.color.BLACK
+                text_color=arcade.color.BLACK,
+                font_name=FONT_NAME
             )
             self.v_box.add(self.voice_volume_label)
 
@@ -924,6 +974,7 @@ class SettingsMenu(arcade.View):
                 height=20
             )
             self.v_box.add(self.voice_volume_slider)
+            self.v_box.add(arcade.gui.UISpace(height=20))
 
             ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
             ui_anchor_layout.add(child=self.v_box, anchor_x="center_x", anchor_y="center_y")
