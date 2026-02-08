@@ -19,6 +19,8 @@ label main
     }
 
     $ print(arra)
+    $ define.araara = 1488
+    $ print(define.araara)
 
     <aj> НО-НО-НО, кто дал \n вам разрешение шуметь?! Сели по местам, \n быстро!
     $ print("haha", persistent.ponpon)

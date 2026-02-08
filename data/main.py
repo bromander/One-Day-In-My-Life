@@ -5,7 +5,7 @@ from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
 from typing import Optional, List, Tuple
-from gui import SpriteButton
+from gui import SpriteButton, UISliderVertical
 import threading
 import time
 import re
@@ -37,9 +37,24 @@ class Persistent:
         return sm.persistent.get_persistent(item)
 
 
-NAMESPACE = {
-    "persistent" : Persistent()
-}
+class Define:
+    def __init__(self):
+        object.__setattr__(self, 'defines', {})
+
+    def __setattr__(self, name, value):
+        defines = object.__getattribute__(self, 'defines')
+        defines[name] = value
+        object.__setattr__(self, name, value)
+
+    def __getattribute__(self, name):
+        if name == 'defines':
+            return object.__getattribute__(self, 'defines')
+        try:
+            return object.__getattribute__(self, name)
+        except AttributeError:
+            defines = object.__getattribute__(self, 'defines')
+            return defines.get(name, {})
+
 
 text_anchor = "left"
 
@@ -67,6 +82,12 @@ STYLE_DEFAULT_BUTTON = {
         font_color=arcade.color.LIGHT_STEEL_BLUE,
         bg=(44, 62, 80)
     ),
+    "disabled" : arcade.gui.UIFlatButton.UIStyle(
+        font_size=16,
+        font_name=(FONT_NAME, ),
+        font_color=arcade.color.LIGHT_STEEL_BLUE,
+        bg=(66, 71, 77)
+    )
 }
 
 
@@ -90,14 +111,11 @@ class GameView(arcade.View):
         am = AudioManager()
         wwl = Wwl()
 
-        if session_id is None:
-            self.session_id = str(uuid.uuid4())
-        else:
-            self.session_id = session_id
-            self.save = sm.save.get_save(self.session_id)
-            wwl.label = self.save["label"]
-            wwl.pose = self.save["position"]
-        print(self.session_id)
+        print(session_id)
+        self.NAMESPACE = {
+            "persistent": Persistent(),
+            "define": Define()
+        }
 
         self.scene = arcade.Scene()
         self.settings_scene = arcade.Scene()
@@ -182,6 +200,43 @@ class GameView(arcade.View):
                         game = GameMenu()
                         self.window.show_view(game)
 
+                    def create_save(event=None):
+                        try:
+                            music_file = am.music.sound.file_name
+                        except FileNotFoundError:
+                            music_file = None
+                        except AttributeError:
+                            music_file = None
+
+                        characters = [
+                            {
+                                "id": str(i),
+                                "path": str(o.texture.file_path),
+                                "size": o.size,
+                                "pos": o.position
+                            }
+                            for i, o in self.characters_sprites.items()
+                        ]
+
+                        bg = {
+                            "path" : str(self.scene["bg"][-1].texture.file_path),
+                            "size" : self.scene["bg"][-1].size,
+                            "pos" : self.scene["bg"][-1].position
+                        }
+
+                        scene = {
+                            "bg" : bg,
+                            "characters" : characters,
+                            "music" : music_file
+
+                        }
+                        sm.save.create_save(self.session_id,
+                                            defines=self.NAMESPACE["define"].defines,
+                                            position=wwl.pose,
+                                            label=wwl.label,
+                                            scene=scene)
+
+
                     return_button = agui.UIFlatButton(
                         text="Главное меню",
                         width=300,
@@ -190,6 +245,15 @@ class GameView(arcade.View):
                     )
                     return_button.on_click = return_to_main_menu
                     self.settings_v_box.add(return_button)
+
+                    save_button = agui.UIFlatButton(
+                        text="Сохранить",
+                        width=200,
+                        style=STYLE_DEFAULT_BUTTON
+                    )
+                    save_button.on_click = create_save
+                    self.settings_v_box.add(save_button)
+
                     self.settings_v_box.add(arcade.gui.UISpace(height=20))
 
                     music_volume_label = agui.UILabel(
@@ -257,13 +321,42 @@ class GameView(arcade.View):
 
         self.start_trigger: bool = True
 
+        def load_saves():
+            if session_id is None:
+                self.session_id = str(uuid.uuid4())
+            else:
+                self.session_id = session_id
+                save = sm.save.get_save(self.session_id)
+                wwl.label = save["label"]
+                wwl.pose = save["position"]
+                for i, o in save["defines"].items():
+                    self.NAMESPACE["define"].defines[i] = o
+
+                scene = save["scene"]
+
+                bg_sprite = arcade.Sprite(scene["bg"]["path"])
+                bg_sprite.size = tuple(scene["bg"]["size"])
+                bg_sprite.position = tuple(scene["bg"]["pos"])
+                self.scene["bg"].append(bg_sprite)
+
+                for i in scene["characters"]:
+                    character_sprite = arcade.Sprite(i["path"])
+                    character_sprite.size = tuple(i["size"])
+                    character_sprite.position = tuple(i["pos"])
+                    self.characters_sprites[i["id"]] = character_sprite
+                    self.scene["characters"].append(character_sprite)
+
+                if scene["music"] is not None:
+                    am.play_music(scene["music"])
+
+        load_saves()
+
     def format_text(self, text: str):
-        global NAMESPACE
         pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
         text = re.split(pattern, str(text))
         for e, i in enumerate(text):
             if i.startswith("[") and i.endswith("]"):
-                text[e] = NAMESPACE.get(i.strip("[]"), "NONE")
+                text[e] = self.NAMESPACE.get(i.strip("[]"), "NONE")
         text = "".join(text).replace("\\\\", "\\")
         return text
 
@@ -367,6 +460,7 @@ class GameView(arcade.View):
 
                     for i in self.characters_sprites.values():
                         i.remove_from_sprite_lists()
+                    self.characters_sprites.clear()
                     texture = arcade.load_texture(f"images/scenes/{now['filename']}")
                     sprite = arcade.Sprite(
                         texture,
@@ -471,8 +565,7 @@ class GameView(arcade.View):
 
 
                 case "EXECUTE":
-                    global NAMESPACE
-                    exec(now["data"], NAMESPACE)
+                    exec(now["data"], self.NAMESPACE)
                     return "NEXT"
 
                 case _:
@@ -541,7 +634,6 @@ class GameView(arcade.View):
                 self.settings_v_box.visible = True
                 settings.alpha = 255
 
-
     def on_update(self, delta_time):
         """
         All the logic to move, and the game logic goes here.
@@ -564,9 +656,9 @@ class GameView(arcade.View):
             self.settings_manager.disable()
 
         if self.waiting_settings:
-            am.music.set_volume(round(self.settings_v_box.children[3].value / 100, 2))
-            am.sound.set_volume(round(self.settings_v_box.children[6].value / 100, 2))
-            am.voice.set_volume(round(self.settings_v_box.children[9].value / 100, 2))
+            am.music.set_volume(round(self.settings_v_box.children[4].value / 100, 2))
+            am.sound.set_volume(round(self.settings_v_box.children[7].value / 100, 2))
+            am.voice.set_volume(round(self.settings_v_box.children[10].value / 100, 2))
 
         self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
 
@@ -749,6 +841,9 @@ class GameMenu(arcade.View):
 
         self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
+        self.why = arcade.Sprite("images/gui/what_are_you_so_afraid_of.png", center_x=self.window.width/2, center_y=self.window.height/2)
+        self.why.alpha = 0
+
         self.show_main_windows()
         self.is_loading = False
         self.is_mouse_pressed = False
@@ -791,7 +886,8 @@ class GameMenu(arcade.View):
         self.manager.draw()
         arcade.draw_sprite(self.cursor_texture)
         arcade.draw_sprite(self.loading_screen)
-        arcade.draw_sprite(self.loading_screen_fade, pixelated=True)
+        arcade.draw_sprite(self.loading_screen_fade)
+        arcade.draw_sprite(self.why)
 
     def on_update(self, delta_time):
         """
@@ -811,6 +907,14 @@ class GameMenu(arcade.View):
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
         self.is_mouse_pressed = False
 
+    def on_key_press(self, key: int, modifiers: int) -> bool | None:
+        if (key == arcade.key.L and modifiers & arcade.key.MOD_SHIFT) and not self.is_loading:
+            self.why.alpha = 255
+            def wHy():
+                time.sleep(10)
+                arcade.exit()
+            threading.Thread(target=wHy).start()
+
     def on_hide_view(self):
         self.manager.disable()
 
@@ -825,6 +929,10 @@ class GameMenu(arcade.View):
                 self.manager.disable()
                 game = GameView()
                 self.window.show_view(game)
+
+            def open_saves(event=None):
+                settings = SaveMenu()
+                self.window.show_view(settings)
 
             def open_settings(event=None):
                 settings = SettingsMenu()
@@ -850,6 +958,14 @@ class GameMenu(arcade.View):
             self.v_box.add(start_button)
 
             settings_button = agui.UIFlatButton(
+                text="Загрузить",
+                width=200,
+                style=STYLE_DEFAULT_BUTTON
+            )
+            settings_button.on_click = open_saves
+            self.v_box.add(settings_button)
+
+            settings_button = agui.UIFlatButton(
                 text="Настройки",
                 width=200,
                 style=STYLE_DEFAULT_BUTTON
@@ -871,6 +987,102 @@ class GameMenu(arcade.View):
             self.manager.add(ui_anchor_layout)
 
         create_menu_buttons()
+
+class SaveMenu(arcade.View):
+    def __init__(self):
+        super().__init__()
+        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+        self.window.set_mouse_visible(False)
+        self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
+
+        saves = sm.save.get_all_saves()
+        self.saves = saves + [[None]]*(20 - len(saves))
+        self.saves_len = 20
+
+        self.slider: Optional[UISliderVertical]  = None
+
+        self.manager = agui.UIManager()
+        self.manager.enable()
+
+        self.background_color = arcade.color.WHITE
+
+        self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+        self.v_box.center_x = self.window.width/2-300
+        self.manager.add(self.v_box)
+
+        self.choise = 0
+
+        self.generate_buttons()
+
+    def generate_buttons(self):
+
+        def return_to_main_menu(event=None):
+            game = GameMenu(False)
+            self.window.show_view(game)
+
+        def open_save(session_id: str, event=None):
+            self.window.set_fullscreen(False)
+            self.window.size = (1920, 1080)
+            self.window.set_fullscreen(True)
+            self.manager.disable()
+            game = GameView(session_id)
+            self.window.show_view(game)
+
+        return_button = agui.UIFlatButton(
+            text="Назад",
+            width=100,
+            height=50,
+            style=STYLE_DEFAULT_BUTTON,
+            x=10,
+            y=self.window.height-65
+        )
+        return_button.on_click = return_to_main_menu
+        self.manager.add(return_button)
+
+        for i in self.saves:
+
+            button = agui.UIFlatButton(text=f"{i[0]} <", width=700, height=200, style=STYLE_DEFAULT_BUTTON)
+
+            if i[0] is not None:
+                button.on_click = lambda event, value=i[0]: open_save(value)
+
+            self.v_box.add(button)
+            self.v_box.children[-1].disabled = True
+
+        self.slider = UISliderVertical(
+            value=1,
+            min_value=1,
+            max_value=self.saves_len,
+            width=20,
+            height=self.window.height - 50,
+            step=1
+        )
+        self.slider.center_x = self.window.width - 20
+        self.slider.center_y = self.window.height / 2
+
+        self.manager.add(self.slider)
+
+        #self.v_box.center_y = ((self.v_box.children[0].height + self.v_box._space_between) * 2) - (self.v_box.children[0].height + self.v_box._space_between) * (self.saves_len - self.slider.value)
+
+
+    def on_draw(self) -> bool | None:
+        self.clear()
+        self.manager.draw()
+        arcade.draw_sprite(self.cursor_texture)
+
+    def on_update(self, delta_time: float) -> bool | None:
+        self.v_box.center_y = self.center_y - ((self.saves_len - self.slider.value) * 220 + 100) + (220 * 10)
+        self.choise = int(self.slider.value-1)
+
+        for i in range(self.saves_len):
+            self.v_box.children[i].disabled = True if i != self.choise else False
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        self.cursor_texture.position = (x, y)
+
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> bool | None:
+        if (self.saves_len - self.slider.value) + scroll_y >= 0 and (self.saves_len - self.slider.value) + scroll_y < self.saves_len:
+            self.slider.value += -scroll_y
 
 class SettingsMenu(arcade.View):
     def __init__(self):
@@ -1247,7 +1459,6 @@ class AudioManager:
         self.sound = AudioChannel(sm.volume.get_sound(), "sound")
         self.voice = AudioChannel(sm.volume.get_voice(), "voice")
 
-    # Удобные сокращения
     def play_music(self, path: str, loop: Optional[bool]=False, volume: float=1.0, effect: Optional[str] = None):
 
         old_volume = self.music.default_volume
@@ -1412,14 +1623,15 @@ class Saves_manager:
     class save:
 
         @staticmethod
-        def create_save(session_id: str, defines: dict, position: int, label: str):
+        def create_save(session_id: str, defines: dict, position: int, label: str, scene: dict):
             with open("./data.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["saves"][session_id] = {
                 "position" : position,
                 "label" : label,
-                "defines" : defines
+                "defines" : defines,
+                "scene" : scene
             }
             with open("./data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
@@ -1430,6 +1642,11 @@ class Saves_manager:
                 file_data = dict(json.load(file))
             return file_data["saves"][session_id]
 
+        @staticmethod
+        def get_all_saves() -> dict:
+            with open("./data.JSON", "r", encoding="UTF-8") as file:
+                file_data = dict(json.load(file))
+            return [[i, o] for i, o in file_data["saves"].items()]
 
 def main():
     window = arcade.Window(width=1024, height=786, title=f"{WINDOW_TITLE} | {splash}", resizable=False)
