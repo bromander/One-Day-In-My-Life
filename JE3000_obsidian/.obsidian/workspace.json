@@ -11,10 +11,14 @@
             "id": "1e982f8e35a29707",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "JopaEngine3000 doc/jpy синтаксис/Проигрывание музыки.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "Новая вкладка"
+              "title": "Проигрывание музыки"
             }
           }
         ]
@@ -181,10 +185,10 @@
   },
   "active": "1e982f8e35a29707",
   "lastOpenFiles": [
-    "JopaEngine3000 doc/jpy синтаксис/Проигрывание музыки.md",
     "JopaEngine3000 doc/jpy синтаксис/Персонажи.md",
     "JopaEngine3000 doc/jpy синтаксис/Меню.md",
+    "JopaEngine3000 doc/Файлы/main.py/class GameView.md",
     "JopaEngine3000 doc/Файлы/main.py/class Character & class ListCharacters.md",
-    "JopaEngine3000 doc/Файлы/main.py/class GameView.md"
+    "JopaEngine3000 doc/jpy синтаксис/Проигрывание музыки.md"
   ]
 }
