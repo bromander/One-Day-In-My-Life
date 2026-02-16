@@ -6,6 +6,7 @@ import arcade.gui as agui
 import arcade.gui.widgets.layout
 from typing import Optional, List, Tuple
 from gui import SpriteButton, UISliderVertical
+import Scene
 import threading
 import time
 import re
@@ -114,8 +115,6 @@ class GameView(arcade.View):
             "persistent": Persistent(),
             "define": Define()
         }
-
-        self.scene = arcade.Scene()
         self.settings_scene = arcade.Scene()
 
         self.settings_manager = agui.UIManager()
@@ -136,12 +135,7 @@ class GameView(arcade.View):
         self.dialog_texts: list = []
         self.cname_text: Optional[arcade.Text] = None
 
-        self.characters_sprites: dict[str : arcade.Sprite] = {}
-
-        self.scene.add_sprite_list("bg")
-        self.scene.add_sprite_list("characters")
-        self.scene.add_sprite_list("fade")
-        self.scene.add_sprite_list("gui")
+        self.scene = Scene.Scene()
 
         self.menu_manager = agui.UIManager()
         self.menu_manager.disable()
@@ -173,7 +167,7 @@ class GameView(arcade.View):
                 center_y=self.height * 0.5
             )
             sprite.alpha = 0
-            self.scene.add_sprite("fade", sprite)
+            self.scene.add_sprite("fade", "", sprite)
 
             #settings bg
             def create_settings():
@@ -220,14 +214,18 @@ class GameView(arcade.View):
                                 "size": o.size,
                                 "pos": o.position
                             }
-                            for i, o in self.characters_sprites.items()
+                            for i, o in self.scene["characters"].items()
                         ]
 
-                        bg = {
-                            "path" : str(self.scene["bg"][-1].texture.file_path),
-                            "size" : self.scene["bg"][-1].size,
-                            "pos" : self.scene["bg"][-1].position
-                        }
+                        bg = [
+                            {
+                                "layer" :  0,
+                                "path" : str(i.texture.file_path),
+                                "size" : i.size,
+                                "pos" : i.position
+                            }
+                            for i in self.scene["bg"].values()
+                        ]
 
                         scene = {
                             "bg" : bg,
@@ -235,6 +233,7 @@ class GameView(arcade.View):
                             "music" : music_file
 
                         }
+                        print(scene)
                         sm.save.create_save(self.session_id,
                                             defines=self.NAMESPACE["define"].defines,
                                             position=wwl.pose-1,
@@ -377,17 +376,17 @@ class GameView(arcade.View):
 
                 scene = save["scene"]
 
-                bg_sprite = arcade.Sprite(scene["bg"]["path"])
-                bg_sprite.size = tuple(scene["bg"]["size"])
-                bg_sprite.position = tuple(scene["bg"]["pos"])
-                self.scene["bg"].append(bg_sprite)
+                for i in scene["bg"]:
+                    bg_sprite = arcade.Sprite(i["path"])
+                    bg_sprite.size = tuple(i["size"])
+                    bg_sprite.position = tuple(i["pos"])
+                    self.scene.add_sprite("bg", f"bg_{i["layer"]}", bg_sprite)
 
                 for i in scene["characters"]:
                     character_sprite = arcade.Sprite(i["path"])
                     character_sprite.size = tuple(i["size"])
                     character_sprite.position = tuple(i["pos"])
-                    self.characters_sprites[i["id"]] = character_sprite
-                    self.scene["characters"].append(character_sprite)
+                    self.scene.add_sprite("characters", i["id"], character_sprite)
 
                 if scene["music"] is not None:
                     am.play_music(scene["music"])
@@ -482,30 +481,23 @@ class GameView(arcade.View):
                             case "right":
                                 sprite.center_x = (self.width // 2) * 1.6
                     else:
-                        if now["character"] in self.characters_sprites:
-                            sprite.position = self.characters_sprites[now["character"]].position
-
-                    if now["character"] in self.characters_sprites:
-                        self.characters_sprites[now["character"]].remove_from_sprite_lists()
-                    self.characters_sprites[now["character"]] = sprite
-                    self.scene.add_sprite("characters", self.characters_sprites[now["character"]])
+                        if now["character"] in self.scene["characters"]:
+                            sprite.position = self.scene["characters"][now["character"]].position
+                            sprite.scale = self.scene["characters"][now["character"]].scale
+                    self.scene.add_sprite("characters", now["sprite"].split(" ")[0], sprite)
                     return "NEXT"
 
                 case "HIDE":
-                    self.characters_sprites[now["character"]].remove_from_sprite_lists()
-                    del self.characters_sprites[now["character"]]
+                    self.scene.delete_sprite("characters", now["character"])
                     return "NEXT"
 
                 case "MOVE":
-                    self.Move.move_towards(self.characters_sprites[now["character"]], now["pos"][0], now["pos"][1], now["speed"])
+                    self.Move.move_towards(self.scene["characters"][now["character"]], now["pos"][0], now["pos"][1], now["speed"])
                     return "NEXT"
 
                 case "SCENE":
-                    self.scene["bg"].clear()
-
-                    for i in self.characters_sprites.values():
-                        i.remove_from_sprite_lists()
-                    self.characters_sprites.clear()
+                    self.scene.clear_layer("characters")
+                    self.scene.clear_layer("bg")
                     texture = arcade.load_texture(f"images/scenes/{now['filename']}")
                     sprite = arcade.Sprite(
                         texture,
@@ -513,7 +505,7 @@ class GameView(arcade.View):
                         center_x=self.width * 0.5,
                         center_y=self.height * 0.5
                     )
-                    self.scene.add_sprite("bg", sprite)
+                    self.scene.add_sprite("bg", "bg_0", sprite)
                     return "NEXT"
 
                 case "FADE":
@@ -530,7 +522,7 @@ class GameView(arcade.View):
                                     elapsed = time.time() - start_time
 
                                     if elapsed >= duration:
-                                        self.scene["fade"][0].alpha = 255
+                                        self.scene["fade"].alpha = 255
                                         break
 
                                     progress = elapsed / duration
@@ -539,7 +531,7 @@ class GameView(arcade.View):
                                     if not wait_trigger:
                                         wait_trigger = True
 
-                                    self.scene["fade"][0].alpha = alpha
+                                    self.scene["fade"].alpha = alpha
 
                                     time.sleep(0.01)
 
@@ -563,7 +555,7 @@ class GameView(arcade.View):
                                     progress = elapsed / duration
                                     alpha = 255 - int(progress * 255)
 
-                                    self.scene["fade"][0].alpha = alpha
+                                    self.scene["fade"].alpha = alpha
 
                                     time.sleep(0.01)
                             threading.Thread(target=editing_alpha).start()
@@ -691,7 +683,9 @@ class GameView(arcade.View):
                 self.waiting_dialogue = False
 
         self.delta_time = delta_time
-        self.scene.update(delta_time)
+
+        self.scene.update()
+
         self.settings_scene.update(delta_time)
         self.menu_manager.enable()
 
@@ -1356,14 +1350,13 @@ class Character():
                 return text
             return text[:index] + new_char + text[index + 1:]
 
+        if self.def_lps == 60:
+            self.lps = sm.volume.get_other("lps")
 
         dialog_text_text_alt = [" "]
         string_index_alt = 0
         _text_alt = []
         for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', text):
-
-            if self.def_lps == 60:
-                self.lps = sm.volume.get_other("lps")
 
             char = str(char)
 
@@ -1630,7 +1623,7 @@ class AudioManager:
                     return None
 
                 threading.Thread(target=fadeout_music).start()
-            case _:
+            case None:
                 self.sound.stop()
 
     def stop_voice(self):
