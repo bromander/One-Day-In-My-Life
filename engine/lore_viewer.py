@@ -9,13 +9,15 @@ class Wwl:
 
         def find_files(extension: str):
             results = {}
-            start_path = os.getcwd()
+            current_path = os.getcwd()
+            parent_path = os.path.dirname(current_path)
+            start_path = parent_path
 
             for root, dirs, files in os.walk(start_path):
                 for file in files:
                     if file.lower().endswith(extension.lower()):
                         full_path = os.path.join(root, file)
-                        results[file] = {"path" : full_path.replace("\\", "/"), "content" : {}}
+                        results[file] = {"path": full_path.replace("\\", "/"), "content": {}}
             return results
 
         self.files = find_files(".jpy")

@@ -4,28 +4,21 @@ from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
-from typing import Optional, List, Tuple
-from gui import UISliderVertical
-import Scene
+from typing import Optional
 import threading
 import time
 import re
 import os
-import json
 import random
 import json
 import uuid
-
+import sys
+sys.path.append(os.path.dirname(__file__))
+from gui import UISliderVertical
+from Scene import Scene
 from lore_viewer import Wwl
 
-with open("./other/splashes.json", "r", encoding="UTF-8") as splashes:
-    splashes = json.load(splashes)
-splash = str(random.choice(splashes))
-if splash.startswith(">"):
-    splash = splash.format(username=str(os.getenv("USERNAME") or os.getenv("USER")))[1:]
-
-wwl = Wwl()
-
+arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
 
 class Persistent:
@@ -58,10 +51,6 @@ class Define:
 
 text_anchor = "left"
 
-WINDOW_WIDTH = 1920
-WINDOW_HEIGHT = 1080
-
-arcade.load_font("fonts/Kurale-Regular.ttf")
 FONT_NAME = "Kurale"
 STYLE_DEFAULT_BUTTON = {
     "normal": arcade.gui.UIFlatButton.UIStyle(
@@ -93,9 +82,7 @@ STYLE_DEFAULT_BUTTON = {
 
 wait_trigger: bool = False
 
-WINDOW_TITLE = f"Game name"
 GAME_NAME = "Game name"
-last_talk = threading.Event()
 
 dialog_text_text: list[str] = []
 cname_text_text = ""
@@ -126,7 +113,7 @@ class GameView(arcade.View):
 
         self.delta_time = 0.0
 
-        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
 
         self.background_color = arcade.color.WHITE
 
@@ -135,7 +122,7 @@ class GameView(arcade.View):
         self.dialog_texts: list = []
         self.cname_text: Optional[arcade.Text] = None
 
-        self.scene = Scene.Scene()
+        self.scene = Scene()
 
         self.menu_manager = agui.UIManager()
         self.menu_manager.disable()
@@ -148,17 +135,17 @@ class GameView(arcade.View):
 
         def create_widgets():
             # dialog window
-            texture = arcade.load_texture("images/gui/dialog_window.png")
+            texture = arcade.load_texture("game/images/gui/dialog_window.png")
 
             self.dialog_window = arcade.Sprite(
                 texture,
-                scale=6 * min(self.width / WINDOW_WIDTH, self.height / WINDOW_HEIGHT),
+                scale=6 * min(self.width / 1920, self.height / 1080),
                 center_x=self.width * 0.5,
                 center_y=self.height * 0.13
             )
 
             #blackscreen
-            texture = arcade.load_texture("images/gui/blackscreen.png")
+            texture = arcade.load_texture("game/images/gui/blackscreen.png")
 
             sprite = arcade.Sprite(
                 texture,
@@ -171,7 +158,7 @@ class GameView(arcade.View):
 
             #settings bg
             def create_settings():
-                texture = arcade.load_texture("images/gui/in_game_settings.png")
+                texture = arcade.load_texture("game/images/gui/in_game_settings.png")
 
                 sprite = arcade.Sprite(
                     texture,
@@ -183,7 +170,7 @@ class GameView(arcade.View):
                 self.settings_scene["in_game_settings"].alpha = 0
 
                 def create_settings_buttons():
-                    with open("data.JSON", "r", encoding="UTF-8") as data:
+                    with open("game/data.JSON", "r", encoding="UTF-8") as data:
                         data = json.load(data)
                     volumes = data['options']
 
@@ -449,10 +436,10 @@ class GameView(arcade.View):
                 case "PLAY":
                     match now["play_what"]:
                         case "MUSIC":
-                            am.play_music(f"music/{now['path']}", now["loop"], float(now["volume"]), effect=now["effect"])
+                            am.play_music(f"game/music/{now['path']}", now["loop"], float(now["volume"]), effect=now["effect"])
 
                         case "SOUND":
-                            am.play_sound(f"sounds/{now['path']}", bool(now["loop"]), float(now["volume"]), effect=now["effect"])
+                            am.play_sound(f"game/sounds/{now['path']}", bool(now["loop"]), float(now["volume"]), effect=now["effect"])
                     return "NEXT"
 
                 case "STOP":
@@ -498,7 +485,7 @@ class GameView(arcade.View):
                 case "SCENE":
                     self.scene.clear_layer("characters")
                     self.scene.clear_layer("bg")
-                    texture = arcade.load_texture(f"images/scenes/{now['filename']}")
+                    texture = arcade.load_texture(f"game/images/scenes/{now['filename']}")
                     sprite = arcade.Sprite(
                         texture,
                         scale=float(now['scale']),
@@ -593,7 +580,7 @@ class GameView(arcade.View):
 
                 case "END":
 
-                    wwl.label = main
+                    wwl.label = "main"
                     wwl.pose = 0
 
                     dialog_text_text = [" "]
@@ -833,7 +820,7 @@ class Map(arcade.View):
 
         self.scene = arcade.Scene()
         self.background_color = arcade.color.WHITE
-        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
 
     def on_draw(self):
         self.clear()
@@ -863,15 +850,15 @@ class GameMenu(arcade.View):
         am = AudioManager()
         wwl = Wwl()
 
-        self.loading_screen = arcade.Sprite("images/gui/JE3000_logo-export.png", 1)
+        self.loading_screen = arcade.Sprite("game/images/gui/JE3000_logo-export.png", 1)
         self.loading_screen.position = (int(self.center_x), int(self.center_y))
-        self.loading_screen_fade = arcade.Sprite("images/gui/blackscreen.png")
+        self.loading_screen_fade = arcade.Sprite("game/images/gui/blackscreen.png")
         self.loading_screen_fade.position = (int(self.center_x), int(self.center_y))
         self.loading_screen_fade.alpha = 0
         self.loading_screen_fade.size = (2500, 2500)
         self.loading_screen.alpha = 0
 
-        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
         self.window.set_mouse_visible(False)
         self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
 
@@ -882,7 +869,7 @@ class GameMenu(arcade.View):
 
         self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
-        self.why = arcade.Sprite("images/gui/what_are_you_so_afraid_of.png", center_x=self.window.width/2, center_y=self.window.height/2)
+        self.why = arcade.Sprite("game/images/gui/what_are_you_so_afraid_of.png", center_x=self.window.width / 2, center_y=self.window.height / 2)
         self.why.alpha = 0
 
         self.show_main_windows()
@@ -938,6 +925,8 @@ class GameMenu(arcade.View):
         """
         if not self.is_loading:
             self.manager.enable()
+        else:
+            self.manager.disable()
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
         self.cursor_texture.position = (x, y)
@@ -1029,7 +1018,7 @@ class GameMenu(arcade.View):
 class SaveMenu(arcade.View):
     def __init__(self):
         super().__init__()
-        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
         self.window.set_mouse_visible(False)
         self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
 
@@ -1136,7 +1125,7 @@ class SettingsMenu(arcade.View):
 
         self.manager.add(self.main_h_box)
 
-        self.cursor_texture = arcade.Sprite("images/gui/cursor.png", 0.2)
+        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
         self.window.set_mouse_visible(False)
         self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
 
@@ -1166,7 +1155,7 @@ class SettingsMenu(arcade.View):
     def show_main_windows(self):
 
         def create_menu_buttons():
-            with open("data.JSON", "r", encoding="UTF-8") as data:
+            with open("game/data.JSON", "r", encoding="UTF-8") as data:
                 data = json.load(data)
             volumes = data['options']
 
@@ -1307,7 +1296,7 @@ class Character():
 
         def find_files(extension: list):
             results = {}
-            start_path = f"./images/characters/{char_id}"
+            start_path = f"./game/images/characters/{char_id}"
 
             for i in extension:
                 for root, dirs, files in os.walk(start_path):
@@ -1435,16 +1424,16 @@ class Character():
 
                         def talk_sound():
                             def _get_random_sound_path():
-                                files = [f"./sounds/character_voice/{self.char_id}/{f}" for f in
-                                         os.listdir(f"./sounds/character_voice/{self.char_id}") if
-                                         os.path.isfile(os.path.join(f"./sounds/character_voice/{self.char_id}", f))]
+                                files = [f"./game/sounds/character_voice/{self.char_id}/{f}" for f in
+                                         os.listdir(f"./game/sounds/character_voice/{self.char_id}") if
+                                         os.path.isfile(os.path.join(f"./game/sounds/character_voice/{self.char_id}", f))]
                                 return random.choice(files)
 
                             am.play_voice(_get_random_sound_path())
                             return None
 
                         if ((index % 3 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
-                            if os.path.isdir(f"./sounds/character_voice/{self.char_id}"):
+                            if os.path.isdir(f"./game/sounds/character_voice/{self.char_id}"):
                                 threading.Thread(target=talk_sound).start()
 
                         if char == ".":
@@ -1484,6 +1473,7 @@ class Character():
     def show(self, sprite: str, scale: Optional[int] = None) -> arcade.Sprite:
         if scale is None:
             scale = self.c_scale
+        print(self.sprites)
         now_sprite = self.sprites[sprite]
         now_sprite.scale = scale
         return now_sprite
@@ -1633,8 +1623,8 @@ class AudioManager:
 class Saves_manager:
     def  __init__(self):
 
-        if not os.path.exists("./data.JSON"):
-            with open("./data.JSON",  "w", encoding="UTF-8") as file:
+        if not os.path.exists("game/data.JSON"):
+            with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 data = {
                     "saves": {},
                     "persistent" : {},
@@ -1655,78 +1645,78 @@ class Saves_manager:
     class persistent:
         @staticmethod
         def get_persistent(name: str):
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             return file["persistent"].get(name, None)
 
         @staticmethod
         def set_persistent(name: str, data: any):
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["persistent"][name] = data
-            with open("./data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
     class volume:
         @staticmethod
         def set_music(value: float):
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["options"]["volume"]["music"] = value
-            with open("./data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
         @staticmethod
         def set_sound(value: float):
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["options"]["volume"]["sound"] = value
-            with open("./data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
         @staticmethod
         def set_voice(value: float):
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["options"]["volume"]["voice"] = value
-            with open("./data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
         @staticmethod
         def set_other(name: str, value: float):
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["options"][name] = value
-            with open("./data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
 
         @staticmethod
         def get_music():
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             return file["options"]["volume"].get("music", None)
 
         @staticmethod
         def get_sound():
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             return file["options"]["volume"].get("sound", None)
 
         @staticmethod
         def get_voice():
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             return file["options"]["volume"].get("voice", None)
 
         @staticmethod
         def get_other(name: str):
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             return file["options"].get(name, None)
 
@@ -1734,7 +1724,7 @@ class Saves_manager:
 
         @staticmethod
         def create_save(session_id: str, defines: dict, position: int, label: str, scene: dict):
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["saves"][session_id] = {
@@ -1743,29 +1733,22 @@ class Saves_manager:
                 "defines" : defines,
                 "scene" : scene
             }
-            with open("./data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
         @staticmethod
         def get_save(session_id: str) -> dict:
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data = dict(json.load(file))
             return file_data["saves"][session_id]
 
         @staticmethod
         def get_all_saves() -> dict:
-            with open("./data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data = dict(json.load(file))
             return [[i, o] for i, o in file_data["saves"].items()]
 
-def main():
-    window = arcade.Window(width=1024, height=786, title=f"{WINDOW_TITLE}: {splash}", resizable=False)
-    game = GameMenu()
-    window.show_view(game)
-    arcade.run()
-
-if __name__ == "__main__":
-    sm = Saves_manager()
-    am = AudioManager()
-    lc = ListCharacters()
-    main()
+sm = Saves_manager()
+am = AudioManager()
+lc = ListCharacters()
+wwl = Wwl()
