@@ -5,7 +5,7 @@ from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
 from typing import Optional, List, Tuple
-from gui import SpriteButton, UISliderVertical
+from gui import UISliderVertical
 import Scene
 import threading
 import time
