@@ -9,9 +9,7 @@ class Wwl:
 
         def find_files(extension: str):
             results = {}
-            current_path = os.getcwd()
-            parent_path = os.path.dirname(current_path)
-            start_path = parent_path
+            start_path = os.getcwd()
 
             for root, dirs, files in os.walk(start_path):
                 for file in files:
@@ -47,6 +45,7 @@ class Wwl:
         while len(files) > index:
             index += 1
             i = files[index-1].strip()
+            #print(i)
             match i:
 
                 case n if i.startswith("<"):
@@ -164,6 +163,10 @@ class Wwl:
                             break
 
                     label.append({"action": "EXECUTE", "data": data})
+
+                case _:
+                    if i and i != "}" and not i.startswith("label"):
+                        print(f"Неопознанная строка: {i}")
 
         return label
 

@@ -9,6 +9,9 @@ label main
 
     $ sosdal = "yeeeah"
     <aj> Иииииииии \n {w=0.5}это конец занятий!
+
+    WAIT 0.1
+
     <narr> {f}*[sosdal] счастливый шум*
     SHOW aj 1
 

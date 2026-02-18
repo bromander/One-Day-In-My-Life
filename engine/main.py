@@ -4,7 +4,7 @@ from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
-from typing import Optional
+from typing import Optional, Literal
 import threading
 import time
 import re
@@ -15,8 +15,10 @@ import uuid
 import sys
 sys.path.append(os.path.dirname(__file__))
 from gui import UISliderVertical
-from Scene import Scene
+from scene import Scene
 from lore_viewer import Wwl
+from waiter import Waiter
+from saves import Saves_manager
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
@@ -80,7 +82,7 @@ STYLE_DEFAULT_BUTTON = {
 }
 
 
-wait_trigger: bool = False
+wait_trigger = Waiter()
 
 GAME_NAME = "Game name"
 
@@ -128,8 +130,8 @@ class GameView(arcade.View):
         self.menu_manager.disable()
         self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
-        self.waiting_dialogue = True
-        self.waiting_settings = False
+        self.waiting_dialogue = Waiter(True)
+        self.waiting_settings = Waiter()
 
         self.last_text = " "
 
@@ -380,6 +382,8 @@ class GameView(arcade.View):
 
         load_saves()
 
+        self.actions = self.Actions(self)
+
         print(self.session_id)
 
     def format_text(self, text: str):
@@ -412,7 +416,6 @@ class GameView(arcade.View):
                 self.window.size = (1024, 786)
                 game = GameMenu(False)
                 self.window.show_view(game)
-
 
     def talk(self, now):
         global dialog_text_text, cname_text_text
@@ -479,7 +482,7 @@ class GameView(arcade.View):
                     return "NEXT"
 
                 case "MOVE":
-                    self.Move.move_towards(self.scene["characters"][now["character"]], now["pos"][0], now["pos"][1], now["speed"])
+                    self.actions.start_action("move_sprite", now)
                     return "NEXT"
 
                 case "SCENE":
@@ -496,56 +499,14 @@ class GameView(arcade.View):
                     return "NEXT"
 
                 case "FADE":
+                    wait_trigger.on()
                     match now["type"]:
                         case "FADEIN":
-                            def editing_alpha():
-                                global wait_trigger
-                                wait_trigger = True
-                                start_time = time.time()
-                                duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other("fade_speed") > 0 else 0
-
-                                while True:
-
-                                    elapsed = time.time() - start_time
-
-                                    if elapsed >= duration:
-                                        self.scene["fade"].alpha = 255
-                                        break
-
-                                    progress = elapsed / duration
-                                    alpha = int(progress * 255)
-
-                                    if not wait_trigger:
-                                        wait_trigger = True
-
-                                    self.scene["fade"].alpha = alpha
-
-                                    time.sleep(0.01)
-
-                                wait_trigger = False
-                            threading.Thread(target=editing_alpha).start()
+                            self.actions.start_action("fadein", now)
                         case "FADEOUT":
-                            def editing_alpha():
-                                global wait_trigger
-                                wait_trigger = True
-                                start_time = time.time()
-                                duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other("fade_speed") > 0 else 0
-
-                                while True:
-
-                                    elapsed = time.time() - start_time
-                                    if elapsed >= duration:
-                                        alpha = 0
-                                        wait_trigger = False
-                                        return None
-
-                                    progress = elapsed / duration
-                                    alpha = 255 - int(progress * 255)
-
-                                    self.scene["fade"].alpha = alpha
-
-                                    time.sleep(0.01)
-                            threading.Thread(target=editing_alpha).start()
+                            self.actions.start_action("fadeout", now)
+                        case _:
+                            wait_trigger.off()
                     return "NEXT"
 
                 case "JUMP":
@@ -557,25 +518,17 @@ class GameView(arcade.View):
 
                 case "MENU":
                     global dialog_text_text, cname_text_text
+                    wait_trigger.on()
 
                     dialog_text_text = [" "]
                     cname_text_text = ""
 
                     self.show_menu(now['data'])
-                    wait_trigger = True
 
                     return "END"
 
                 case "WAIT":
-
-                    def _waiter():
-                        global wait_trigger
-
-                        wait_trigger = True
-                        time.sleep(now["time"])
-                        wait_trigger = False
-
-                    threading.Thread(target=_waiter).start()
+                    self.actions.start_action("wait", now)
                     return "NEXT"
 
                 case "END":
@@ -593,7 +546,7 @@ class GameView(arcade.View):
                     return "NEXT"
 
                 case _:
-                    return None
+                    print(f"Неопознанная команда: {now}")
 
     def on_draw(self):
         """
@@ -612,6 +565,7 @@ class GameView(arcade.View):
             arcade.draw_sprite(self.cursor_texture)
 
     def show_menu(self, data):
+        global wait_trigger
 
         def jump(label: str):
             global wait_trigger
@@ -619,8 +573,10 @@ class GameView(arcade.View):
             wwl.label = label
             self.menu_manager.clear()
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
-            wait_trigger = False
+            #wait_trigger.off()
             self.talk_manager()
+
+        wait_trigger.on()
 
         for k, v in data.items():
             button = agui.UIFlatButton(
@@ -632,6 +588,8 @@ class GameView(arcade.View):
             button.on_click = lambda event, label=v: jump(label)
             self.menu_v_box.add(button)
 
+        wait_trigger.on()
+
         ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
         ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y")
 
@@ -640,23 +598,14 @@ class GameView(arcade.View):
     def show_settings(self, state: Optional[bool] = None):
         settings = self.settings_scene["in_game_settings"]
 
-        if state is True:
-            self.waiting_settings = True
-            self.settings_h_box.visible = True
-            settings.alpha = 255
-        elif state is False:
-            self.waiting_settings = False
-            self.settings_h_box.visible = False
-            settings.alpha = 0
+        if state is not None:
+            turn_on = state
         else:
-            if settings.alpha > 0:
-                self.waiting_settings = False
-                self.settings_h_box.visible = False
-                settings.alpha = 0
-            else:
-                self.waiting_settings = True
-                self.settings_h_box.visible = True
-                settings.alpha = 255
+            turn_on = settings.alpha <= 0
+
+        (self.waiting_settings.on if turn_on else self.waiting_settings.off)()
+        self.settings_h_box.visible = turn_on
+        settings.alpha = 255 if turn_on else 0
 
     def on_update(self, delta_time):
         """
@@ -664,14 +613,17 @@ class GameView(arcade.View):
         Normally, you'll call update() on the sprite lists that
         need it.
         """
-        if self.waiting_dialogue:
-            if not wait_trigger:
-                self.talk_manager()
-                self.waiting_dialogue = False
 
         self.delta_time = delta_time
 
         self.scene.update()
+
+        self.actions.update()
+
+        if self.waiting_dialogue:
+            if not wait_trigger:
+                self.talk_manager()
+                self.waiting_dialogue.off()
 
         self.settings_scene.update(delta_time)
         self.menu_manager.enable()
@@ -690,16 +642,15 @@ class GameView(arcade.View):
 
         self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
 
-
     def on_key_press(self, key, modifiers):
         if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.waiting_settings:
-            self.waiting_dialogue = True
+            self.waiting_dialogue.on()
         if key == arcade.key.S:
             self.show_settings()
 
     def on_mouse_release(self, x, y, button, modifiers):
         if (int(button) == 1) and not self.waiting_settings:
-            self.waiting_dialogue = True
+            self.waiting_dialogue.on()
 
     def update_main_windows(self):
 
@@ -793,26 +744,101 @@ class GameView(arcade.View):
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
         self.window.set_mouse_visible(False)
 
-    class Move():
-        @staticmethod
-        def move_towards(sprite, target_x, target_y, speed):
+    class Actions:
+        def __init__(self, main):
+            self.main: GameView = main
+            self.active_generators = []
 
-            def move():
-                while True:
-                    dx = target_x - sprite.center_x
-                    dy = target_y - sprite.center_y
-                    distance = (dx ** 2 + dy ** 2) ** 0.5
-                    if distance > speed:
-                        sprite.center_x += dx / distance * speed
-                        sprite.center_y += dy / distance * speed
-                    else:
-                        sprite.center_x = target_x
-                        sprite.center_y = target_y
-                    time.sleep(0.01)
-                    if distance <= 0:
-                        break
+        def _fadein(self, now: dict):
+            global wait_trigger
+            wait_trigger.on()
+            start_time = time.time()
+            duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other(
+                "fade_speed") > 0 else 0
 
-            threading.Thread(target=move).start()
+            while True:
+
+                elapsed = time.time() - start_time
+
+                if elapsed >= duration:
+                    self.main.scene["fade"].alpha = 255
+                    wait_trigger.off()
+                    return None
+
+                progress = elapsed / duration
+                alpha = int(progress * 255)
+
+                self.main.scene["fade"].alpha = alpha
+
+                yield
+
+        def _fadeout(self, now: dict):
+            global wait_trigger
+            wait_trigger.on()
+            start_time = time.time()
+            duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other("fade_speed") > 0 else 0
+
+            while True:
+
+                elapsed = time.time() - start_time
+                if elapsed >= duration:
+                    alpha = 0
+                    wait_trigger.off()
+                    return None
+
+                progress = elapsed / duration
+                alpha = 255 - int(progress * 255)
+
+                self.main.scene["fade"].alpha = alpha
+
+                yield
+
+        def _move(self, now: dict):
+            # Хз работает ли это или нет, но вроде должно
+            sprite = self.main.scene["characters"][now["character"]]
+            while True:
+                dx = now["pos"][0] - sprite.center_x
+                dy = now["pos"][1] - sprite.center_y
+                distance = (dx ** 2 + dy ** 2) ** 0.5
+                if distance > now["speed"]:
+                    sprite.center_x += dx / distance * now["speed"]
+                    sprite.center_y += dy / distance * now["speed"]
+                else:
+                    sprite.center_x = now["pos"][0]
+                    sprite.center_y = now["pos"][1]
+                time.sleep(0.01)
+                if distance <= 0:
+                    break
+                yield
+
+        def _wait(self, now):
+            global wait_trigger
+            start_time = time.time()
+
+            wait_trigger.on()
+
+            while time.time() - start_time < now["time"]:
+                yield
+
+            wait_trigger.off()
+
+        def update(self):
+            for gen in self.active_generators[:]:
+                try:
+                    next(gen)
+                except StopIteration:
+                    self.active_generators.remove(gen)
+
+        def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"], now: dict):
+            if name == "fadein":
+                self.active_generators.append(self._fadein(now))
+            elif name == "fadeout":
+                self.active_generators.append(self._fadeout(now))
+            elif name == "move_sprite":
+                self.active_generators.append(self._move(now))
+            elif name == "wait":
+                self.active_generators.append(self._wait(now))
+
 
 class Map(arcade.View):
     def __init__(self):
@@ -1430,11 +1456,10 @@ class Character():
                                 return random.choice(files)
 
                             am.play_voice(_get_random_sound_path())
-                            return None
 
-                        if ((index % 3 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
+                        if ((index % 4 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
                             if os.path.isdir(f"./game/sounds/character_voice/{self.char_id}"):
-                                threading.Thread(target=talk_sound).start()
+                                talk_sound()
 
                         if char == ".":
                             if not fast:
@@ -1468,7 +1493,6 @@ class Character():
         thread = threading.Thread(target=_talk)
         Character.active_threads = [(stop_event, thread)]
         thread.start()
-
 
     def show(self, sprite: str, scale: Optional[int] = None) -> arcade.Sprite:
         if scale is None:
@@ -1618,135 +1642,6 @@ class AudioManager:
 
     def stop_voice(self):
         self.voice.stop()
-
-
-class Saves_manager:
-    def  __init__(self):
-
-        if not os.path.exists("game/data.JSON"):
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
-                data = {
-                    "saves": {},
-                    "persistent" : {},
-                    "options": {
-                        "volume": {
-                            "music": 1.0,
-                            "sound": 1.0,
-                            "voice": 1.0
-                        },
-                        "lps" : 60,
-                        "fade_speed" : 0
-                    }
-                }
-                json.dump(data, file, indent=4, ensure_ascii=False)
-
-        self.defines = {}
-
-    class persistent:
-        @staticmethod
-        def get_persistent(name: str):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-            return file["persistent"].get(name, None)
-
-        @staticmethod
-        def set_persistent(name: str, data: any):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["persistent"][name] = data
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
-
-    class volume:
-        @staticmethod
-        def set_music(value: float):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["options"]["volume"]["music"] = value
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
-
-        @staticmethod
-        def set_sound(value: float):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["options"]["volume"]["sound"] = value
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
-
-        @staticmethod
-        def set_voice(value: float):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["options"]["volume"]["voice"] = value
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
-
-        @staticmethod
-        def set_other(name: str, value: float):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["options"][name] = value
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
-
-
-        @staticmethod
-        def get_music():
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-            return file["options"]["volume"].get("music", None)
-
-        @staticmethod
-        def get_sound():
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-            return file["options"]["volume"].get("sound", None)
-
-        @staticmethod
-        def get_voice():
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-            return file["options"]["volume"].get("voice", None)
-
-        @staticmethod
-        def get_other(name: str):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-            return file["options"].get(name, None)
-
-    class save:
-
-        @staticmethod
-        def create_save(session_id: str, defines: dict, position: int, label: str, scene: dict):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["saves"][session_id] = {
-                "position" : position,
-                "label" : label,
-                "defines" : defines,
-                "scene" : scene
-            }
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
-
-        @staticmethod
-        def get_save(session_id: str) -> dict:
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file_data = dict(json.load(file))
-            return file_data["saves"][session_id]
-
-        @staticmethod
-        def get_all_saves() -> dict:
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
-                file_data = dict(json.load(file))
-            return [[i, o] for i, o in file_data["saves"].items()]
 
 sm = Saves_manager()
 am = AudioManager()
