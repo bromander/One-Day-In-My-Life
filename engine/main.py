@@ -1,3 +1,5 @@
+import logging
+
 import arcade
 import pyglet
 from pyglet.event import EVENT_HANDLE_STATE
@@ -25,12 +27,12 @@ arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
 class Persistent:
     def __setattr__(self, name, value):
-        sm.persistent.set_persistent(name, value)
+        Saves_manager().persistent.set_persistent(name, value)
         super().__setattr__(name, value)
 
     def __getattribute__(self, item):
-        super().__setattr__(item, sm.persistent.get_persistent(item))
-        return sm.persistent.get_persistent(item)
+        super().__setattr__(item, Saves_manager().persistent.get_persistent(item))
+        return Saves_manager().persistent.get_persistent(item)
 
 class Define:
     def __init__(self):
@@ -96,9 +98,6 @@ class GameView(arcade.View):
 
     def __init__(self, session_id: Optional[str] = None) -> None:
         super().__init__()
-        global am, wwl
-        am = AudioManager()
-        wwl = Wwl()
 
         self.NAMESPACE = {
             "persistent": Persistent(),
@@ -187,6 +186,7 @@ class GameView(arcade.View):
                         self.window.size = (1024, 786)
                         game = GameMenu()
                         self.window.show_view(game)
+                        init_file()
 
                     def create_save(event=None):
                         try:
@@ -200,7 +200,7 @@ class GameView(arcade.View):
                             {
                                 "id": str(i),
                                 "path": str(o.texture.file_path),
-                                "size": o.size,
+                                "size": round(i.size),
                                 "pos": o.position
                             }
                             for i, o in self.scene["characters"].items()
@@ -210,7 +210,7 @@ class GameView(arcade.View):
                             {
                                 "layer" :  0,
                                 "path" : str(i.texture.file_path),
-                                "size" : i.size,
+                                "size" : round(i.size),
                                 "pos" : i.position
                             }
                             for i in self.scene["bg"].values()
@@ -222,8 +222,7 @@ class GameView(arcade.View):
                             "music" : music_file
 
                         }
-                        print(scene)
-                        sm.save.create_save(self.session_id,
+                        Saves_manager().save.create_save(self.session_id,
                                             defines=self.NAMESPACE["define"].defines,
                                             position=wwl.pose-1,
                                             label=wwl.label,
@@ -331,7 +330,7 @@ class GameView(arcade.View):
                     self.fade_speed_slider = agui.UISlider(
                         value=volumes["fade_speed"],  # начальное значение
                         min_value=-10,
-                        max_value=0,
+                        max_value=10,
                         width=300,
                         height=20
                     )
@@ -352,12 +351,12 @@ class GameView(arcade.View):
 
         self.start_trigger: bool = True
 
-        def load_saves():
+        def load_saves(session_id):
             if session_id is None:
                 self.session_id = str(uuid.uuid4())
             else:
                 self.session_id = session_id
-                save = sm.save.get_save(self.session_id)
+                save = Saves_manager().save.get_save(self.session_id)
                 wwl.label = save["label"]
                 wwl.pose = save["position"]
                 for i, o in save["defines"].items():
@@ -380,7 +379,7 @@ class GameView(arcade.View):
                 if scene["music"] is not None:
                     am.play_music(scene["music"])
 
-        load_saves()
+        load_saves(session_id)
 
         self.actions = self.Actions(self)
 
@@ -396,9 +395,7 @@ class GameView(arcade.View):
         return text
 
     def talk_manager(self):
-        print(wwl.pose, wwl.label)
         now = wwl.get_thing()
-        print(now)
         res = self.talk(now)
 
         match res:
@@ -416,6 +413,7 @@ class GameView(arcade.View):
                 self.window.size = (1024, 786)
                 game = GameMenu(False)
                 self.window.show_view(game)
+                init_file()
 
     def talk(self, now):
         global dialog_text_text, cname_text_text
@@ -637,8 +635,8 @@ class GameView(arcade.View):
             am.music.set_volume(round(self.settings_v_box.children[4].value / 100, 2))
             am.sound.set_volume(round(self.settings_v_box.children[7].value / 100, 2))
             am.voice.set_volume(round(self.settings_v_box.children[10].value / 100, 2))
-            sm.volume.set_other("lps", self.settings_v_box_1.children[1].value)
-            sm.volume.set_other("fade_speed", self.settings_v_box_1.children[4].value)
+            sm.volume.set_other("lps", round(self.settings_v_box_1.children[1].value, 2))
+            sm.volume.set_other("fade_speed", round(self.settings_v_box_1.children[4].value, 2))
 
         self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
 
@@ -839,42 +837,9 @@ class GameView(arcade.View):
             elif name == "wait":
                 self.active_generators.append(self._wait(now))
 
-
-class Map(arcade.View):
-    def __init__(self):
-        super().__init__()
-
-        self.scene = arcade.Scene()
-        self.background_color = arcade.color.WHITE
-        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
-
-    def on_draw(self):
-        self.clear()
-        self.scene.draw()
-        arcade.draw_sprite(self.cursor_texture)
-
-
-
-    def on_update(self, delta_time: float) -> bool | None:
-        self.scene.update(delta_time)
-
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
-        self.cursor_texture.position = (x, y)
-        self.window.set_mouse_visible(False)
-
-    def on_close(self):
-        self.window.set_fullscreen(False)
-        self.window.size = (1024, 786)
-        game = GameMenu()
-        self.window.show_view(game)
-
 class GameMenu(arcade.View):
     def __init__(self, show_lc: bool = True):
         super().__init__()
-
-        global am, wwl
-        am = AudioManager()
-        wwl = Wwl()
 
         self.loading_screen = arcade.Sprite("game/images/gui/JE3000_logo-export.png", 1)
         self.loading_screen.position = (int(self.center_x), int(self.center_y))
@@ -1175,8 +1140,8 @@ class SettingsMenu(arcade.View):
             am.music.set_volume(round(self.music_volume_slider.value / 100, 2))
             am.sound.set_volume(round(self.sound_volume_slider.value / 100, 2))
             am.voice.set_volume(round(self.voice_volume_slider.value / 100, 2))
-            sm.volume.set_other("lps", int(self.lps_slider.value))
-            sm.volume.set_other("fade_speed", int(self.fade_speed_slider.value))
+            sm.volume.set_other("lps", round(self.lps_slider.value, 2))
+            sm.volume.set_other("fade_speed", round(self.fade_speed_slider.value, 2))
 
     def show_main_windows(self):
 
@@ -1273,7 +1238,7 @@ class SettingsMenu(arcade.View):
             self.fade_speed_slider = agui.UISlider(
                 value=volumes["fade_speed"],  # начальное значение
                 min_value=-10,
-                max_value=0,
+                max_value=10,
                 width=300,
                 height=20
             )
@@ -1333,7 +1298,6 @@ class Character():
 
             return results
 
-
         self.c_name = name
         self.colour = hex_to_rgb(colour)
         self.name_colour = hex_to_rgb(name_colour)
@@ -1349,8 +1313,7 @@ class Character():
 
         self.char_id = char_id
 
-        if self.char_id is not None:
-            self.sprites = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"])
+        self.sprites = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"])
 
         self.text_anch = text_anch
 
@@ -1643,7 +1606,10 @@ class AudioManager:
     def stop_voice(self):
         self.voice.stop()
 
-sm = Saves_manager()
-am = AudioManager()
-lc = ListCharacters()
-wwl = Wwl()
+
+def init_file():
+    global sm, am, lc, wwl
+    sm = Saves_manager()
+    am = AudioManager()
+    lc = ListCharacters()
+    wwl = Wwl()

@@ -2,13 +2,17 @@ import os
 import sys
 import arcade
 import random
-import  json
+import json
 sys.path.insert(0, os.path.dirname(__file__))
-from engine import GameMenu
+import engine
+from engine.main import GameMenu, init_file
 
 WINDOW_TITLE = f"Game name"
 
 def main():
+
+    init_file()
+
     with open("game/other/splashes.json", "r", encoding="UTF-8") as splashes:
         splashes = json.load(splashes)
     splash = str(random.choice(splashes))
