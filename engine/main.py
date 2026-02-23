@@ -437,22 +437,26 @@ class GameView(arcade.View):
                 case "PLAY":
                     match now["play_what"]:
                         case "MUSIC":
-                            am.play_music(f"game/music/{now['path']}", now["loop"], float(now["volume"]), effect=now["effect"])
+                            target = am.play_music(f"game/music/{now['path']}", now["loop"], float(now["volume"]), effect=now["effect"])
+                            self.actions.active_generators.append(target)
 
                         case "SOUND":
-                            am.play_sound(f"game/sounds/{now['path']}", bool(now["loop"]), float(now["volume"]), effect=now["effect"])
+                            target = am.play_sound(f"game/sounds/{now['path']}", bool(now["loop"]), float(now["volume"]), effect=now["effect"])
+                            self.actions.active_generators.append(target)
                     return "NEXT"
 
                 case "STOP":
                     match now["what"]:
                         case "MUSIC":
                             if now["effect"] is not None:
-                                am.stop_music(now["effect"])
+                                target = am.stop_music(now["effect"])
+                                self.actions.active_generators.append(target)
                             else:
                                 am.stop_music()
                         case "SOUND":
                             if now["effect"] is not None:
-                                am.stop_sound(now["effect"])
+                                target = am.stop_sound(now["effect"])
+                                self.actions.active_generators.append(target)
                             else:
                                 am.stop_sound()
                     return "NEXT"
@@ -746,6 +750,7 @@ class GameView(arcade.View):
         def __init__(self, main):
             self.main: GameView = main
             self.active_generators = []
+            self.talk_generator = None
 
         def _fadein(self, now: dict):
             global wait_trigger
@@ -821,10 +826,14 @@ class GameView(arcade.View):
             wait_trigger.off()
 
         def update(self):
+            if self.talk_generator:
+                next(self.talk_generator)
             for gen in self.active_generators[:]:
                 try:
                     next(gen)
                 except StopIteration:
+                    self.active_generators.remove(gen)
+                except TypeError:
                     self.active_generators.remove(gen)
 
         def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"], now: dict):
@@ -878,23 +887,24 @@ class GameMenu(arcade.View):
     def show_ls(self):
         self.loading_screen.alpha = 255
         self.is_loading = True
-        def show():
-            self.loading_screen_fade.alpha = 255
-            time.sleep(0.4)
-            for i in range(0, 255):
-                if self.is_mouse_pressed:
-                    self.loading_screen_fade.alpha = 0
-                    break
-                self.loading_screen_fade.alpha = 255-i
-                time.sleep(0.01)
-            time.sleep(1.9)
-            self.loading_screen_fade.alpha = 255
-            self.loading_screen.alpha = 0
-            time.sleep(0.1)
-            self.loading_screen_fade.alpha = 0
-            self.is_loading = False
+        self.loading_generator = self.loading()
 
-        threading.Thread(target=show).start()
+    def loading(self):
+        self.loading_screen_fade.alpha = 255
+        for i in range(0, int(250/2)):
+            if self.is_mouse_pressed:
+                self.loading_screen_fade.alpha = 0
+                break
+            self.loading_screen_fade.alpha = 255 - i*2
+            yield
+        for i in range(50):
+            yield
+        self.loading_screen_fade.alpha = 255
+        for i in range(5):
+            yield
+        self.loading_screen.alpha = 0
+        self.loading_screen_fade.alpha = 0
+        self.is_loading = False
 
     def on_draw(self):
         """
@@ -917,6 +927,11 @@ class GameMenu(arcade.View):
         if not self.is_loading:
             self.manager.enable()
         else:
+            if self.loading_generator:
+                try:
+                    next(self.loading_generator)
+                except StopIteration:
+                    self.loading_generator = None
             self.manager.disable()
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
@@ -931,10 +946,7 @@ class GameMenu(arcade.View):
     def on_key_press(self, key: int, modifiers: int) -> bool | None:
         if (key == arcade.key.L and modifiers & arcade.key.MOD_SHIFT) and not self.is_loading:
             self.why.alpha = 255
-            def wHy():
-                time.sleep(10)
-                arcade.exit()
-            threading.Thread(target=wHy).start()
+            self.is_loading  = True
 
     def show_main_windows(self):
 
@@ -1479,25 +1491,51 @@ class ListCharacters:
 
 
 class AudioChannel:
-    def __init__(self, default_volume: float=1.0, volume_type: Optional[str] = None):
-        self.sound: Optional[arcade.sound.Sound] = None
+    def __init__(self, default_volume: float=1.0, modifier: float = 1.0, volume_type: Optional[str] = None):
+        '''
+        :param default_volume: Громкость по умолчанию
+        :param volume_type: Тип звука ("music"/"sound"/"voice")
+        '''
         self.player: Optional[pyglet.media.player.Player] = None
-        self.default_volume: float = default_volume
-        self.volume_type: Optional[str] = volume_type
+        self.default_volume: float = default_volume # Громкость по умолчанию
+        self.volume_type: Optional[str] = volume_type # Тип канала
+        self.modifier = modifier # Модификатор громкости. Предназначен для управления громкости с ползунков из настроек
+        self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкости во время плавных переходов (FADEIN/FADEOUT)
+        self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкости текущего трека. Сбрасывается при запуске нового трека
 
-    def play(self, path, loop=False, volume=None, speed=1.0):
-        self.sound = arcade.load_sound(path)
-        if volume is None:
-            volume = self.default_volume
+    @property
+    def fade_modifier(self):
+        return self._fade_modifier
 
-        self.player = self.sound.play(volume=volume, loop=loop, speed=speed)
+    @fade_modifier.setter
+    def fade_modifier(self, value):
+        self._fade_modifier = value
+        if self.player:
+            self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+            # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
+
+    def play(self, path, loop=False, speed=1.0, local_volume: Optional[float]=None):
+        """
+        Включает звук
+        :param path: Путь к файлу
+        :param loop: Если True, звук будет зацикливаться
+        :param speed: Скорость проигрывания
+        :return:
+        """
+        self.stop()
+
+        if local_volume:
+            self._local_modifier = local_volume
+
+        sound = arcade.load_sound(path)
+        volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+
+        self.player = sound.play(volume=volume, loop=loop, speed=speed)
 
     def stop(self):
         if self.player:
-            self.sound.stop(self.player)
-            self.sound = None
             self.player.delete()
-            self.player = None
+        self._local_modifier = 1.0
 
     def pause(self):
         if self.player:
@@ -1507,100 +1545,110 @@ class AudioChannel:
         if self.player:
             self.player.play()
 
-    def set_volume(self, vol):
-        if self.player is not None:
-            self.player.volume = vol
-            self.default_volume = vol
+    def set_volume(self, vol, is_global: bool = True):
+        """
+        Изменяет громкость
+        :param vol: Громкость
+        :param is_global: Если True, применяет глобально, к этом и последующим звукам, а также, сохраняет значение. Если False, применяет громкость только к текущему звуку
+        """
 
-        if self.volume_type == "music":
-            sm.volume.set_music(vol)
-        elif self.volume_type == "sound":
-            sm.volume.set_sound(vol)
-        elif self.volume_type == "voice":
-            sm.volume.set_voice(vol)
+        if is_global:
+            self.modifier = vol
+            if self.player:
+                self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+
+            # Сохраняем значения
+            if self.volume_type == "music":
+                sm.volume.set_music(self.modifier)
+            elif self.volume_type == "sound":
+                sm.volume.set_sound(self.modifier)
+            elif self.volume_type == "voice":
+                sm.volume.set_voice(self.modifier)
+        else:
+            self._local_modifier = vol
+            if self.player:
+                self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+
 
     def is_playing(self):
-        return bool(self.player and self.player.playing)
+        if self.player:
+            return self.player.playing
+        else:
+            return False
 
 class AudioManager:
     def __init__(self):
 
-        self.music = AudioChannel(sm.volume.get_music(), "music")
-        self.sound = AudioChannel(sm.volume.get_sound(), "sound")
-        self.voice = AudioChannel(sm.volume.get_voice(), "voice")
+        self.music = AudioChannel(modifier=sm.volume.get_music(), volume_type="music")
+        self.sound = AudioChannel(modifier=sm.volume.get_sound(), volume_type="sound")
+        self.voice = AudioChannel(modifier=sm.volume.get_voice(), volume_type="voice", default_volume=2.0)
 
-    def play_music(self, path: str, loop: Optional[bool]=False, volume: float=1.0, effect: Optional[str] = None):
+    def play_music(self, path: str, loop: Optional[bool] = False, volume: float = 1.0, effect: Optional[str] = None):
 
-        old_volume = self.music.default_volume
         match effect:
             case "FADE":
                 def fadeout_music():
-                    self.music.default_volume = 0.0
-                    self.music.set_volume(0.0)
-                    while self.music.default_volume < old_volume:
-                        self.music.default_volume += 0.002
-                        self.music.set_volume(self.music.default_volume)
-                        time.sleep(0.005)
-                    self.music.set_volume(old_volume)
-                    return None
+                    while self.music.fade_modifier < 1.0:
+                        self.music.fade_modifier += 0.005
+                        yield
+                    self.music.fade_modifier = 1.0
 
-                threading.Thread(target=fadeout_music).start()
-        self.music.play(path, loop=loop, volume=self.music.default_volume * volume)
+                self.music.fade_modifier = 0.0
+                self.music.play(path, loop=loop, local_volume=volume)
+                return fadeout_music()
 
-    def play_sound(self, path, loop=False, volume=1.0, effect: Optional[str] = None):
+            case _:
+                self.music.play(path, loop=loop, local_volume=volume)
 
-        old_volume = self.sound.default_volume
+    def play_sound(self, path, loop: Optional[bool] = False, volume: float = 1.0, effect: Optional[str] = None):
+
         match effect:
             case "FADE":
-                def fadeout_music():
-                    int_volume = int(round(self.music.default_volume, 2) * 100)
-                    for i in range(int_volume):
-                        self.music.default_volume = i/100
-                        self.music.set_volume(self.music.default_volume)
-                        time.sleep(0.001)
-                    self.music.set_volume(old_volume)
-                    return None
+                def fadeout_sound():
+                    while self.sound.fade_modifier < 1.0:
+                        self.sound.fade_modifier += 0.005
+                        yield
+                    self.sound.fade_modifier = 1.0
 
-                threading.Thread(target=fadeout_music).start()
-        self.sound.play(path, loop=loop, volume=self.sound.default_volume * volume)
+                self.sound.fade_modifier = 0.0
+                self.sound.play(path, loop=loop, local_volume=volume)
+                return fadeout_sound()
 
-    def play_voice(self, path, loop=False, volume=2.0):
-        self.voice.play(path, loop=loop, volume=self.voice.default_volume * volume, speed=random.randint(99, 101) / 100)
+            case _:
+                self.sound.play(path, loop=loop, local_volume=volume)
+
+
+    def play_voice(self, path, loop=False):
+        self.voice.play(path, loop=loop, speed=random.randint(99, 101) / 100)
 
     def stop_music(self, effect: Optional[str] = None):
-        old_volume = self.music.default_volume
         match effect:
             case "FADE":
                 def fadeout_music():
-                    int_volume = int(round(self.music.default_volume, 2)*100)
-                    for i in range(int_volume):
-                        self.music.default_volume = round((int_volume - i)/100, 2)
-                        self.music.set_volume(self.music.default_volume)
-                        time.sleep(0.01)
+                    while 0.0 < self.music.fade_modifier:
+                        self.music.fade_modifier -= 0.005
+                        yield
+                    self.music.fade_modifier = 0.0
                     self.music.stop()
-                    self.music.set_volume(old_volume)
-                    return None
-                threading.Thread(target=fadeout_music).start()
-
+                    self.music.fade_modifier = 1.0
+                return fadeout_music()
             case _:
                 self.music.stop()
 
     def stop_sound(self, effect: Optional[str] = None):
-        old_volume = self.sound.default_volume
         match effect:
             case "FADE":
-                def fadeout_music():
-                    int_volume = int(round(self.sound.default_volume, 2) * 100)
-                    for i in range(int_volume):
-                        self.sound.default_volume = round((int_volume - i) / 100, 2)
-                        self.sound.set_volume(self.sound.default_volume)
-                        time.sleep(0.005)
+                def fadeout_sound():
+                    while 0.0 < self.sound.fade_modifier:
+                        self.sound.fade_modifier -= 0.005
+                        yield
+                    self.sound.fade_modifier = 0.0
                     self.sound.stop()
-                    self.sound.set_volume(old_volume)
-                    return None
+                    self.sound.fade_modifier = 1.0
 
-                threading.Thread(target=fadeout_music).start()
-            case None:
+                return fadeout_sound()
+
+            case _:
                 self.sound.stop()
 
     def stop_voice(self):
@@ -1608,6 +1656,9 @@ class AudioManager:
 
 
 def init_file():
+    """
+    Инициализирует основные классы
+    """
     global sm, am, lc, wwl
     sm = Saves_manager()
     am = AudioManager()

@@ -1,6 +1,6 @@
 
 label main
-    PLAY MUSIC mike_zone.ogg 0.8
+    PLAY MUSIC mike_zone.ogg 0.6 True FADE
 
     SCENE bg_school_blackboard.jpg 2.7
     SHOW aj happy at center

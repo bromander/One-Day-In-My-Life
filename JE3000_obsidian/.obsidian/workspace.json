@@ -20,8 +20,23 @@
               "icon": "lucide-file",
               "title": "Проигрывание музыки"
             }
+          },
+          {
+            "id": "235f91834127954c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "JopaEngine3000 doc/jpy синтаксис/Проигрывание музыки.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Проигрывание музыки"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -183,7 +198,7 @@
       "bases:Создать новую базу": false
     }
   },
-  "active": "1e982f8e35a29707",
+  "active": "235f91834127954c",
   "lastOpenFiles": [
     "JopaEngine3000 doc/jpy синтаксис/Персонажи.md",
     "JopaEngine3000 doc/jpy синтаксис/Меню.md",
