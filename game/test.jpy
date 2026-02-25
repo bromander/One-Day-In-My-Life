@@ -10,6 +10,8 @@ label main
     $ sosdal = "yeeeah"
     <aj> Иииииииии \n {w=0.5}это конец занятий!
 
+    PLAY SOUND sfx/gaster-vanish.mp3 1.0 False FADE
+
     WAIT 0.1
 
     <narr> {f}*[sosdal] счастливый шум*

@@ -1,5 +1,3 @@
-import logging
-
 import arcade
 import pyglet
 from pyglet.event import EVENT_HANDLE_STATE
@@ -94,1186 +92,1182 @@ cname_text_text = ""
 cname_text_colour = arcade.color.BLACK
 dialog_text_colour = arcade.color.BLACK
 
-class GameView(arcade.View):
 
-    def __init__(self, session_id: Optional[str] = None) -> None:
-        super().__init__()
+class Views:
+    def init(self):
+        return self.GameMenu, self.SettingsMenu, self.SaveMenu, self.GameView
 
-        self.NAMESPACE = {
-            "persistent": Persistent(),
-            "define": Define()
-        }
-        self.settings_scene = arcade.Scene()
 
-        self.settings_manager = agui.UIManager()
-        self.settings_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
-        self.settings_v_box_1 = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
-        self.settings_v_box_1 = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
-        self.settings_h_box = arcade.gui.widgets.layout.UIBoxLayout(vertical=False, space_between=20)
-        self.settings_h_box.visible = False
+    class Main_template(arcade.View):
+        def __init__(self):
+            super().__init__()
+            self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
 
-        self.delta_time = 0.0
+        def on_update(self, delta_time: float) -> bool | None:
+            self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
+            self.window.set_mouse_visible(False)
 
-        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
+        def  on_draw(self) -> bool | None:
+            arcade.draw_sprite(self.cursor_texture)
 
-        self.background_color = arcade.color.WHITE
+    class GameView(Main_template):
 
-        self.dialog_window: Optional[arcade.Sprite] = None
-        self.dialog_text_batch = Batch()
-        self.dialog_texts: list = []
-        self.cname_text: Optional[arcade.Text] = None
+        def __init__(self, session_id: Optional[str] = None) -> None:
+            super().__init__()
 
-        self.scene = Scene()
+            self.NAMESPACE = {
+                "persistent": Persistent(),
+                "define": Define()
+            }
+            self.settings_scene = arcade.Scene()
 
-        self.menu_manager = agui.UIManager()
-        self.menu_manager.disable()
-        self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+            self.settings_manager = agui.UIManager()
+            self.settings_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
+            self.settings_v_box_1 = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
+            self.settings_v_box_1 = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
+            self.settings_h_box = arcade.gui.widgets.layout.UIBoxLayout(vertical=False, space_between=20)
+            self.settings_h_box.visible = False
 
-        self.waiting_dialogue = Waiter(True)
-        self.waiting_settings = Waiter()
+            self.delta_time = 0.0
 
-        self.last_text = " "
+            self.background_color = arcade.color.WHITE
 
-        def create_widgets():
-            # dialog window
-            texture = arcade.load_texture("game/images/gui/dialog_window.png")
+            self.dialog_window: Optional[arcade.Sprite] = None
+            self.dialog_text_batch = Batch()
+            self.dialog_texts: list = []
+            self.cname_text: Optional[arcade.Text] = None
 
-            self.dialog_window = arcade.Sprite(
-                texture,
-                scale=6 * min(self.width / 1920, self.height / 1080),
-                center_x=self.width * 0.5,
-                center_y=self.height * 0.13
-            )
+            self.scene = Scene()
 
-            #blackscreen
-            texture = arcade.load_texture("game/images/gui/blackscreen.png")
+            self.menu_manager = agui.UIManager()
+            self.menu_manager.disable()
+            self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
-            sprite = arcade.Sprite(
-                texture,
-                scale=50,
-                center_x=self.width * 0.5,
-                center_y=self.height * 0.5
-            )
-            sprite.alpha = 0
-            self.scene.add_sprite("fade", "", sprite)
+            self.waiting_dialogue = Waiter(True)
+            self.waiting_settings = Waiter()
 
-            #settings bg
-            def create_settings():
-                texture = arcade.load_texture("game/images/gui/in_game_settings.png")
+            self.last_text = " "
+
+            def create_widgets():
+                # dialog window
+                texture = arcade.load_texture("game/images/gui/dialog_window.png")
+
+                self.dialog_window = arcade.Sprite(
+                    texture,
+                    scale=6 * min(self.width / 1920, self.height / 1080),
+                    center_x=self.width * 0.5,
+                    center_y=self.height * 0.13
+                )
+
+                #blackscreen
+                texture = arcade.load_texture("game/images/gui/blackscreen.png")
 
                 sprite = arcade.Sprite(
                     texture,
+                    scale=50,
                     center_x=self.width * 0.5,
-                    center_y=self.height * 0.5,
-                    scale=1.0
+                    center_y=self.height * 0.5
                 )
-                self.settings_scene.add_sprite("in_game_settings", sprite)
-                self.settings_scene["in_game_settings"].alpha = 0
+                sprite.alpha = 0
+                self.scene.add_sprite("fade", "", sprite)
 
-                def create_settings_buttons():
-                    with open("game/data.JSON", "r", encoding="UTF-8") as data:
-                        data = json.load(data)
-                    volumes = data['options']
+                #settings bg
+                def create_settings():
+                    texture = arcade.load_texture("game/images/gui/in_game_settings.png")
 
-                    def return_to_main_menu(event=None):
-                        for i in lc.characters.values():
-                            i.active_threads[0][0].set() # Включаем флаг stop_event, чтобы остановить речь всех персонажей
-
-                        am.stop_sound()
-                        am.stop_music()
-                        am.stop_voice()
-                        self.window.set_fullscreen(False)
-                        self.window.size = (1024, 786)
-                        game = GameMenu()
-                        self.window.show_view(game)
-                        init_file()
-
-                    def create_save(event=None):
-                        try:
-                            music_file = am.music.sound.file_name
-                        except FileNotFoundError:
-                            music_file = None
-                        except AttributeError:
-                            music_file = None
-
-                        characters = [
-                            {
-                                "id": str(i),
-                                "path": str(o.texture.file_path),
-                                "size": round(i.size),
-                                "pos": o.position
-                            }
-                            for i, o in self.scene["characters"].items()
-                        ]
-
-                        bg = [
-                            {
-                                "layer" :  0,
-                                "path" : str(i.texture.file_path),
-                                "size" : round(i.size),
-                                "pos" : i.position
-                            }
-                            for i in self.scene["bg"].values()
-                        ]
-
-                        scene = {
-                            "bg" : bg,
-                            "characters" : characters,
-                            "music" : music_file
-
-                        }
-                        Saves_manager().save.create_save(self.session_id,
-                                            defines=self.NAMESPACE["define"].defines,
-                                            position=wwl.pose-1,
-                                            label=wwl.label,
-                                            scene=scene)
-
-
-                    return_button = agui.UIFlatButton(
-                        text="Главное меню",
-                        width=300,
-                        height=50,
-                        style=STYLE_DEFAULT_BUTTON
-                    )
-                    return_button.on_click = return_to_main_menu
-                    self.settings_v_box.add(return_button)
-
-                    save_button = agui.UIFlatButton(
-                        text="Сохранить",
-                        width=200,
-                        style=STYLE_DEFAULT_BUTTON
-                    )
-                    save_button.on_click = create_save
-                    self.settings_v_box.add(save_button)
-
-                    self.settings_v_box.add(arcade.gui.UISpace(height=20))
-
-                    music_volume_label = agui.UILabel(
-                        "Музыка",
-                        text_color=arcade.color.WHITE,
-                        font_size=20,
-                        font_name=FONT_NAME
-                    )
-                    self.settings_v_box.add(music_volume_label)
-
-                    music_volume_slider = agui.UISlider(
-                        value=volumes['volume']["music"] * 100,  # начальное значение
-                        min_value=0,
-                        max_value=200,
-                        width=300,
-                        height=20
-                    )
-                    self.settings_v_box.add(music_volume_slider)
-                    self.settings_v_box.add(arcade.gui.UISpace(height=10))
-
-                    sound_volume_label = agui.UILabel(
-                        "Звуки",
-                        text_color=arcade.color.WHITE,
-                        font_size=20,
-                        font_name=FONT_NAME
-                    )
-                    self.settings_v_box.add(sound_volume_label)
-
-                    sound_volume_slider = agui.UISlider(
-                        value=volumes['volume']["sound"] * 100,  # начальное значение
-                        min_value=0,
-                        max_value=200,
-                        width=300,
-                        height=20
-                    )
-                    self.settings_v_box.add(sound_volume_slider)
-                    self.settings_v_box.add(arcade.gui.UISpace(height=10))
-
-                    voice_volume_label = agui.UILabel(
-                        "Голос",
-                        text_color=arcade.color.WHITE,
-                        font_size=20,
-                        font_name=FONT_NAME
-                    )
-                    self.settings_v_box.add(voice_volume_label)
-
-                    voice_volume_slider = agui.UISlider(
-                        value=volumes['volume']["voice"] * 100,  # начальное значение
-                        min_value=0,
-                        max_value=200,
-                        width=300,
-                        height=20
-                    )
-                    self.settings_v_box.add(voice_volume_slider)
-
-
-
-                    lps_label = agui.UILabel(
-                        "Скорость появления букв",
-                        text_color=arcade.color.WHITE,
-                        font_size=20,
-                        font_name=FONT_NAME
-                    )
-                    self.settings_v_box_1.add(lps_label)
-                    self.lps_slider = agui.UISlider(
-                        value=volumes["lps"],  # начальное значение
-                        min_value=20,
-                        max_value=110,
-                        width=300,
-                        height=20
-                    )
-                    self.settings_v_box_1.add(self.lps_slider)
-                    self.settings_v_box_1.add(arcade.gui.UISpace(height=20))
-
-                    fade_speed_label = agui.UILabel(
-                        "Скорость переходов",
-                        text_color=arcade.color.WHITE,
-                        font_size=20,
-                        font_name=FONT_NAME
-                    )
-                    self.settings_v_box_1.add(fade_speed_label)
-                    self.fade_speed_slider = agui.UISlider(
-                        value=volumes["fade_speed"],  # начальное значение
-                        min_value=-10,
-                        max_value=10,
-                        width=300,
-                        height=20
-                    )
-                    self.settings_v_box_1.add(self.fade_speed_slider)
-
-                    self.settings_h_box.add(self.settings_v_box_1)
-                    self.settings_h_box.add(self.settings_v_box)
-
-                    ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-                    ui_anchor_layout.add(child=self.settings_h_box, anchor_x="left", align_x=80)
-
-                    self.settings_manager.add(ui_anchor_layout)
-
-                create_settings_buttons()
-
-            create_settings()
-        create_widgets()
-
-        self.start_trigger: bool = True
-
-        def load_saves(session_id):
-            if session_id is None:
-                self.session_id = str(uuid.uuid4())
-            else:
-                self.session_id = session_id
-                save = Saves_manager().save.get_save(self.session_id)
-                wwl.label = save["label"]
-                wwl.pose = save["position"]
-                for i, o in save["defines"].items():
-                    self.NAMESPACE["define"].defines[i] = o
-
-                scene = save["scene"]
-
-                for i in scene["bg"]:
-                    bg_sprite = arcade.Sprite(i["path"])
-                    bg_sprite.size = tuple(i["size"])
-                    bg_sprite.position = tuple(i["pos"])
-                    self.scene.add_sprite("bg", f"bg_{i["layer"]}", bg_sprite)
-
-                for i in scene["characters"]:
-                    character_sprite = arcade.Sprite(i["path"])
-                    character_sprite.size = tuple(i["size"])
-                    character_sprite.position = tuple(i["pos"])
-                    self.scene.add_sprite("characters", i["id"], character_sprite)
-
-                if scene["music"] is not None:
-                    am.play_music(scene["music"])
-
-        load_saves(session_id)
-
-        self.actions = self.Actions(self)
-
-        print(self.session_id)
-
-    def format_text(self, text: str):
-        pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
-        text = re.split(pattern, str(text))
-        for e, i in enumerate(text):
-            if i.startswith("[") and i.endswith("]"):
-                text[e] = self.NAMESPACE.get(i.strip("[]"), "NONE")
-        text = "".join(text).replace("\\\\", "\\")
-        return text
-
-    def talk_manager(self):
-        now = wwl.get_thing()
-        res = self.talk(now)
-
-        match res:
-            case "NEXT":
-                self.talk_manager()
-            case "REPEAT":
-                # self.talk(now)
-                return None
-            case "END":
-                return None
-            case "END_text":
-                return None
-            case "CHANEL":
-                self.window.set_fullscreen(False)
-                self.window.size = (1024, 786)
-                game = GameMenu(False)
-                self.window.show_view(game)
-                init_file()
-
-    def talk(self, now):
-        global dialog_text_text, cname_text_text
-        global wait_trigger
-
-        while True:
-
-            if now is None:
-                return None
-
-            match now['action']:
-
-                case "SAY":
-                    self.dialog_texts = []
-
-                    self.start_trigger = False
-                    pon = lc.get_character(now["character"]).talk(self.format_text(now["args"]))
-
-                    return "END_text"
-
-                case "PLAY":
-                    match now["play_what"]:
-                        case "MUSIC":
-                            target = am.play_music(f"game/music/{now['path']}", now["loop"], float(now["volume"]), effect=now["effect"])
-                            self.actions.active_generators.append(target)
-
-                        case "SOUND":
-                            target = am.play_sound(f"game/sounds/{now['path']}", bool(now["loop"]), float(now["volume"]), effect=now["effect"])
-                            self.actions.active_generators.append(target)
-                    return "NEXT"
-
-                case "STOP":
-                    match now["what"]:
-                        case "MUSIC":
-                            if now["effect"] is not None:
-                                target = am.stop_music(now["effect"])
-                                self.actions.active_generators.append(target)
-                            else:
-                                am.stop_music()
-                        case "SOUND":
-                            if now["effect"] is not None:
-                                target = am.stop_sound(now["effect"])
-                                self.actions.active_generators.append(target)
-                            else:
-                                am.stop_sound()
-                    return "NEXT"
-
-                case "SHOW":
-                    sprite = lc.get_character(now["character"]).show(str(now["sprite"]))
-                    if 'at' in now:
-                        sprite.center_y = sprite.height / 2
-                        match now['at']:
-                            case "center":
-                                sprite.center_x = self.width // 2
-                            case "left":
-                                sprite.center_x = (self.width // 2) * 0.4
-                            case "right":
-                                sprite.center_x = (self.width // 2) * 1.6
-                    else:
-                        if now["character"] in self.scene["characters"]:
-                            sprite.position = self.scene["characters"][now["character"]].position
-                            sprite.scale = self.scene["characters"][now["character"]].scale
-                    self.scene.add_sprite("characters", now["sprite"].split(" ")[0], sprite)
-                    return "NEXT"
-
-                case "HIDE":
-                    self.scene.delete_sprite("characters", now["character"])
-                    return "NEXT"
-
-                case "MOVE":
-                    self.actions.start_action("move_sprite", now)
-                    return "NEXT"
-
-                case "SCENE":
-                    self.scene.clear_layer("characters")
-                    self.scene.clear_layer("bg")
-                    texture = arcade.load_texture(f"game/images/scenes/{now['filename']}")
                     sprite = arcade.Sprite(
                         texture,
-                        scale=float(now['scale']),
                         center_x=self.width * 0.5,
-                        center_y=self.height * 0.5
+                        center_y=self.height * 0.5,
+                        scale=1.0
                     )
-                    self.scene.add_sprite("bg", "bg_0", sprite)
-                    return "NEXT"
+                    self.settings_scene.add_sprite("in_game_settings", sprite)
+                    self.settings_scene["in_game_settings"].alpha = 0
 
-                case "FADE":
-                    wait_trigger.on()
-                    match now["type"]:
-                        case "FADEIN":
-                            self.actions.start_action("fadein", now)
-                        case "FADEOUT":
-                            self.actions.start_action("fadeout", now)
-                        case _:
-                            wait_trigger.off()
-                    return "NEXT"
+                    def create_settings_buttons():
+                        with open("game/data.JSON", "r", encoding="UTF-8") as data:
+                            data = json.load(data)
+                        volumes = data['options']
 
-                case "JUMP":
+                        def return_to_main_menu(event=None):
+                            for i in lc.characters.values():
+                                i.active_threads[0][0].set() # Включаем флаг stop_event, чтобы остановить речь всех персонажей
 
-                    wwl.pose = 0
-                    wwl.label = now["label"]
+                            am.stop_sound()
+                            am.stop_music()
+                            am.stop_voice()
+                            self.window.set_fullscreen(False)
+                            self.window.size = (1024, 786)
+                            game = Views.GameMenu()
+                            self.window.show_view(game)
+                            init_file()
 
-                    return "NEXT"
+                        def create_save(event=None):
+                            try:
+                                music_file = am.music.sound.file_name
+                            except FileNotFoundError:
+                                music_file = None
+                            except AttributeError:
+                                music_file = None
 
-                case "MENU":
-                    global dialog_text_text, cname_text_text
-                    wait_trigger.on()
+                            characters = [
+                                {
+                                    "id": str(i),
+                                    "path": str(o.texture.file_path),
+                                    "size": round(i.size),
+                                    "pos": o.position
+                                }
+                                for i, o in self.scene["characters"].items()
+                            ]
 
-                    dialog_text_text = [" "]
-                    cname_text_text = ""
+                            bg = [
+                                {
+                                    "layer" :  0,
+                                    "path" : str(i.texture.file_path),
+                                    "size" : round(i.size),
+                                    "pos" : i.position
+                                }
+                                for i in self.scene["bg"].values()
+                            ]
 
-                    self.show_menu(now['data'])
+                            scene = {
+                                "bg" : bg,
+                                "characters" : characters,
+                                "music" : music_file
 
-                    return "END"
+                            }
+                            Saves_manager().save.create_save(self.session_id,
+                                                defines=self.NAMESPACE["define"].defines,
+                                                position=wwl.pose-1,
+                                                label=wwl.label,
+                                                scene=scene)
 
-                case "WAIT":
-                    self.actions.start_action("wait", now)
-                    return "NEXT"
 
+                        return_button = agui.UIFlatButton(
+                            text="Главное меню",
+                            width=300,
+                            height=50,
+                            style=STYLE_DEFAULT_BUTTON
+                        )
+                        return_button.on_click = return_to_main_menu
+                        self.settings_v_box.add(return_button)
+
+                        save_button = agui.UIFlatButton(
+                            text="Сохранить",
+                            width=200,
+                            style=STYLE_DEFAULT_BUTTON
+                        )
+                        save_button.on_click = create_save
+                        self.settings_v_box.add(save_button)
+
+                        self.settings_v_box.add(arcade.gui.UISpace(height=20))
+
+                        music_volume_label = agui.UILabel(
+                            "Музыка",
+                            text_color=arcade.color.WHITE,
+                            font_size=20,
+                            font_name=FONT_NAME
+                        )
+                        self.settings_v_box.add(music_volume_label)
+
+                        music_volume_slider = agui.UISlider(
+                            value=volumes['volume']["music"] * 100,  # начальное значение
+                            min_value=0,
+                            max_value=200,
+                            width=300,
+                            height=20
+                        )
+                        self.settings_v_box.add(music_volume_slider)
+                        self.settings_v_box.add(arcade.gui.UISpace(height=10))
+
+                        sound_volume_label = agui.UILabel(
+                            "Звуки",
+                            text_color=arcade.color.WHITE,
+                            font_size=20,
+                            font_name=FONT_NAME
+                        )
+                        self.settings_v_box.add(sound_volume_label)
+
+                        sound_volume_slider = agui.UISlider(
+                            value=volumes['volume']["sound"] * 100,  # начальное значение
+                            min_value=0,
+                            max_value=200,
+                            width=300,
+                            height=20
+                        )
+                        self.settings_v_box.add(sound_volume_slider)
+                        self.settings_v_box.add(arcade.gui.UISpace(height=10))
+
+                        voice_volume_label = agui.UILabel(
+                            "Голос",
+                            text_color=arcade.color.WHITE,
+                            font_size=20,
+                            font_name=FONT_NAME
+                        )
+                        self.settings_v_box.add(voice_volume_label)
+
+                        voice_volume_slider = agui.UISlider(
+                            value=volumes['volume']["voice"] * 100,  # начальное значение
+                            min_value=0,
+                            max_value=200,
+                            width=300,
+                            height=20
+                        )
+                        self.settings_v_box.add(voice_volume_slider)
+
+
+
+                        lps_label = agui.UILabel(
+                            "Скорость появления букв",
+                            text_color=arcade.color.WHITE,
+                            font_size=20,
+                            font_name=FONT_NAME
+                        )
+                        self.settings_v_box_1.add(lps_label)
+                        self.lps_slider = agui.UISlider(
+                            value=volumes["lps"],  # начальное значение
+                            min_value=20,
+                            max_value=110,
+                            width=300,
+                            height=20
+                        )
+                        self.settings_v_box_1.add(self.lps_slider)
+                        self.settings_v_box_1.add(arcade.gui.UISpace(height=20))
+
+                        fade_speed_label = agui.UILabel(
+                            "Скорость переходов",
+                            text_color=arcade.color.WHITE,
+                            font_size=20,
+                            font_name=FONT_NAME
+                        )
+                        self.settings_v_box_1.add(fade_speed_label)
+                        self.fade_speed_slider = agui.UISlider(
+                            value=volumes["fade_speed"],  # начальное значение
+                            min_value=-10,
+                            max_value=10,
+                            width=300,
+                            height=20
+                        )
+                        self.settings_v_box_1.add(self.fade_speed_slider)
+
+                        self.settings_h_box.add(self.settings_v_box_1)
+                        self.settings_h_box.add(self.settings_v_box)
+
+                        ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
+                        ui_anchor_layout.add(child=self.settings_h_box, anchor_x="left", align_x=80)
+
+                        self.settings_manager.add(ui_anchor_layout)
+
+                    create_settings_buttons()
+
+                create_settings()
+            create_widgets()
+
+            self.start_trigger: bool = True
+
+            def load_saves(session_id):
+                if session_id is None:
+                    self.session_id = str(uuid.uuid4())
+                else:
+                    self.session_id = session_id
+                    save = Saves_manager().save.get_save(self.session_id)
+                    wwl.label = save["label"]
+                    wwl.pose = save["position"]
+                    for i, o in save["defines"].items():
+                        self.NAMESPACE["define"].defines[i] = o
+
+                    scene = save["scene"]
+
+                    for i in scene["bg"]:
+                        bg_sprite = arcade.Sprite(i["path"])
+                        bg_sprite.size = tuple(i["size"])
+                        bg_sprite.position = tuple(i["pos"])
+                        self.scene.add_sprite("bg", f"bg_{i["layer"]}", bg_sprite)
+
+                    for i in scene["characters"]:
+                        character_sprite = arcade.Sprite(i["path"])
+                        character_sprite.size = tuple(i["size"])
+                        character_sprite.position = tuple(i["pos"])
+                        self.scene.add_sprite("characters", i["id"], character_sprite)
+
+                    if scene["music"] is not None:
+                        am.play_music(scene["music"])
+
+            load_saves(session_id)
+
+            self.actions = self.Actions(self)
+
+            print(self.session_id)
+
+        def format_text(self, text: str):
+            pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
+            text = re.split(pattern, str(text))
+            for e, i in enumerate(text):
+                if i.startswith("[") and i.endswith("]"):
+                    text[e] = self.NAMESPACE.get(i.strip("[]"), "NONE")
+            text = "".join(text).replace("\\\\", "\\")
+            return text
+
+        def talk_manager(self):
+            now = wwl.get_thing()
+            res = self.talk(now)
+
+            match res:
+                case "NEXT":
+                    self.talk_manager()
+                case "REPEAT":
+                    # self.talk(now)
+                    return None
                 case "END":
+                    return None
+                case "END_text":
+                    return None
+                case "CHANEL":
+                    self.window.set_fullscreen(False)
+                    self.window.size = (1024, 786)
+                    game = Views.GameMenu(False)
+                    self.window.show_view(game)
+                    init_file()
 
-                    wwl.label = "main"
-                    wwl.pose = 0
-
-                    dialog_text_text = [" "]
-                    cname_text_text = ""
-                    return "CHANEL"
-
-
-                case "EXECUTE":
-                    exec(now["data"], self.NAMESPACE)
-                    return "NEXT"
-
-                case _:
-                    print(f"Неопознанная команда: {now}")
-
-    def on_draw(self):
-        """
-        Render the screen.
-        """
-
-        if not self.start_trigger:
-            self.clear()
-            self.scene.draw()
-            arcade.draw_sprite(self.dialog_window)
-            self.update_main_windows()
-            self.dialog_text_batch.draw()
-            self.menu_manager.draw()
-            self.settings_scene.draw()
-            self.settings_manager.draw()
-            arcade.draw_sprite(self.cursor_texture)
-
-    def show_menu(self, data):
-        global wait_trigger
-
-        def jump(label: str):
+        def talk(self, now):
+            global dialog_text_text, cname_text_text
             global wait_trigger
-            wwl.pose = 0
-            wwl.label = label
-            self.menu_manager.clear()
-            self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
-            #wait_trigger.off()
-            self.talk_manager()
 
-        wait_trigger.on()
+            while True:
 
-        for k, v in data.items():
-            button = agui.UIFlatButton(
-                text=k,
-                width=200,
-                font_name=FONT_NAME,
-                style=STYLE_DEFAULT_BUTTON
-            )
-            button.on_click = lambda event, label=v: jump(label)
-            self.menu_v_box.add(button)
+                if now is None:
+                    return None
 
-        wait_trigger.on()
+                match now['action']:
 
-        ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-        ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y")
+                    case "SAY":
+                        self.dialog_texts = []
 
-        self.menu_manager.add(ui_anchor_layout)
+                        self.start_trigger = False
+                        pon = lc.get_character(now["character"]).talk(self.format_text(now["args"]))
 
-    def show_settings(self, state: Optional[bool] = None):
-        settings = self.settings_scene["in_game_settings"]
+                        return "END_text"
 
-        if state is not None:
-            turn_on = state
-        else:
-            turn_on = settings.alpha <= 0
+                    case "PLAY":
+                        match now["play_what"]:
+                            case "MUSIC":
+                                target = am.play_music(f"game/music/{now['path']}", now["loop"], float(now["volume"]), effect=now["effect"])
+                                self.actions.active_generators.append(target)
 
-        (self.waiting_settings.on if turn_on else self.waiting_settings.off)()
-        self.settings_h_box.visible = turn_on
-        settings.alpha = 255 if turn_on else 0
+                            case "SOUND":
+                                target = am.play_sound(f"game/sounds/{now['path']}", bool(now["loop"]), float(now["volume"]), effect=now["effect"])
+                                self.actions.active_generators.append(target)
+                        return "NEXT"
 
-    def on_update(self, delta_time):
-        """
-        All the logic to move, and the game logic goes here.
-        Normally, you'll call update() on the sprite lists that
-        need it.
-        """
+                    case "STOP":
+                        match now["what"]:
+                            case "MUSIC":
+                                if now["effect"] is not None:
+                                    target = am.stop_music(now["effect"])
+                                    self.actions.active_generators.append(target)
+                                else:
+                                    am.stop_music()
+                            case "SOUND":
+                                if now["effect"] is not None:
+                                    target = am.stop_sound(now["effect"])
+                                    self.actions.active_generators.append(target)
+                                else:
+                                    am.stop_sound()
+                        return "NEXT"
 
-        self.delta_time = delta_time
-
-        self.scene.update()
-
-        self.actions.update()
-
-        if self.waiting_dialogue:
-            if not wait_trigger:
-                self.talk_manager()
-                self.waiting_dialogue.off()
-
-        self.settings_scene.update(delta_time)
-        self.menu_manager.enable()
-
-        if self.waiting_settings:
-            self.settings_manager.enable()
-        else:
-            self.settings_manager.disable()
-
-        if self.waiting_settings:
-            am.music.set_volume(round(self.settings_v_box.children[4].value / 100, 2))
-            am.sound.set_volume(round(self.settings_v_box.children[7].value / 100, 2))
-            am.voice.set_volume(round(self.settings_v_box.children[10].value / 100, 2))
-            sm.volume.set_other("lps", round(self.settings_v_box_1.children[1].value, 2))
-            sm.volume.set_other("fade_speed", round(self.settings_v_box_1.children[4].value, 2))
-
-        self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
-
-    def on_key_press(self, key, modifiers):
-        if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.waiting_settings:
-            self.waiting_dialogue.on()
-        if key == arcade.key.S:
-            self.show_settings()
-
-    def on_mouse_release(self, x, y, button, modifiers):
-        if (int(button) == 1) and not self.waiting_settings:
-            self.waiting_dialogue.on()
-
-    def update_main_windows(self):
-
-        def create_dialog_text():
-
-            def split_by_length(text, max_length):
-                if len(text) <= max_length:
-                    return [text]
-
-                parts = []
-                words = text.split(" ")
-                current_line = []
-
-                for word in words:
-                    if len(word) > max_length:
-                        if current_line:
-                            parts.append(" ".join(current_line))
-                            current_line = []
-
-                        for i in range(0, len(word), max_length):
-                            parts.append(word[i:i + max_length])
-                    else:
-                        test_line = " ".join(current_line + [word])
-                        if len(test_line) <= max_length:
-                            current_line.append(word)
+                    case "SHOW":
+                        sprite = lc.get_character(now["character"]).show(str(now["sprite"]))
+                        if 'at' in now:
+                            sprite.center_y = sprite.height / 2
+                            match now['at']:
+                                case "center":
+                                    sprite.center_x = self.width // 2
+                                case "left":
+                                    sprite.center_x = (self.width // 2) * 0.4
+                                case "right":
+                                    sprite.center_x = (self.width // 2) * 1.6
                         else:
+                            if now["character"] in self.scene["characters"]:
+                                sprite.position = self.scene["characters"][now["character"]].position
+                                sprite.scale = self.scene["characters"][now["character"]].scale
+                        self.scene.add_sprite("characters", now["sprite"].split(" ")[0], sprite)
+                        return "NEXT"
+
+                    case "HIDE":
+                        self.scene.delete_sprite("characters", now["character"])
+                        return "NEXT"
+
+                    case "MOVE":
+                        self.actions.start_action("move_sprite", now)
+                        return "NEXT"
+
+                    case "SCENE":
+                        self.scene.clear_layer("characters")
+                        self.scene.clear_layer("bg")
+                        texture = arcade.load_texture(f"game/images/scenes/{now['filename']}")
+                        sprite = arcade.Sprite(
+                            texture,
+                            scale=float(now['scale']),
+                            center_x=self.width * 0.5,
+                            center_y=self.height * 0.5
+                        )
+                        self.scene.add_sprite("bg", "bg_0", sprite)
+                        return "NEXT"
+
+                    case "FADE":
+                        wait_trigger.on()
+                        match now["type"]:
+                            case "FADEIN":
+                                self.actions.start_action("fadein", now)
+                            case "FADEOUT":
+                                self.actions.start_action("fadeout", now)
+                            case _:
+                                wait_trigger.off()
+                        return "NEXT"
+
+                    case "JUMP":
+
+                        wwl.pose = 0
+                        wwl.label = now["label"]
+
+                        return "NEXT"
+
+                    case "MENU":
+                        global dialog_text_text, cname_text_text
+                        wait_trigger.on()
+
+                        dialog_text_text = [" "]
+                        cname_text_text = ""
+
+                        self.show_menu(now['data'])
+
+                        return "END"
+
+                    case "WAIT":
+                        self.actions.start_action("wait", now)
+                        return "NEXT"
+
+                    case "END":
+
+                        wwl.label = "main"
+                        wwl.pose = 0
+
+                        dialog_text_text = [" "]
+                        cname_text_text = ""
+                        return "CHANEL"
+
+
+                    case "EXECUTE":
+                        exec(now["data"], self.NAMESPACE)
+                        return "NEXT"
+
+                    case _:
+                        print(f"Неопознанная команда: {now}")
+
+        def on_draw(self):
+            """
+            Render the screen.
+            """
+
+            if not self.start_trigger:
+                self.clear()
+                self.scene.draw()
+                arcade.draw_sprite(self.dialog_window)
+                self.update_main_windows()
+                self.dialog_text_batch.draw()
+                self.menu_manager.draw()
+                self.settings_scene.draw()
+                self.settings_manager.draw()
+            super().on_draw()
+
+        def show_menu(self, data):
+            global wait_trigger
+
+            def jump(label: str):
+                global wait_trigger
+                wwl.pose = 0
+                wwl.label = label
+                self.menu_manager.clear()
+                self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+                #wait_trigger.off()
+                self.talk_manager()
+
+            wait_trigger.on()
+
+            for k, v in data.items():
+                button = agui.UIFlatButton(
+                    text=k,
+                    width=200,
+                    font_name=FONT_NAME,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                button.on_click = lambda event, label=v: jump(label)
+                self.menu_v_box.add(button)
+
+            wait_trigger.on()
+
+            ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
+            ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y")
+
+            self.menu_manager.add(ui_anchor_layout)
+
+        def show_settings(self, state: Optional[bool] = None):
+            settings = self.settings_scene["in_game_settings"]
+
+            if state is not None:
+                turn_on = state
+            else:
+                turn_on = settings.alpha <= 0
+
+            (self.waiting_settings.on if turn_on else self.waiting_settings.off)()
+            self.settings_h_box.visible = turn_on
+            settings.alpha = 255 if turn_on else 0
+
+        def on_update(self, delta_time):
+            """
+            All the logic to move, and the game logic goes here.
+            Normally, you'll call update() on the sprite lists that
+            need it.
+            """
+
+            self.delta_time = delta_time
+
+            self.scene.update()
+
+            self.actions.update(delta_time)
+
+            if self.waiting_dialogue:
+                if not wait_trigger:
+                    self.talk_manager()
+                    self.waiting_dialogue.off()
+
+            self.settings_scene.update(delta_time)
+            self.menu_manager.enable()
+
+            if self.waiting_settings:
+                self.settings_manager.enable()
+            else:
+                self.settings_manager.disable()
+
+            if self.waiting_settings:
+                am.music.set_volume(round(self.settings_v_box.children[4].value / 100, 2))
+                am.sound.set_volume(round(self.settings_v_box.children[7].value / 100, 2))
+                am.voice.set_volume(round(self.settings_v_box.children[10].value / 100, 2))
+                sm.volume.set_other("lps", round(self.settings_v_box_1.children[1].value, 2))
+                sm.volume.set_other("fade_speed", round(self.settings_v_box_1.children[4].value, 2))
+            
+            super().on_update(delta_time)
+
+        def on_key_press(self, key, modifiers):
+            if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.waiting_settings:
+                self.waiting_dialogue.on()
+            if key == arcade.key.S:
+                self.show_settings()
+
+        def on_mouse_release(self, x, y, button, modifiers):
+            if (int(button) == 1) and not self.waiting_settings:
+                self.waiting_dialogue.on()
+
+        def update_main_windows(self):
+
+            def create_dialog_text():
+
+                def split_by_length(text, max_length):
+                    if len(text) <= max_length:
+                        return [text]
+
+                    parts = []
+                    words = text.split(" ")
+                    current_line = []
+
+                    for word in words:
+                        if len(word) > max_length:
                             if current_line:
                                 parts.append(" ".join(current_line))
-                            current_line = [word]
+                                current_line = []
 
-                if current_line:
-                    parts.append(" ".join(current_line))
+                            for i in range(0, len(word), max_length):
+                                parts.append(word[i:i + max_length])
+                        else:
+                            test_line = " ".join(current_line + [word])
+                            if len(test_line) <= max_length:
+                                current_line.append(word)
+                            else:
+                                if current_line:
+                                    parts.append(" ".join(current_line))
+                                current_line = [word]
 
-                return parts
+                    if current_line:
+                        parts.append(" ".join(current_line))
 
-
-            for i, line in enumerate(dialog_text_text):
-                for e, sline in enumerate(split_by_length(line, 60)):
-                    if text_anchor == "left":
-                        t = arcade.Text(
-                            text=sline,
-                            x=self.width * 0.18,
-                            y=(self.height * 0.2) - (i+e) * (30 + 10),
-                            font_size=30,
-                            color=dialog_text_colour,
-                            batch=self.dialog_text_batch,
-                            font_name=FONT_NAME,
-                            anchor_x=text_anchor
-                        )
-                    elif text_anchor == "center":
-                        t = arcade.Text(
-                            text=sline,
-                            x=self.width // 2,
-                            y=(self.height * 0.2) - (i + e) * (30 + 10),
-                            font_size=30,
-                            color=dialog_text_colour,
-                            batch=self.dialog_text_batch,
-                            font_name=FONT_NAME,
-                            anchor_x=text_anchor
-                        )
-                    elif text_anchor == "right":
-                        t = arcade.Text(
-                            text=sline,
-                            x=self.width * 0.82,
-                            y=(self.height * 0.2) - (i + e) * (30 + 10),
-                            font_size=30,
-                            color=dialog_text_colour,
-                            batch=self.dialog_text_batch,
-                            font_name=FONT_NAME,
-                            anchor_x=text_anchor
-                        )
-
-                    self.dialog_text_batch.draw()
-
-        def create_cname_text():
-            self.cname_text = arcade.Text(
-                cname_text_text,
-                x=self.width * 0.19,
-                y=self.height * 0.255,
-                font_size=40,
-                multiline=True,
-                width=1150,
-                color=cname_text_colour,
-                font_name=FONT_NAME
-            )
-            self.cname_text.draw()
-
-        create_dialog_text()
-        create_cname_text()
-
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
-        self.window.set_mouse_visible(False)
-
-    class Actions:
-        def __init__(self, main):
-            self.main: GameView = main
-            self.active_generators = []
-            self.talk_generator = None
-
-        def _fadein(self, now: dict):
-            global wait_trigger
-            wait_trigger.on()
-            start_time = time.time()
-            duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other(
-                "fade_speed") > 0 else 0
-
-            while True:
-
-                elapsed = time.time() - start_time
-
-                if elapsed >= duration:
-                    self.main.scene["fade"].alpha = 255
-                    wait_trigger.off()
-                    return None
-
-                progress = elapsed / duration
-                alpha = int(progress * 255)
-
-                self.main.scene["fade"].alpha = alpha
-
-                yield
-
-        def _fadeout(self, now: dict):
-            global wait_trigger
-            wait_trigger.on()
-            start_time = time.time()
-            duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other("fade_speed") > 0 else 0
-
-            while True:
-
-                elapsed = time.time() - start_time
-                if elapsed >= duration:
-                    alpha = 0
-                    wait_trigger.off()
-                    return None
-
-                progress = elapsed / duration
-                alpha = 255 - int(progress * 255)
-
-                self.main.scene["fade"].alpha = alpha
-
-                yield
-
-        def _move(self, now: dict):
-            # Хз работает ли это или нет, но вроде должно
-            sprite = self.main.scene["characters"][now["character"]]
-            while True:
-                dx = now["pos"][0] - sprite.center_x
-                dy = now["pos"][1] - sprite.center_y
-                distance = (dx ** 2 + dy ** 2) ** 0.5
-                if distance > now["speed"]:
-                    sprite.center_x += dx / distance * now["speed"]
-                    sprite.center_y += dy / distance * now["speed"]
-                else:
-                    sprite.center_x = now["pos"][0]
-                    sprite.center_y = now["pos"][1]
-                time.sleep(0.01)
-                if distance <= 0:
-                    break
-                yield
-
-        def _wait(self, now):
-            global wait_trigger
-            start_time = time.time()
-
-            wait_trigger.on()
-
-            while time.time() - start_time < now["time"]:
-                yield
-
-            wait_trigger.off()
-
-        def update(self):
-            if self.talk_generator:
-                next(self.talk_generator)
-            for gen in self.active_generators[:]:
-                try:
-                    next(gen)
-                except StopIteration:
-                    self.active_generators.remove(gen)
-                except TypeError:
-                    self.active_generators.remove(gen)
-
-        def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"], now: dict):
-            if name == "fadein":
-                self.active_generators.append(self._fadein(now))
-            elif name == "fadeout":
-                self.active_generators.append(self._fadeout(now))
-            elif name == "move_sprite":
-                self.active_generators.append(self._move(now))
-            elif name == "wait":
-                self.active_generators.append(self._wait(now))
-
-class GameMenu(arcade.View):
-    def __init__(self, show_lc: bool = True):
-        super().__init__()
-
-        self.loading_screen = arcade.Sprite("game/images/gui/JE3000_logo-export.png", 1)
-        self.loading_screen.position = (int(self.center_x), int(self.center_y))
-        self.loading_screen_fade = arcade.Sprite("game/images/gui/blackscreen.png")
-        self.loading_screen_fade.position = (int(self.center_x), int(self.center_y))
-        self.loading_screen_fade.alpha = 0
-        self.loading_screen_fade.size = (2500, 2500)
-        self.loading_screen.alpha = 0
-
-        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
-        self.window.set_mouse_visible(False)
-        self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
-
-        self.manager = agui.UIManager()
-        self.manager.disable()
-
-        self.background_color = arcade.color.WHITE
-
-        self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
-
-        self.why = arcade.Sprite("game/images/gui/what_are_you_so_afraid_of.png", center_x=self.window.width / 2, center_y=self.window.height / 2)
-        self.why.alpha = 0
-
-        self.show_main_windows()
-        self.is_loading = False
-        self.is_mouse_pressed = False
-
-        am.stop_music()
-        am.stop_voice()
-        am.stop_sound()
-
-        if show_lc:
-            self.show_ls()
+                    return parts
 
 
-    def show_ls(self):
-        self.loading_screen.alpha = 255
-        self.is_loading = True
-        self.loading_generator = self.loading()
+                for i, line in enumerate(dialog_text_text):
+                    for e, sline in enumerate(split_by_length(line, 60)):
+                        if text_anchor == "left":
+                            t = arcade.Text(
+                                text=sline,
+                                x=self.width * 0.18,
+                                y=(self.height * 0.2) - (i+e) * (30 + 10),
+                                font_size=30,
+                                color=dialog_text_colour,
+                                batch=self.dialog_text_batch,
+                                font_name=FONT_NAME,
+                                anchor_x=text_anchor
+                            )
+                        elif text_anchor == "center":
+                            t = arcade.Text(
+                                text=sline,
+                                x=self.width // 2,
+                                y=(self.height * 0.2) - (i + e) * (30 + 10),
+                                font_size=30,
+                                color=dialog_text_colour,
+                                batch=self.dialog_text_batch,
+                                font_name=FONT_NAME,
+                                anchor_x=text_anchor
+                            )
+                        elif text_anchor == "right":
+                            t = arcade.Text(
+                                text=sline,
+                                x=self.width * 0.82,
+                                y=(self.height * 0.2) - (i + e) * (30 + 10),
+                                font_size=30,
+                                color=dialog_text_colour,
+                                batch=self.dialog_text_batch,
+                                font_name=FONT_NAME,
+                                anchor_x=text_anchor
+                            )
 
-    def loading(self):
-        self.loading_screen_fade.alpha = 255
-        for i in range(0, int(250/2)):
-            if self.is_mouse_pressed:
-                self.loading_screen_fade.alpha = 0
-                break
-            self.loading_screen_fade.alpha = 255 - i*2
-            yield
-        for i in range(50):
-            yield
-        self.loading_screen_fade.alpha = 255
-        for i in range(5):
-            yield
-        self.loading_screen.alpha = 0
-        self.loading_screen_fade.alpha = 0
-        self.is_loading = False
+                        self.dialog_text_batch.draw()
 
-    def on_draw(self):
-        """
-        Render the screen.
-        """
+            def create_cname_text():
+                self.cname_text = arcade.Text(
+                    cname_text_text,
+                    x=self.width * 0.19,
+                    y=self.height * 0.255,
+                    font_size=40,
+                    multiline=True,
+                    width=1150,
+                    color=cname_text_colour,
+                    font_name=FONT_NAME
+                )
+                self.cname_text.draw()
 
-        self.clear()
-        self.manager.draw()
-        arcade.draw_sprite(self.cursor_texture)
-        arcade.draw_sprite(self.loading_screen)
-        arcade.draw_sprite(self.loading_screen_fade)
-        arcade.draw_sprite(self.why)
+            create_dialog_text()
+            create_cname_text()
 
-    def on_update(self, delta_time):
-        """
-        All the logic to move, and the game logic goes here.
-        Normally, you'll call update() on the sprite lists that
-        need it.
-        """
-        if not self.is_loading:
-            self.manager.enable()
-        else:
-            if self.loading_generator:
-                try:
-                    next(self.loading_generator)
-                except StopIteration:
-                    self.loading_generator = None
+        class Actions:
+            def __init__(self, main):
+                self.main: Views.GameView = main
+                self.active_generators = []
+                self.talk_generator = None
+
+            def _fadein(self, now: dict):
+                global wait_trigger
+                wait_trigger.on()
+                start_time = time.time()
+                duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other(
+                    "fade_speed") > 0 else 0
+
+                while True:
+
+                    elapsed = time.time() - start_time
+
+                    if elapsed >= duration:
+                        self.main.scene["fade"].alpha = 255
+                        wait_trigger.off()
+                        return None
+
+                    progress = elapsed / duration
+                    alpha = int(progress * 255)
+
+                    self.main.scene["fade"].alpha = alpha
+
+                    yield
+
+            def _fadeout(self, now: dict):
+                global wait_trigger
+                wait_trigger.on()
+                start_time = time.time()
+                duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other("fade_speed") > 0 else 0
+
+                while True:
+
+                    elapsed = time.time() - start_time
+                    if elapsed >= duration:
+                        alpha = 0
+                        wait_trigger.off()
+                        return None
+
+                    progress = elapsed / duration
+                    alpha = 255 - int(progress * 255)
+
+                    self.main.scene["fade"].alpha = alpha
+
+                    yield
+
+            def _move(self, now: dict):
+                # Хз работает ли это или нет, но вроде должно
+                sprite = self.main.scene["characters"][now["character"]]
+                while True:
+                    dx = now["pos"][0] - sprite.center_x
+                    dy = now["pos"][1] - sprite.center_y
+                    distance = (dx ** 2 + dy ** 2) ** 0.5
+                    if distance > now["speed"]:
+                        sprite.center_x += dx / distance * now["speed"]
+                        sprite.center_y += dy / distance * now["speed"]
+                    else:
+                        sprite.center_x = now["pos"][0]
+                        sprite.center_y = now["pos"][1]
+                    time.sleep(0.01)
+                    if distance <= 0:
+                        break
+                    yield
+
+            def _wait(self, now):
+                global wait_trigger
+                start_time = time.time()
+
+                wait_trigger.on()
+
+                while time.time() - start_time < now["time"]:
+                    yield
+
+                wait_trigger.off()
+
+            def update(self, delta_time: float):
+                if self.talk_generator:
+                    next(self.talk_generator)
+                for gen in self.active_generators[:]:
+                    try:
+                        next(gen)
+                    except StopIteration:
+                        self.active_generators.remove(gen)
+                    except TypeError:
+                        self.active_generators.remove(gen)
+
+            def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"], now: dict):
+                if name == "fadein":
+                    self.active_generators.append(self._fadein(now))
+                elif name == "fadeout":
+                    self.active_generators.append(self._fadeout(now))
+                elif name == "move_sprite":
+                    self.active_generators.append(self._move(now))
+                elif name == "wait":
+                    self.active_generators.append(self._wait(now))
+
+    class GameMenu(Main_template):
+        def __init__(self, show_lc: bool = True):
+            super().__init__()
+
+            self.loading_screen = arcade.Sprite("game/images/gui/JE3000_logo-export.png", 1)
+            self.loading_screen.position = (int(self.center_x), int(self.center_y))
+            self.loading_screen_fade = arcade.Sprite("game/images/gui/blackscreen.png")
+            self.loading_screen_fade.position = (int(self.center_x), int(self.center_y))
+            self.loading_screen_fade.alpha = 0
+            self.loading_screen_fade.size = (2500, 2500)
+            self.loading_screen.alpha = 0
+
+            self.manager = agui.UIManager()
             self.manager.disable()
 
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
-        self.cursor_texture.position = (x, y)
+            self.background_color = arcade.color.WHITE
 
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
-        self.is_mouse_pressed = True
+            self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
-    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
-        self.is_mouse_pressed = False
+            self.why = arcade.Sprite("game/images/gui/what_are_you_so_afraid_of.png", center_x=self.window.width / 2, center_y=self.window.height / 2)
+            self.why.alpha = 0
 
-    def on_key_press(self, key: int, modifiers: int) -> bool | None:
-        if (key == arcade.key.L and modifiers & arcade.key.MOD_SHIFT) and not self.is_loading:
-            self.why.alpha = 255
-            self.is_loading  = True
+            self.show_main_windows()
+            self.is_loading = False
+            self.is_mouse_pressed = False
 
-    def show_main_windows(self):
+            am.stop_music()
+            am.stop_voice()
+            am.stop_sound()
 
-        def create_menu_buttons():
+            if show_lc:
+                self.show_ls()
 
-            def start_game(event=None):
+
+        def show_ls(self):
+            def loading(self):
+                self.loading_screen_fade.alpha = 255
+                for i in range(0, int(250 / 2)):
+                    if self.is_mouse_pressed:
+                        self.loading_screen_fade.alpha = 0
+                        break
+                    self.loading_screen_fade.alpha = 255 - i * 2
+                    yield
+                for i in range(50):
+                    yield
+                self.loading_screen_fade.alpha = 255
+                for i in range(5):
+                    yield
+                self.loading_screen.alpha = 0
+                self.loading_screen_fade.alpha = 0
+                self.is_loading = False
+
+            self.loading_screen.alpha = 255
+            self.is_loading = True
+            self.loading_generator = loading(self)
+
+        def on_draw(self):
+            """
+            Render the screen.
+            """
+
+            self.clear()
+            self.manager.draw()
+            arcade.draw_sprite(self.loading_screen)
+            arcade.draw_sprite(self.loading_screen_fade)
+            arcade.draw_sprite(self.why)
+            super().on_draw()
+
+        def on_update(self, delta_time):
+            """
+            All the logic to move, and the game logic goes here.
+            Normally, you'll call update() on the sprite lists that
+            need it.
+            """
+            if not self.is_loading:
+                self.manager.enable()
+            else:
+                if self.loading_generator:
+                    try:
+                        next(self.loading_generator)
+                    except StopIteration:
+                        self.loading_generator = None
+                self.manager.disable()
+
+            super().on_update(delta_time)
+
+        def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
+            self.is_mouse_pressed = True
+
+        def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
+            self.is_mouse_pressed = False
+
+        def on_key_press(self, key: int, modifiers: int) -> bool | None:
+            if (key == arcade.key.L and modifiers & arcade.key.MOD_SHIFT) and not self.is_loading:
+                self.why.alpha = 255
+                self.is_loading  = True
+
+        def show_main_windows(self):
+
+            def create_menu_buttons():
+
+                def start_game(event=None):
+                    self.window.set_fullscreen(False)
+                    self.window.size = (1920, 1080)
+                    self.window.set_fullscreen(True)
+                    self.manager.disable()
+                    game = Views.GameView()
+                    self.window.show_view(game)
+
+                def open_saves(event=None):
+                    settings = Views.SaveMenu()
+                    self.window.show_view(settings)
+
+                def open_settings(event=None):
+                    settings = Views.SettingsMenu()
+                    self.window.show_view(settings)
+
+                main_lebel = agui.UILabel(
+                    GAME_NAME,
+                    text_color=arcade.color.MIDNIGHT_BLUE,
+                    font_name=FONT_NAME,
+                    align="center",
+                    width=self.window.width,
+                    y=self.window.height * 0.7,
+                    font_size=70
+                )
+                self.manager.add(main_lebel)
+
+                start_button = agui.UIFlatButton(
+                    text="Начать игру",
+                    width=200,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                start_button.on_click = start_game
+                self.v_box.add(start_button)
+
+                settings_button = agui.UIFlatButton(
+                    text="Загрузить",
+                    width=200,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                settings_button.on_click = open_saves
+                self.v_box.add(settings_button)
+
+                settings_button = agui.UIFlatButton(
+                    text="Настройки",
+                    width=200,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                settings_button.on_click = open_settings
+                self.v_box.add(settings_button)
+
+                exit_button = agui.UIFlatButton(
+                    text="Выход",
+                    width=200,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                exit_button.on_click = lambda event: arcade.exit()
+                self.v_box.add(exit_button)
+
+                ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
+                ui_anchor_layout.add(child=self.v_box, anchor_x="center_x", anchor_y="center_y")
+
+                self.manager.add(ui_anchor_layout)
+
+            create_menu_buttons()
+
+    class SaveMenu(Main_template):
+        def __init__(self):
+            super().__init__()
+
+            saves = sm.save.get_all_saves()
+            self.saves = saves + [[None]]*(20 - len(saves))
+            self.saves_len = 20
+
+            self.slider: Optional[UISliderVertical]  = None
+
+            self.manager = agui.UIManager()
+            self.manager.enable()
+
+            self.background_color = arcade.color.WHITE
+
+            self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+            self.v_box.center_x = self.window.width/2-300
+            self.manager.add(self.v_box)
+
+            self.choise = 0
+
+            self.generate_buttons()
+
+        def generate_buttons(self):
+
+            def return_to_main_menu(event=None):
+                game = Views.GameMenu(False)
+                self.window.show_view(game)
+
+            def open_save(session_id: str, event=None):
                 self.window.set_fullscreen(False)
                 self.window.size = (1920, 1080)
                 self.window.set_fullscreen(True)
                 self.manager.disable()
-                game = GameView()
-                self.window.show_view(game)
-
-            def open_saves(event=None):
-                settings = SaveMenu()
-                self.window.show_view(settings)
-
-            def open_settings(event=None):
-                settings = SettingsMenu()
-                self.window.show_view(settings)
-
-            main_lebel = agui.UILabel(
-                GAME_NAME,
-                text_color=arcade.color.MIDNIGHT_BLUE,
-                font_name=FONT_NAME,
-                align="center",
-                width=self.window.width,
-                y=self.window.height * 0.7,
-                font_size=70
-            )
-            self.manager.add(main_lebel)
-
-            start_button = agui.UIFlatButton(
-                text="Начать игру",
-                width=200,
-                style=STYLE_DEFAULT_BUTTON
-            )
-            start_button.on_click = start_game
-            self.v_box.add(start_button)
-
-            settings_button = agui.UIFlatButton(
-                text="Загрузить",
-                width=200,
-                style=STYLE_DEFAULT_BUTTON
-            )
-            settings_button.on_click = open_saves
-            self.v_box.add(settings_button)
-
-            settings_button = agui.UIFlatButton(
-                text="Настройки",
-                width=200,
-                style=STYLE_DEFAULT_BUTTON
-            )
-            settings_button.on_click = open_settings
-            self.v_box.add(settings_button)
-
-            exit_button = agui.UIFlatButton(
-                text="Выход",
-                width=200,
-                style=STYLE_DEFAULT_BUTTON
-            )
-            exit_button.on_click = lambda event: arcade.exit()
-            self.v_box.add(exit_button)
-
-            ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-            ui_anchor_layout.add(child=self.v_box, anchor_x="center_x", anchor_y="center_y")
-
-            self.manager.add(ui_anchor_layout)
-
-        create_menu_buttons()
-
-class SaveMenu(arcade.View):
-    def __init__(self):
-        super().__init__()
-        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
-        self.window.set_mouse_visible(False)
-        self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
-
-        saves = sm.save.get_all_saves()
-        self.saves = saves + [[None]]*(20 - len(saves))
-        self.saves_len = 20
-
-        self.slider: Optional[UISliderVertical]  = None
-
-        self.manager = agui.UIManager()
-        self.manager.enable()
-
-        self.background_color = arcade.color.WHITE
-
-        self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
-        self.v_box.center_x = self.window.width/2-300
-        self.manager.add(self.v_box)
-
-        self.choise = 0
-
-        self.generate_buttons()
-
-    def generate_buttons(self):
-
-        def return_to_main_menu(event=None):
-            game = GameMenu(False)
-            self.window.show_view(game)
-
-        def open_save(session_id: str, event=None):
-            self.window.set_fullscreen(False)
-            self.window.size = (1920, 1080)
-            self.window.set_fullscreen(True)
-            self.manager.disable()
-            game = GameView(session_id)
-            self.window.show_view(game)
-
-        return_button = agui.UIFlatButton(
-            text="Назад",
-            width=100,
-            height=50,
-            style=STYLE_DEFAULT_BUTTON,
-            x=10,
-            y=self.window.height-65
-        )
-        return_button.on_click = return_to_main_menu
-        self.manager.add(return_button)
-
-        for i in self.saves:
-
-            button = agui.UIFlatButton(text=f"{i[0]} <", width=700, height=200, style=STYLE_DEFAULT_BUTTON)
-
-            if i[0] is not None:
-                button.on_click = lambda event, value=i[0]: open_save(value)
-
-            self.v_box.add(button)
-            self.v_box.children[-1].disabled = True
-
-        self.slider = UISliderVertical(
-            value=1,
-            min_value=1,
-            max_value=self.saves_len,
-            width=20,
-            height=self.window.height - 50,
-            step=1
-        )
-        self.slider.center_x = self.window.width - 20
-        self.slider.center_y = self.window.height / 2
-
-        self.manager.add(self.slider)
-
-        #self.v_box.center_y = ((self.v_box.children[0].height + self.v_box._space_between) * 2) - (self.v_box.children[0].height + self.v_box._space_between) * (self.saves_len - self.slider.value)
-
-
-    def on_draw(self) -> bool | None:
-        self.clear()
-        self.manager.draw()
-        arcade.draw_sprite(self.cursor_texture)
-
-    def on_update(self, delta_time: float) -> bool | None:
-        self.v_box.center_y = self.center_y - ((self.saves_len - self.slider.value) * 220 + 100) + (220 * 10)
-        self.choise = int(self.slider.value-1)
-
-        for i in range(self.saves_len):
-            self.v_box.children[i].disabled = True if i != self.choise else False
-
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        self.cursor_texture.position = (x, y)
-
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> bool | None:
-        if (self.saves_len - self.slider.value) + scroll_y >= 0 and (self.saves_len - self.slider.value) + scroll_y < self.saves_len:
-            self.slider.value += -scroll_y
-
-class SettingsMenu(arcade.View):
-    def __init__(self):
-        super().__init__()
-
-        self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=0)
-        self.v_box_1 = arcade.gui.widgets.layout.UIBoxLayout(space_between=0)
-        self.main_h_box = arcade.gui.widgets.layout.UIBoxLayout(vertical=False, space_between=20)
-
-        self.manager = agui.UIManager()
-        self.manager.enable()
-        self.other_buttons = []
-
-        self.manager.add(self.main_h_box)
-
-        self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
-        self.window.set_mouse_visible(False)
-        self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
-
-        self.music_volume_slider: Optional[agui.UISlider] = None
-        self.sound_volume_slider: Optional[agui.UISlider] = None
-        self.voice_volume_slider: Optional[agui.UISlider] = None
-        self.lps_slider: Optional[agui.UISlider] = None
-        self.fade_speed_slider: Optional[agui.UISlider] = None
-
-        self.background_color = arcade.color.WHITE
-
-        self.show_main_windows()
-
-    def on_draw(self):
-        self.clear()
-        self.manager.draw()
-        arcade.draw_sprite(self.cursor_texture)
-
-    def on_update(self, delta_time: float) -> bool | None:
-        if self.window.visible:
-            am.music.set_volume(round(self.music_volume_slider.value / 100, 2))
-            am.sound.set_volume(round(self.sound_volume_slider.value / 100, 2))
-            am.voice.set_volume(round(self.voice_volume_slider.value / 100, 2))
-            sm.volume.set_other("lps", round(self.lps_slider.value, 2))
-            sm.volume.set_other("fade_speed", round(self.fade_speed_slider.value, 2))
-
-    def show_main_windows(self):
-
-        def create_menu_buttons():
-            with open("game/data.JSON", "r", encoding="UTF-8") as data:
-                data = json.load(data)
-            volumes = data['options']
-
-            def return_to_main_menu(event=None):
-                game = GameMenu(False)
+                game = Views.GameView(session_id)
                 self.window.show_view(game)
 
             return_button = agui.UIFlatButton(
                 text="Назад",
-                width=300,
+                width=100,
                 height=50,
-                style=STYLE_DEFAULT_BUTTON
+                style=STYLE_DEFAULT_BUTTON,
+                x=10,
+                y=self.window.height-65
             )
             return_button.on_click = return_to_main_menu
-            return_button.center_x = self.window.center_x
-            return_button.center_y = self.window.height * 0.7
             self.manager.add(return_button)
-            self.manager.add(arcade.gui.UISpace(height=40))
 
-            music_volume_label = agui.UILabel(
-                "Музыка",
-                text_color=arcade.color.BLACK,
-                font_name=FONT_NAME
+            for i in self.saves:
+
+                button = agui.UIFlatButton(text=f"{i[0]} <", width=700, height=200, style=STYLE_DEFAULT_BUTTON)
+
+                if i[0] is not None:
+                    button.on_click = lambda event, value=i[0]: open_save(value)
+
+                self.v_box.add(button)
+                self.v_box.children[-1].disabled = True
+
+            self.slider = UISliderVertical(
+                value=1,
+                min_value=1,
+                max_value=self.saves_len,
+                width=20,
+                height=self.window.height - 50,
+                step=1
             )
-            self.v_box.add(music_volume_label)
+            self.slider.center_x = self.window.width - 20
+            self.slider.center_y = self.window.height / 2
 
-            self.music_volume_slider = agui.UISlider(
-                value=volumes['volume']["music"]*100,  # начальное значение
-                min_value=0,
-                max_value=200,
-                width=300,
-                height=20
-            )
-            self.v_box.add(self.music_volume_slider)
-            self.v_box.add(arcade.gui.UISpace(height=20))
+            self.manager.add(self.slider)
 
-            sound_volume_label = agui.UILabel(
-                "Звуки",
-                text_color=arcade.color.BLACK,
-                font_name=FONT_NAME
-            )
-            self.v_box.add(sound_volume_label)
-
-            self.sound_volume_slider = agui.UISlider(
-                value=volumes['volume']["sound"]*100,  # начальное значение
-                min_value=0,
-                max_value=200,
-                width=300,
-                height=20
-            )
-            self.v_box.add(self.sound_volume_slider)
-            self.v_box.add(arcade.gui.UISpace(height=20))
-
-            voice_volume_label = agui.UILabel(
-                "Голос",
-                text_color=arcade.color.BLACK,
-                font_name=FONT_NAME
-            )
-            self.v_box.add(voice_volume_label)
-
-            self.voice_volume_slider = agui.UISlider(
-                value=volumes['volume']["voice"]*100,  # начальное значение
-                min_value=0,
-                max_value=200,
-                width=300,
-                height=20
-            )
-            self.v_box.add(self.voice_volume_slider)
-            self.v_box.add(arcade.gui.UISpace(height=20))
+            #self.v_box.center_y = ((self.v_box.children[0].height + self.v_box._space_between) * 2) - (self.v_box.children[0].height + self.v_box._space_between) * (self.saves_len - self.slider.value)
 
 
+        def on_draw(self) -> bool | None:
+            self.clear()
+            self.manager.draw()
+            super().on_draw()
 
-            self.lps_slider = agui.UISlider(
-                value=volumes["lps"],  # начальное значение
-                min_value=20,
-                max_value=110,
-                width=300,
-                height=20
-            )
-            self.v_box_1.add(self.lps_slider)
-            lps_label = agui.UILabel(
-                "Скорость появления букв",
-                text_color=arcade.color.BLACK,
-                font_name=FONT_NAME
-            )
-            self.v_box_1.add(lps_label)
-            self.v_box_1.add(arcade.gui.UISpace(height=20))
+        def on_update(self, delta_time: float) -> bool | None:
+            self.v_box.center_y = self.center_y - ((self.saves_len - self.slider.value) * 220 + 100) + (220 * 10)
+            self.choise = int(self.slider.value-1)
 
-            self.fade_speed_slider = agui.UISlider(
-                value=volumes["fade_speed"],  # начальное значение
-                min_value=-10,
-                max_value=10,
-                width=300,
-                height=20
-            )
-            self.v_box_1.add(self.fade_speed_slider)
-            fade_speed_label = agui.UILabel(
-                "Скорость переходов",
-                text_color=arcade.color.BLACK,
-                font_name=FONT_NAME
-            )
-            self.v_box_1.add(fade_speed_label)
+            for i in range(self.saves_len):
+                self.v_box.children[i].disabled = True if i != self.choise else False
+            super().on_update(delta_time)
 
-            self.main_h_box.add(self.v_box_1)
-            self.main_h_box.add(self.v_box)
-            ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-            ui_anchor_layout.add(child=self.main_h_box, anchor_x="center_x", anchor_y="center_y")
+        def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> bool | None:
+            if (self.saves_len - self.slider.value) + scroll_y >= 0 and (self.saves_len - self.slider.value) + scroll_y < self.saves_len:
+                self.slider.value += -scroll_y
 
-            self.manager.add(ui_anchor_layout)
+    class SettingsMenu(Main_template):
+        def __init__(self):
+            super().__init__()
 
-        create_menu_buttons()
+            self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=0)
+            self.v_box_1 = arcade.gui.widgets.layout.UIBoxLayout(space_between=0)
+            self.main_h_box = arcade.gui.widgets.layout.UIBoxLayout(vertical=False, space_between=20)
 
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> EVENT_HANDLE_STATE:
-        self.cursor_texture.position = (x, y)
-        self.window.set_mouse_visible(False)
+            self.manager = agui.UIManager()
+            self.manager.enable()
+            self.other_buttons = []
+
+            self.manager.add(self.main_h_box)
+
+            self.music_volume_slider: Optional[agui.UISlider] = None
+            self.sound_volume_slider: Optional[agui.UISlider] = None
+            self.voice_volume_slider: Optional[agui.UISlider] = None
+            self.lps_slider: Optional[agui.UISlider] = None
+            self.fade_speed_slider: Optional[agui.UISlider] = None
+
+            self.background_color = arcade.color.WHITE
+
+            self.show_main_windows()
+
+        def on_draw(self):
+            self.clear()
+            self.manager.draw()
+            super().on_draw()
+
+        def on_update(self, delta_time: float) -> bool | None:
+            if self.window.visible:
+                am.music.set_volume(round(self.music_volume_slider.value / 100, 2))
+                am.sound.set_volume(round(self.sound_volume_slider.value / 100, 2))
+                am.voice.set_volume(round(self.voice_volume_slider.value / 100, 2))
+                sm.volume.set_other("lps", round(self.lps_slider.value, 2))
+                sm.volume.set_other("fade_speed", round(self.fade_speed_slider.value, 2))
+            super().on_update(delta_time)
+
+        def show_main_windows(self):
+
+            def create_menu_buttons():
+                with open("game/data.JSON", "r", encoding="UTF-8") as data:
+                    data = json.load(data)
+                volumes = data['options']
+
+                def return_to_main_menu(event=None):
+                    game = Views.GameMenu(False)
+                    self.window.show_view(game)
+
+                return_button = agui.UIFlatButton(
+                    text="Назад",
+                    width=300,
+                    height=50,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                return_button.on_click = return_to_main_menu
+                return_button.center_x = self.window.center_x
+                return_button.center_y = self.window.height * 0.7
+                self.manager.add(return_button)
+                self.manager.add(arcade.gui.UISpace(height=40))
+
+                music_volume_label = agui.UILabel(
+                    "Музыка",
+                    text_color=arcade.color.BLACK,
+                    font_name=FONT_NAME
+                )
+                self.v_box.add(music_volume_label)
+
+                self.music_volume_slider = agui.UISlider(
+                    value=volumes['volume']["music"]*100,  # начальное значение
+                    min_value=0,
+                    max_value=200,
+                    width=300,
+                    height=20
+                )
+                self.v_box.add(self.music_volume_slider)
+                self.v_box.add(arcade.gui.UISpace(height=20))
+
+                sound_volume_label = agui.UILabel(
+                    "Звуки",
+                    text_color=arcade.color.BLACK,
+                    font_name=FONT_NAME
+                )
+                self.v_box.add(sound_volume_label)
+
+                self.sound_volume_slider = agui.UISlider(
+                    value=volumes['volume']["sound"]*100,  # начальное значение
+                    min_value=0,
+                    max_value=200,
+                    width=300,
+                    height=20
+                )
+                self.v_box.add(self.sound_volume_slider)
+                self.v_box.add(arcade.gui.UISpace(height=20))
+
+                voice_volume_label = agui.UILabel(
+                    "Голос",
+                    text_color=arcade.color.BLACK,
+                    font_name=FONT_NAME
+                )
+                self.v_box.add(voice_volume_label)
+
+                self.voice_volume_slider = agui.UISlider(
+                    value=volumes['volume']["voice"]*100,  # начальное значение
+                    min_value=0,
+                    max_value=200,
+                    width=300,
+                    height=20
+                )
+                self.v_box.add(self.voice_volume_slider)
+                self.v_box.add(arcade.gui.UISpace(height=20))
+
+
+
+                self.lps_slider = agui.UISlider(
+                    value=volumes["lps"],  # начальное значение
+                    min_value=20,
+                    max_value=110,
+                    width=300,
+                    height=20
+                )
+                self.v_box_1.add(self.lps_slider)
+                lps_label = agui.UILabel(
+                    "Скорость появления букв",
+                    text_color=arcade.color.BLACK,
+                    font_name=FONT_NAME
+                )
+                self.v_box_1.add(lps_label)
+                self.v_box_1.add(arcade.gui.UISpace(height=20))
+
+                self.fade_speed_slider = agui.UISlider(
+                    value=volumes["fade_speed"],  # начальное значение
+                    min_value=-10,
+                    max_value=10,
+                    width=300,
+                    height=20
+                )
+                self.v_box_1.add(self.fade_speed_slider)
+                fade_speed_label = agui.UILabel(
+                    "Скорость переходов",
+                    text_color=arcade.color.BLACK,
+                    font_name=FONT_NAME
+                )
+                self.v_box_1.add(fade_speed_label)
+
+                self.main_h_box.add(self.v_box_1)
+                self.main_h_box.add(self.v_box)
+                ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
+                ui_anchor_layout.add(child=self.main_h_box, anchor_x="center_x", anchor_y="center_y")
+
+                self.manager.add(ui_anchor_layout)
+
+            create_menu_buttons()
 
 
 
