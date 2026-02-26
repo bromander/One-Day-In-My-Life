@@ -8,6 +8,7 @@ import engine
 from engine.main import Views, init_file
 
 WINDOW_TITLE = f"Game name"
+engine.main.GAME_NAME = "Game Name"
 
 def main():
 

@@ -83,7 +83,7 @@ STYLE_DEFAULT_BUTTON = {
 
 wait_trigger = Waiter()
 
-GAME_NAME = "Game name"
+GAME_NAME = ""
 
 dialog_text_text: list[str] = []
 cname_text_text = ""
@@ -103,13 +103,54 @@ class Views:
             self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
             self.window.background_color = arcade.color.WHITE
             self.background_color = arcade.color.WHITE
-
+            self.fps = {
+                'window': [],
+                'last_print_time': time.time(),
+                'avg_fps': 0.0,
+                'min_fps': 0.0,
+                'max_fps': 0.0,
+                'label': arcade.Text(
+                    "FPS: Avg=0, Min=0, Max=0",
+                    x=10,
+                    y=self.window.height - 10,
+                    color=arcade.color.ARCADE_GREEN,
+                    font_size=14,
+                    anchor_x="left",
+                    anchor_y="top",
+                )
+            }
         def on_update(self, delta_time: float) -> bool | None:
             self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
             self.window.set_mouse_visible(False)
 
-        def  on_draw(self) -> bool | None:
+            if sm.volume.get_other("show_fps"):
+                current_fps = 1.0 / delta_time if delta_time > 0 else 0
+
+                self.fps['window'].append(current_fps)
+                if len(self.fps['window']) > 60:
+                    self.fps['window'].pop(0)
+
+                if time.time() - self.fps['last_print_time'] >= 1.0:
+                    self.fps['avg_fps'] = sum(self.fps['window']) / len(self.fps['window'])
+                    self.fps['min_fps'] = min(self.fps['window'])
+                    self.fps['max_fps'] = max(self.fps['window'])
+
+                    self.fps['label'].text = f"FPS: Avg={int(self.fps['avg_fps'])}, Min={int(self.fps['min_fps'])}, Max={int(self.fps['max_fps'])}"
+
+                    self.fps['last_print_time'] = time.time()
+
+
+        def on_draw(self) -> bool | None:
             arcade.draw_sprite(self.cursor_texture)
+            if sm.volume.get_other("show_fps"):
+                arcade.draw_lrbt_rectangle_filled(
+                    left=5,
+                    right=250,
+                    bottom=self.window.height - 35,
+                    top=self.window.height - 10,
+                    color=(0, 0, 0, 200)
+                )
+                self.fps['label'].draw()
 
     class GameView(Main_template):
 
@@ -919,18 +960,23 @@ class Views:
             def loading(self):
                 self.loading_screen_fade.alpha = 255
                 for i in range(0, int(250 / 2)):
+                    if random.random() > 0.9:
+                        continue
                     if self.is_mouse_pressed:
                         self.loading_screen_fade.alpha = 0
                         break
                     self.loading_screen_fade.alpha = 255 - i * 2
                     yield
-                for i in range(50):
+                for i in range(20, 50):
                     yield
-                self.loading_screen_fade.alpha = 255
-                for i in range(5):
-                    yield
-                self.loading_screen.alpha = 0
                 self.loading_screen_fade.alpha = 0
+                for i in range(random.randint(1, 2)):
+                    self.loading_screen_fade.alpha = 255
+                    for i in range(random.randint(1, 3)):
+                        yield
+                    self.loading_screen.alpha = 0
+                    self.loading_screen_fade.alpha = 0
+                    yield
                 self.is_loading = False
 
             self.loading_screen.alpha = 255
@@ -1192,9 +1238,19 @@ class Views:
                 )
                 return_button.on_click = return_to_main_menu
                 return_button.center_x = self.window.center_x
-                return_button.center_y = self.window.height * 0.7
+                return_button.center_y = self.window.height * 0.8
                 self.manager.add(return_button)
-                self.manager.add(arcade.gui.UISpace(height=40))
+
+                FPS_check_box = agui.UIFlatButton(
+                    text="Счтчик FPS",
+                    width=300,
+                    height=50,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                FPS_check_box.on_click = lambda event=None: sm.volume.set_other("show_fps", not sm.volume.get_other("show_fps"))
+                FPS_check_box.center_x = self.window.center_x
+                FPS_check_box.center_y = self.window.height * 0.7
+                self.manager.add(FPS_check_box)
 
                 music_volume_label = agui.UILabel(
                     "Музыка",

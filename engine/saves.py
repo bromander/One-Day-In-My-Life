@@ -15,7 +15,8 @@ class Saves_manager:
                             "voice": 1.0
                         },
                         "lps" : 60,
-                        "fade_speed" : 0
+                        "fade_speed" : 0,
+                        "show_fps" : False
                     }
                 }
                 json.dump(data, file, indent=4, ensure_ascii=False)
