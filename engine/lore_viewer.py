@@ -1,6 +1,7 @@
 import os
 import time
 import re
+from typing import Optional
 
 
 class Wwl:
@@ -170,14 +171,17 @@ class Wwl:
 
         return label
 
-    def get_thing(self, pos:int = 1, edit_main: bool = True):
-        if len(self._get_lore())-1 < self.pose:
-            self.pose = 0
-            return None
-        lore = self._get_lore()[self.pose]
+    def get_thing(self, pos_offset: Optional[int] = None, edit_main: bool = True):
         if edit_main:
-            self.pose += pos
-        return lore
+            if len(self._get_lore()) - 1 < self.pose:
+                self.pose = 0
+                return None
+            lore = self._get_lore()[self.pose]
+            self.pose += 1
+            return lore
+        else:
+            lore = self._get_lore()[self.pose if pos_offset is None else self.pose + pos_offset]
+            return lore
 
 
 if __name__ == "__main__":

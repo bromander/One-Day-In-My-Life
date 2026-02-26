@@ -5,7 +5,6 @@ from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
 from typing import Optional, Literal
-import threading
 import time
 import re
 import os
@@ -102,6 +101,8 @@ class Views:
         def __init__(self):
             super().__init__()
             self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
+            self.window.background_color = arcade.color.WHITE
+            self.background_color = arcade.color.WHITE
 
         def on_update(self, delta_time: float) -> bool | None:
             self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
@@ -129,8 +130,6 @@ class Views:
             self.settings_h_box.visible = False
 
             self.delta_time = 0.0
-
-            self.background_color = arcade.color.WHITE
 
             self.dialog_window: Optional[arcade.Sprite] = None
             self.dialog_text_batch = Batch()
@@ -190,8 +189,7 @@ class Views:
                         volumes = data['options']
 
                         def return_to_main_menu(event=None):
-                            for i in lc.characters.values():
-                                i.active_threads[0][0].set() # Включаем флаг stop_event, чтобы остановить речь всех персонажей
+                            self.actions.active_generators.clear()
 
                             am.stop_sound()
                             am.stop_music()
@@ -431,6 +429,8 @@ class Views:
 
         def talk(self, now):
             global dialog_text_text, cname_text_text
+            global cname_text_colour, dialog_text_colour
+            global text_anchor
             global wait_trigger
 
             while True:
@@ -441,10 +441,33 @@ class Views:
                 match now['action']:
 
                     case "SAY":
+                        def format_dialogue(text: str):
+                            text = re.sub(r'\{[^}]*\}', '', text)
+                            text = text.replace(r'\n ', '\n')
+                            return text.split('\n')
+
                         self.dialog_texts = []
 
                         self.start_trigger = False
                         pon = lc.get_character(now["character"]).talk(self.format_text(now["args"]))
+
+                        if self.actions.talk_generator is not None:
+                            self.actions.talk_generator = None
+                            i = -2
+                            while True:
+                                nowe = wwl.get_thing(pos_offset = i, edit_main=False)
+                                if nowe['action'] == 'SAY':
+                                    wwl.pose += (i + 2)
+                                    break
+                                else:
+                                    i -= 1
+                            dialog_text_text = format_dialogue(nowe['args'])
+                            cname_text_text = lc.get_character(nowe['character']).c_name
+                            cname_text_colour = lc.get_character(nowe['character']).name_colour
+                            dialog_text_colour = lc.get_character(nowe['character']).colour
+                            text_anchor = lc.get_character(nowe['character']).text_anch
+                        else:
+                            self.actions.talk_generator = pon
 
                         return "END_text"
 
@@ -533,7 +556,6 @@ class Views:
                         return "NEXT"
 
                     case "MENU":
-                        global dialog_text_text, cname_text_text
                         wait_trigger.on()
 
                         dialog_text_text = [" "]
@@ -838,7 +860,11 @@ class Views:
 
             def update(self, delta_time: float):
                 if self.talk_generator:
-                    next(self.talk_generator)
+                    try:
+                        next(self.talk_generator)
+                    except StopIteration:
+                        self.talk_generator = None
+
                 for gen in self.active_generators[:]:
                     try:
                         next(gen)
@@ -871,8 +897,6 @@ class Views:
 
             self.manager = agui.UIManager()
             self.manager.disable()
-
-            self.background_color = arcade.color.WHITE
 
             self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
@@ -1037,8 +1061,6 @@ class Views:
             self.manager = agui.UIManager()
             self.manager.enable()
 
-            self.background_color = arcade.color.WHITE
-
             self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
             self.v_box.center_x = self.window.width/2-300
             self.manager.add(self.v_box)
@@ -1134,8 +1156,6 @@ class Views:
             self.voice_volume_slider: Optional[agui.UISlider] = None
             self.lps_slider: Optional[agui.UISlider] = None
             self.fade_speed_slider: Optional[agui.UISlider] = None
-
-            self.background_color = arcade.color.WHITE
 
             self.show_main_windows()
 
@@ -1272,7 +1292,6 @@ class Views:
 
 
 class Character():
-    active_threads = []
 
     def __init__(self, name: str, char_id: Optional[str] = None, colour: str = "", name_colour: str = "", c_scale: float = 1.0, text_anch: str = "left", lps: int = 60):
         def hex_to_rgb(hex_color: str):
@@ -1370,15 +1389,8 @@ class Character():
 
         self.action = None
 
-        for stop_event, thread in Character.active_threads:
-            stop_event.set()
-            thread.join()
-
         dialog_text_text = dialog_text_text_alt.copy()
         cname_text_text = ""
-
-
-        stop_event = threading.Event()
 
         def _talk():
             global dialog_text_text, cname_text_text
@@ -1406,10 +1418,6 @@ class Character():
 
                         cname_text_text = self.c_name
 
-                        if stop_event.is_set():
-                            self.action = None
-                            return False
-
                         if not char.startswith("{") and not str(char).endswith("}"):
                             if char != r"\n ":
                                 _text.append(char)
@@ -1432,41 +1440,45 @@ class Character():
 
                         if char == ".":
                             if not fast:
-                                time.sleep(0.1)
+                                old_time = time.time()
+                                while time.time() < old_time + 0.1:
+                                    yield
+
                         elif char == ",":
                             if not fast:
-                                time.sleep(0.05)
+                                old_time = time.time()
+                                while time.time() < old_time + 0.05:
+                                    yield
                         elif char.startswith("{") and str(char).endswith("}"):
                             char = char[1:][:-1]
 
                             if char.startswith("w"):
                                 i -= 1
-                                time.sleep(float(char.split("=")[-1]))
+                                old_time = time.time()
+                                while time.time() < old_time + float(char.split("=")[-1]):
+                                    yield
                             if char.startswith("f"):
                                 i -= 1
                                 fast = True
 
-                        if stop_event.is_set():
-                            self.action = None
-                            return False
-
                         if not fast:
-                            time.sleep(1 / self.lps)
+                            old_time = time.time()
+                            while time.time() < old_time + 1 / self.lps:
+                                yield
                     self.action = None
-                    return False
+                    return None
                 else:
                     if not fast:
-                        time.sleep(1 / self.lps)
-                    continue
+                        old_time = time.time()
+                        while time.time() < old_time + 1 / self.lps:
+                            yield
+                    yield
 
-        thread = threading.Thread(target=_talk)
-        Character.active_threads = [(stop_event, thread)]
-        thread.start()
+        return _talk()
 
     def show(self, sprite: str, scale: Optional[int] = None) -> arcade.Sprite:
         if scale is None:
             scale = self.c_scale
-        print(self.sprites)
         now_sprite = self.sprites[sprite]
         now_sprite.scale = scale
         return now_sprite
@@ -1479,7 +1491,7 @@ class ListCharacters:
             "sj": Character("ГлупоДжек", "sj", name_colour="#D1D0CF", c_scale=0.5, colour="#D4D4D4"),
             "narr" : Character(" ", None, text_anch="center")
         }
-    def get_character(self, char_id: str):
+    def get_character(self, char_id: str) -> Character:
         return self.characters[char_id]
 
 
