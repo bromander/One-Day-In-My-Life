@@ -1,10 +1,12 @@
+import pathlib
 import arcade
 import pyglet
 from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
-from typing import Optional, Literal
+from typing import Optional, Literal, Tuple, Dict
+import types
 import time
 import re
 import os
@@ -21,33 +23,6 @@ from saves import Saves_manager
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
-
-class Persistent:
-    def __setattr__(self, name, value):
-        Saves_manager().persistent.set_persistent(name, value)
-        super().__setattr__(name, value)
-
-    def __getattribute__(self, item):
-        super().__setattr__(item, Saves_manager().persistent.get_persistent(item))
-        return Saves_manager().persistent.get_persistent(item)
-
-class Define:
-    def __init__(self):
-        object.__setattr__(self, 'defines', {})
-
-    def __setattr__(self, name, value):
-        defines = object.__getattribute__(self, 'defines')
-        defines[name] = value
-        object.__setattr__(self, name, value)
-
-    def __getattribute__(self, name):
-        if name == 'defines':
-            return object.__getattribute__(self, 'defines')
-        try:
-            return object.__getattribute__(self, name)
-        except AttributeError:
-            defines = object.__getattribute__(self, 'defines')
-            return defines.get(name, {})
 
 
 text_anchor = "left"
@@ -91,11 +66,186 @@ cname_text_text = ""
 cname_text_colour = arcade.color.BLACK
 dialog_text_colour = arcade.color.BLACK
 
-
 class Views:
     def init(self):
         return self.GameMenu, self.SettingsMenu, self.SaveMenu, self.GameView
 
+    class Namespace:
+        def __init__(self, game_view):
+            self.Game_view = game_view
+            self.NAMESPACE = {
+                "Persistent": self.Persistent(),
+                "Define": self.Define(),
+                "Scene": self.Scene(game_view),
+                "Audio" : self.Audio(game_view),
+                "Lore" : self.Lore(game_view),
+                "wait" : self.wait
+            }
+
+        def __getitem__(self, item):
+            return self.NAMESPACE[item]
+
+        def execute(self, command: str):
+            exec(command, self.NAMESPACE)
+
+        def get(self, key: str, default: any = None):
+            return self.NAMESPACE.get(key, default)
+
+        class Persistent:
+
+            def __setattr__(self, name, value):
+                Saves_manager().persistent.set_persistent(name, value)
+                super().__setattr__(name, value)
+
+            def __getattribute__(self, item):
+                super().__setattr__(item, Saves_manager().persistent.get_persistent(item))
+                return Saves_manager().persistent.get_persistent(item)
+
+        class Define:
+            def __init__(self):
+                object.__setattr__(self, 'defines', {})
+
+            def __setattr__(self, name, value):
+                defines = object.__getattribute__(self, 'defines')
+                defines[name] = value
+                object.__setattr__(self, name, value)
+
+            def __getattribute__(self, name):
+                if name == 'defines':
+                    return object.__getattribute__(self, 'defines')
+                try:
+                    return object.__getattribute__(self, name)
+                except AttributeError:
+                    defines = object.__getattribute__(self, 'defines')
+                    return defines.get(name, {})
+
+        class Scene:
+            def __init__(self, Game_view):
+                self.Game_view = Game_view
+
+            def show_sprite(self, character: str, at: Optional[Tuple[str, tuple]] = None, stream: Literal["consistently", "together"] = "consistently"):
+                char_id = character.split(" ")[0]
+                sprite = lc.get_character(char_id).show(character)
+                if at is not None:
+                    sprite.center_y = sprite.height / 2
+                    match at:
+                        case "center":
+                            sprite.center_x = self.Game_view.width // 2
+                        case "left":
+                            sprite.center_x = (self.Game_view.width // 2) * 0.4
+                        case "right":
+                            sprite.center_x = (self.Game_view.width // 2) * 1.6
+                        case _ if type(at) is tuple:
+
+                            if at[0] == -1:
+                                at = (self.Game_view.scene["characters"][char_id].position[0] / self.Game_view.width, at[0])
+                            if at[1] == -1:
+                                at = (at[0], self.Game_view.scene["characters"][char_id].position[1] / self.Game_view.height)
+
+                            sprite.center_x = self.Game_view.width * at[0]
+                            sprite.center_y = self.Game_view.height * at[1]
+                else:
+                    if char_id in self.Game_view.scene["characters"]:
+                        sprite.position = self.Game_view.scene["characters"][char_id].position
+                        sprite.scale = self.Game_view.scene["characters"][char_id].scale
+
+                def target():
+                    self.Game_view.scene.add_sprite("characters", character.split(" ")[0], sprite)
+                    yield
+
+                if stream == "consistently":
+                    self.Game_view.actions.active_generators_consistently.append(target())
+                elif stream == "together":
+                    self.Game_view.actions.active_generators_together.append(target())
+
+            def hide_sprite(self, character: str, stream: Literal["consistently", "together"] = "consistently"):
+                def target():
+                    self.Game_view.scene.delete_sprite("characters", character)
+                    yield
+
+                if stream == "consistently":
+                    self.Game_view.actions.active_generators_consistently.append(target())
+                elif stream == "together":
+                    self.Game_view.actions.active_generators_together.append(target())
+
+            def set_bg(self, file_name: str, scale: float, layer: int = 0):
+                self.Game_view.scene.clear_layer("characters")
+                self.Game_view.scene.clear_layer("bg")
+                texture = arcade.load_texture(f"game/images/scenes/{file_name}")
+                sprite = arcade.Sprite(
+                    texture,
+                    scale=scale,
+                    center_x=self.Game_view.width * 0.5,
+                    center_y=self.Game_view.height * 0.5
+                )
+                self.Game_view.scene.add_sprite("bg", f"bg_{layer}", sprite)
+
+            def move(self, character: str, position: tuple, speed: float, stream: Literal["consistently", "together"] = "consistently"):
+                now = {"character" : character, "pos" : position, "speed" : speed}
+                self.Game_view.actions.start_action("move_sprite", now, stream=stream)
+
+            def fade(self, type: Literal["fadein", "fadeout"], duration: float, stream: Literal["consistently", "together"] = "consistently"):
+                global wait_trigger
+                wait_trigger.on()
+                match type:
+                    case "fadein":
+                        self.Game_view.actions.start_action("fadein", {"time" : duration}, stream=stream)
+                    case "fadeout":
+                        self.Game_view.actions.start_action("fadeout", {"time" : duration}, stream=stream)
+                    case _:
+                        wait_trigger.off()
+
+            def show_menu(self, buttons: dict):
+                '''
+                Пример параметра buttons:
+                {
+                    "Кнопка1" : "Лейбл1",
+                    "Кнопка2" : "Лейбл3",
+                    "Сдохнуть" : "Лейбл_сдохнуть"
+                }
+                '''
+                global dialog_text_text, cname_text_text
+                wait_trigger.on()
+
+                dialog_text_text = [" "]
+                cname_text_text = ""
+
+                self.Game_view.show_menu(buttons)
+
+        class Lore:
+            def __init__(self, Game_view):
+                self.Game_view = Game_view
+
+            def jump(self, label: str, position: int=0):
+                wwl.pose = position
+                wwl.label = label
+
+        class Audio:
+            def __init__(self, Game_view):
+                self.Game_view = Game_view
+
+            def play(self, channel: Literal["music", "sound"], file_name: str, volume: float=1.0, loop: Optional[bool] = None, effect: Optional[str] = None):
+                match channel:
+                    case "music":
+                        loop = True if loop is None else loop
+                        target = am.play_music(f"game/music/{file_name}", loop, volume, effect)
+                        self.Game_view.actions.active_generators_together.append(target)
+                    case "sound":
+                        loop = False if loop is None else loop
+                        target = am.play_sound(f"game/sounds/{file_name}", loop, volume, effect)
+                        self.Game_view.actions.active_generators_together.append(target)
+
+            def stop(self, channel: Literal["music", "sound"], effect: Optional[str] = None):
+                match channel:
+                    case "music":
+                        self.Game_view.actions.active_generators_together.append(am.stop_music(effect))
+                    case "sound":
+                        self.Game_view.actions.active_generators_together.append(am.stop_sound(effect))
+
+        def wait(self, duration: float):
+            global wait_trigger
+            wait_trigger.on()
+            self.Game_view.actions.start_action("wait", {"time" : duration})
 
     class Main_template(arcade.View):
         def __init__(self):
@@ -157,10 +307,6 @@ class Views:
         def __init__(self, session_id: Optional[str] = None) -> None:
             super().__init__()
 
-            self.NAMESPACE = {
-                "persistent": Persistent(),
-                "define": Define()
-            }
             self.settings_scene = arcade.Scene()
 
             self.settings_manager = agui.UIManager()
@@ -230,7 +376,8 @@ class Views:
                         volumes = data['options']
 
                         def return_to_main_menu(event=None):
-                            self.actions.active_generators.clear()
+                            self.actions.active_generators_consistently.clear()
+                            self.actions.active_generators_together.clear()
 
                             am.stop_sound()
                             am.stop_music()
@@ -438,6 +585,8 @@ class Views:
 
             print(self.session_id)
 
+            self.NAMESPACE = Views.Namespace(self)
+
         def format_text(self, text: str):
             pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
             text = re.split(pattern, str(text))
@@ -447,15 +596,14 @@ class Views:
             text = "".join(text).replace("\\\\", "\\")
             return text
 
-        def talk_manager(self):
-            now = wwl.get_thing()
+        def talk_manager(self, pos_offset: Optional[int] = None):
+            now = wwl.get_thing(pos_offset)
             res = self.talk(now)
 
             match res:
                 case "NEXT":
                     self.talk_manager()
                 case "REPEAT":
-                    # self.talk(now)
                     return None
                 case "END":
                     return None
@@ -512,104 +660,6 @@ class Views:
 
                         return "END_text"
 
-                    case "PLAY":
-                        match now["play_what"]:
-                            case "MUSIC":
-                                target = am.play_music(f"game/music/{now['path']}", now["loop"], float(now["volume"]), effect=now["effect"])
-                                self.actions.active_generators.append(target)
-
-                            case "SOUND":
-                                target = am.play_sound(f"game/sounds/{now['path']}", bool(now["loop"]), float(now["volume"]), effect=now["effect"])
-                                self.actions.active_generators.append(target)
-                        return "NEXT"
-
-                    case "STOP":
-                        match now["what"]:
-                            case "MUSIC":
-                                if now["effect"] is not None:
-                                    target = am.stop_music(now["effect"])
-                                    self.actions.active_generators.append(target)
-                                else:
-                                    am.stop_music()
-                            case "SOUND":
-                                if now["effect"] is not None:
-                                    target = am.stop_sound(now["effect"])
-                                    self.actions.active_generators.append(target)
-                                else:
-                                    am.stop_sound()
-                        return "NEXT"
-
-                    case "SHOW":
-                        sprite = lc.get_character(now["character"]).show(str(now["sprite"]))
-                        if 'at' in now:
-                            sprite.center_y = sprite.height / 2
-                            match now['at']:
-                                case "center":
-                                    sprite.center_x = self.width // 2
-                                case "left":
-                                    sprite.center_x = (self.width // 2) * 0.4
-                                case "right":
-                                    sprite.center_x = (self.width // 2) * 1.6
-                        else:
-                            if now["character"] in self.scene["characters"]:
-                                sprite.position = self.scene["characters"][now["character"]].position
-                                sprite.scale = self.scene["characters"][now["character"]].scale
-                        self.scene.add_sprite("characters", now["sprite"].split(" ")[0], sprite)
-                        return "NEXT"
-
-                    case "HIDE":
-                        self.scene.delete_sprite("characters", now["character"])
-                        return "NEXT"
-
-                    case "MOVE":
-                        self.actions.start_action("move_sprite", now)
-                        return "NEXT"
-
-                    case "SCENE":
-                        self.scene.clear_layer("characters")
-                        self.scene.clear_layer("bg")
-                        texture = arcade.load_texture(f"game/images/scenes/{now['filename']}")
-                        sprite = arcade.Sprite(
-                            texture,
-                            scale=float(now['scale']),
-                            center_x=self.width * 0.5,
-                            center_y=self.height * 0.5
-                        )
-                        self.scene.add_sprite("bg", "bg_0", sprite)
-                        return "NEXT"
-
-                    case "FADE":
-                        wait_trigger.on()
-                        match now["type"]:
-                            case "FADEIN":
-                                self.actions.start_action("fadein", now)
-                            case "FADEOUT":
-                                self.actions.start_action("fadeout", now)
-                            case _:
-                                wait_trigger.off()
-                        return "NEXT"
-
-                    case "JUMP":
-
-                        wwl.pose = 0
-                        wwl.label = now["label"]
-
-                        return "NEXT"
-
-                    case "MENU":
-                        wait_trigger.on()
-
-                        dialog_text_text = [" "]
-                        cname_text_text = ""
-
-                        self.show_menu(now['data'])
-
-                        return "END"
-
-                    case "WAIT":
-                        self.actions.start_action("wait", now)
-                        return "NEXT"
-
                     case "END":
 
                         wwl.label = "main"
@@ -621,7 +671,7 @@ class Views:
 
 
                     case "EXECUTE":
-                        exec(now["data"], self.NAMESPACE)
+                        self.NAMESPACE.execute(now["data"])
                         return "NEXT"
 
                     case _:
@@ -687,11 +737,6 @@ class Views:
             settings.alpha = 255 if turn_on else 0
 
         def on_update(self, delta_time):
-            """
-            All the logic to move, and the game logic goes here.
-            Normally, you'll call update() on the sprite lists that
-            need it.
-            """
 
             self.delta_time = delta_time
 
@@ -765,44 +810,40 @@ class Views:
 
                     return parts
 
+                line_counter = 0
+
+                self.dialog_text_batch = Batch()
+
+                text_objects = []
 
                 for i, line in enumerate(dialog_text_text):
-                    for e, sline in enumerate(split_by_length(line, 60)):
-                        if text_anchor == "left":
-                            t = arcade.Text(
-                                text=sline,
-                                x=self.width * 0.18,
-                                y=(self.height * 0.2) - (i+e) * (30 + 10),
-                                font_size=30,
-                                color=dialog_text_colour,
-                                batch=self.dialog_text_batch,
-                                font_name=FONT_NAME,
-                                anchor_x=text_anchor
-                            )
-                        elif text_anchor == "center":
-                            t = arcade.Text(
-                                text=sline,
-                                x=self.width // 2,
-                                y=(self.height * 0.2) - (i + e) * (30 + 10),
-                                font_size=30,
-                                color=dialog_text_colour,
-                                batch=self.dialog_text_batch,
-                                font_name=FONT_NAME,
-                                anchor_x=text_anchor
-                            )
-                        elif text_anchor == "right":
-                            t = arcade.Text(
-                                text=sline,
-                                x=self.width * 0.82,
-                                y=(self.height * 0.2) - (i + e) * (30 + 10),
-                                font_size=30,
-                                color=dialog_text_colour,
-                                batch=self.dialog_text_batch,
-                                font_name=FONT_NAME,
-                                anchor_x=text_anchor
-                            )
+                    split_lines = split_by_length(line, 60)
 
-                        self.dialog_text_batch.draw()
+                    for sline in split_lines:
+                        y_pos = (self.height * 0.2) - line_counter * 40
+
+                        if text_anchor == "left":
+                            x_pos = self.width * 0.18
+                        elif text_anchor == "center":
+                            x_pos = self.width // 2
+                        else:
+                            x_pos = self.width * 0.82
+
+                        t = arcade.Text(
+                            text=sline,
+                            x=x_pos,
+                            y=y_pos,
+                            font_size=30,
+                            color=dialog_text_colour,
+                            font_name=FONT_NAME,
+                            anchor_x=text_anchor
+                        )
+
+                        text_objects.append(t)
+                        line_counter += 1
+
+                for text_obj in text_objects:
+                    text_obj.draw()
 
             def create_cname_text():
                 self.cname_text = arcade.Text(
@@ -823,7 +864,8 @@ class Views:
         class Actions:
             def __init__(self, main):
                 self.main: Views.GameView = main
-                self.active_generators = []
+                self.active_generators_consistently = []
+                self.active_generators_together = []
                 self.talk_generator = None
 
             def _fadein(self, now: dict):
@@ -871,22 +913,24 @@ class Views:
                     yield
 
             def _move(self, now: dict):
-                # Хз работает ли это или нет, но вроде должно
                 sprite = self.main.scene["characters"][now["character"]]
+                if now["pos"][0] == -1:
+                    now["pos"] = (sprite.center_x / self.main.width, now["pos"][0])
+                if now["pos"][1] == -1:
+                    now["pos"] = (now["pos"][0],  sprite.center_y / self.main.height)
                 while True:
-                    dx = now["pos"][0] - sprite.center_x
-                    dy = now["pos"][1] - sprite.center_y
+                    dx = self.main.width * now["pos"][0] - sprite.center_x
+                    dy = self.main.height * now["pos"][1] - sprite.center_y
                     distance = (dx ** 2 + dy ** 2) ** 0.5
+
                     if distance > now["speed"]:
                         sprite.center_x += dx / distance * now["speed"]
                         sprite.center_y += dy / distance * now["speed"]
+                        yield
                     else:
-                        sprite.center_x = now["pos"][0]
-                        sprite.center_y = now["pos"][1]
-                    time.sleep(0.01)
-                    if distance <= 0:
+                        sprite.center_x = self.main.width * now["pos"][0]
+                        sprite.center_y = self.main.height * now["pos"][1]
                         break
-                    yield
 
             def _wait(self, now):
                 global wait_trigger
@@ -906,23 +950,35 @@ class Views:
                     except StopIteration:
                         self.talk_generator = None
 
-                for gen in self.active_generators[:]:
+                if self.active_generators_together:
+                    for gen in self.active_generators_together[:]:
+                        try:
+                            next(gen)
+                        except StopIteration:
+                            self.active_generators_together.remove(gen)
+
+                if self.active_generators_consistently:
+                    gen = self.active_generators_consistently[:][0]
+                    print(gen)
                     try:
                         next(gen)
                     except StopIteration:
-                        self.active_generators.remove(gen)
-                    except TypeError:
-                        self.active_generators.remove(gen)
+                        self.active_generators_consistently.remove(gen)
 
-            def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"], now: dict):
-                if name == "fadein":
-                    self.active_generators.append(self._fadein(now))
-                elif name == "fadeout":
-                    self.active_generators.append(self._fadeout(now))
-                elif name == "move_sprite":
-                    self.active_generators.append(self._move(now))
-                elif name == "wait":
-                    self.active_generators.append(self._wait(now))
+            def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"],
+                             now: dict,
+                             stream: Literal["consistently", "together"] = "together"):
+
+                method_map = {
+                    "fadein": self._fadein,
+                    "fadeout": self._fadeout,
+                    "move_sprite": self._move,
+                    "wait": self._wait
+                }
+
+                target_list = (self.active_generators_together if stream == "together" else self.active_generators_consistently)
+
+                target_list.append(method_map[name](now))
 
     class GameMenu(Main_template):
         def __init__(self, show_lc: bool = True):
@@ -1394,6 +1450,10 @@ class Character():
 
         self.char_id = char_id
 
+        self.talk_sounds = [arcade.load_sound(f"./game/sounds/character_voice/{self.char_id}/{f}") for f in
+                                         os.listdir(f"./game/sounds/character_voice/{self.char_id}") if
+                                         os.path.isfile(os.path.join(f"./game/sounds/character_voice/{self.char_id}", f))] if char_id is not None else []
+
         self.sprites = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"])
 
         self.text_anch = text_anch
@@ -1481,18 +1541,9 @@ class Character():
 
                         index += 1
 
-                        def talk_sound():
-                            def _get_random_sound_path():
-                                files = [f"./game/sounds/character_voice/{self.char_id}/{f}" for f in
-                                         os.listdir(f"./game/sounds/character_voice/{self.char_id}") if
-                                         os.path.isfile(os.path.join(f"./game/sounds/character_voice/{self.char_id}", f))]
-                                return random.choice(files)
-
-                            am.play_voice(_get_random_sound_path())
-
                         if ((index % 4 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
                             if os.path.isdir(f"./game/sounds/character_voice/{self.char_id}"):
-                                talk_sound()
+                                am.play_voice(random.choice(self.talk_sounds))
 
                         if char == ".":
                             if not fast:
@@ -1513,6 +1564,7 @@ class Character():
                                 old_time = time.time()
                                 while time.time() < old_time + float(char.split("=")[-1]):
                                     yield
+                            yield
                             if char.startswith("f"):
                                 i -= 1
                                 fast = True
@@ -1545,7 +1597,13 @@ class ListCharacters:
             "j" : Character("Джопа", "j", name_colour="#D2691E", colour="#CD853F"),
             "aj": Character("АнтиДжек", "aj", name_colour="#3f87cd", c_scale=0.5, colour="#2167C4"),
             "sj": Character("ГлупоДжек", "sj", name_colour="#D1D0CF", c_scale=0.5, colour="#D4D4D4"),
-            "narr" : Character(" ", None, text_anch="center")
+            "narr" : Character(" ", None, text_anch="center"),
+
+            "masorubka" : Character("Мясорубка/", char_id="masorubka", name_colour="#FFB6C1", colour="#FFB6C1", c_scale=0.8),
+            "edwin" : Character("Эдвин/", char_id="edwin", name_colour="#FFDEAD", colour="#FFDEAD", c_scale=0.8),
+            "rony" : Character("Рони/", char_id="rony", name_colour="#c9976c", colour="#c9976c", c_scale=0.8),
+            "bromand" : Character("Броманд/", char_id="bromand", name_colour="#7FFF00", colour="#7FFF00", c_scale=0.8),
+            "uni" : Character("Юни/", char_id="uni", name_colour="#00FF7F", colour="#00FF7F", c_scale=0.8)
         }
     def get_character(self, char_id: str) -> Character:
         return self.characters[char_id]
@@ -1576,10 +1634,10 @@ class AudioChannel:
             self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
             # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
 
-    def play(self, path, loop=False, speed=1.0, local_volume: Optional[float]=None):
+    def play(self, file: Tuple[str, arcade.sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None):
         """
         Включает звук
-        :param path: Путь к файлу
+        :param file: Путь к файлу/уже готовый саунд
         :param loop: Если True, звук будет зацикливаться
         :param speed: Скорость проигрывания
         :return:
@@ -1589,7 +1647,10 @@ class AudioChannel:
         if local_volume:
             self._local_modifier = local_volume
 
-        sound = arcade.load_sound(path)
+        if type(file) is str:
+            sound = arcade.load_sound(file)
+        elif type(file) is arcade.sound.Sound:
+            sound = file
         volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
 
         self.player = sound.play(volume=volume, loop=loop, speed=speed)
@@ -1645,7 +1706,7 @@ class AudioManager:
         self.sound = AudioChannel(modifier=sm.volume.get_sound(), volume_type="sound")
         self.voice = AudioChannel(modifier=sm.volume.get_voice(), volume_type="voice", default_volume=2.0)
 
-    def play_music(self, path: str, loop: Optional[bool] = False, volume: float = 1.0, effect: Optional[str] = None):
+    def play_music(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
 
         match effect:
             case "FADE":
@@ -1660,9 +1721,12 @@ class AudioManager:
                 return fadeout_music()
 
             case _:
-                self.music.play(path, loop=loop, local_volume=volume)
+                def music():
+                    self.music.play(path, loop=loop, local_volume=volume)
+                    yield
+                return music()
 
-    def play_sound(self, path, loop: Optional[bool] = False, volume: float = 1.0, effect: Optional[str] = None):
+    def play_sound(self, path, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
 
         match effect:
             case "FADE":
@@ -1677,7 +1741,10 @@ class AudioManager:
                 return fadeout_sound()
 
             case _:
-                self.sound.play(path, loop=loop, local_volume=volume)
+                def sound():
+                    self.sound.play(path, loop=loop, local_volume=volume)
+                    yield
+                return sound()
 
 
     def play_voice(self, path, loop=False):
@@ -1695,7 +1762,10 @@ class AudioManager:
                     self.music.fade_modifier = 1.0
                 return fadeout_music()
             case _:
-                self.music.stop()
+                def music():
+                    self.music.stop()
+                    yield
+                return music()
 
     def stop_sound(self, effect: Optional[str] = None):
         match effect:
@@ -1711,7 +1781,10 @@ class AudioManager:
                 return fadeout_sound()
 
             case _:
-                self.sound.stop()
+                def sound():
+                    self.sound.stop()
+                    yield
+                return sound()
 
     def stop_voice(self):
         self.voice.stop()

@@ -9,6 +9,7 @@ class Scene:
             "gui": {},
             "fade": arcade.Sprite()
         }
+        self.save_points = []
 
     def __getitem__(self, item):
         return self.data[item]
@@ -21,7 +22,8 @@ class Scene:
 
     def delete_sprite(self, layer: str, name: str):
         if layer != "fade":
-            del self.data[layer][name]
+            if name in self.data[layer]:
+                del self.data[layer][name]
         else:
             self.data[layer].clear()
 
@@ -45,3 +47,11 @@ class Scene:
             elif type(i) is dict:
                 for o in i.values():
                     arcade.draw_sprite(o)
+
+    def create_savepoint(self):
+        self.save_points.append(self.data)
+        if len(self.save_points) >= 5:
+            self.save_points.pop(-1)
+
+    def load_savepoint(self, sp_id: int = 0):
+        self.data = self.save_points[sp_id]
