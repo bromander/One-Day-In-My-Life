@@ -56,14 +56,14 @@ label main
     <masorubka> "А идеи, которые не требуют глубокого анализа и тысячи сложнейших сцен, для простого конкурса игровых поделок есть?"
     Scene.show_sprite("rony oh")
     <masorubka> "Мы за своё существование сделали только одну игру, мы просто не потянем такой объём!"
-    Scene.move("rony", position=(0.67, -1), speed=80.0, stream="together")
+    Scene.move("rony", position=(0.67, -1), speed=2.0, stream="together")
     Scene.show_sprite("bromand neutral", at="center")
     <bromand> "Ребят, может, спросить Юни? Она всё-таки наш босс, как-никак."
 
     Scene.show_sprite("masorubka neutral", at=(0.1, -1), stream="together")
-    Scene.move("masorubka", position=(0.1, -1), speed=80.0, stream="together")
+    Scene.move("masorubka", position=(0.1, -1), speed=2.5, stream="together")
     Scene.show_sprite("edwin neutral", at=(0.9, -1), stream="together")
-    Scene.move("edwin", position=(0.9, -1), speed=80.0, stream="together")
+    Scene.move("edwin", position=(0.9, -1), speed=2.5, stream="together")
     Scene.show_sprite("uni", at=(0.3, 0.45), stream="together")
     <uni> "Народ!!!!!!!!!!!!!!  ! ! ! !! ! !!!!"
     <uni> "Мы делаем ЯоЙ!!!!!!!!!!!!"

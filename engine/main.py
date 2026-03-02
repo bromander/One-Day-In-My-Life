@@ -228,19 +228,19 @@ class Views:
                 match channel:
                     case "music":
                         loop = True if loop is None else loop
-                        target = am.play_music(f"game/music/{file_name}", loop, volume, effect)
+                        target = am.play_music_gen(f"game/music/{file_name}", loop, volume, effect)
                         self.Game_view.actions.active_generators_together.append(target)
                     case "sound":
                         loop = False if loop is None else loop
-                        target = am.play_sound(f"game/sounds/{file_name}", loop, volume, effect)
+                        target = am.play_sound_gen(f"game/sounds/{file_name}", loop, volume, effect)
                         self.Game_view.actions.active_generators_together.append(target)
 
             def stop(self, channel: Literal["music", "sound"], effect: Optional[str] = None):
                 match channel:
                     case "music":
-                        self.Game_view.actions.active_generators_together.append(am.stop_music(effect))
+                        self.Game_view.actions.active_generators_together.append(am.stop_music_gen(effect))
                     case "sound":
-                        self.Game_view.actions.active_generators_together.append(am.stop_sound(effect))
+                        self.Game_view.actions.active_generators_together.append(am.stop_sound_gen(effect))
 
         def wait(self, duration: float):
             global wait_trigger
@@ -255,12 +255,13 @@ class Views:
             self.background_color = arcade.color.WHITE
             self.fps = {
                 'window': [],
+                'window_size': 100,
                 'last_print_time': time.time(),
                 'avg_fps': 0.0,
                 'min_fps': 0.0,
                 'max_fps': 0.0,
                 'label': arcade.Text(
-                    "FPS: Avg=0, Min=0, Max=0",
+                    f"FPS: Avg=0, Min=0, Max=0, Window size: 0. Vsync: {self.window.vsync}",
                     x=10,
                     y=self.window.height - 10,
                     color=arcade.color.ARCADE_GREEN,
@@ -273,11 +274,13 @@ class Views:
             self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
             self.window.set_mouse_visible(False)
 
+            sm = Saves_manager()
+
             if sm.volume.get_other("show_fps"):
                 current_fps = 1.0 / delta_time if delta_time > 0 else 0
 
                 self.fps['window'].append(current_fps)
-                if len(self.fps['window']) > 60:
+                if len(self.fps['window']) > self.fps['window_size']:
                     self.fps['window'].pop(0)
 
                 if time.time() - self.fps['last_print_time'] >= 1.0:
@@ -285,17 +288,20 @@ class Views:
                     self.fps['min_fps'] = min(self.fps['window'])
                     self.fps['max_fps'] = max(self.fps['window'])
 
-                    self.fps['label'].text = f"FPS: Avg={int(self.fps['avg_fps'])}, Min={int(self.fps['min_fps'])}, Max={int(self.fps['max_fps'])}"
+                    self.fps['label'].text = (f"FPS: Avg={int(self.fps['avg_fps'])}, Min={int(self.fps['min_fps'])}, Max={int(self.fps['max_fps'])}, "
+                                              f"Window size: {self.fps['window_size']}. "
+                                              f"Vsync: {self.window.vsync}")
 
                     self.fps['last_print_time'] = time.time()
 
 
         def on_draw(self) -> bool | None:
+            sm = Saves_manager()
             arcade.draw_sprite(self.cursor_texture)
             if sm.volume.get_other("show_fps"):
                 arcade.draw_lrbt_rectangle_filled(
                     left=5,
-                    right=250,
+                    right=8*len(self.fps['label'].text),
                     bottom=self.window.height - 35,
                     top=self.window.height - 10,
                     color=(0, 0, 0, 200)
@@ -306,6 +312,8 @@ class Views:
 
         def __init__(self, session_id: Optional[str] = None) -> None:
             super().__init__()
+
+            self.window.set_vsync(True)
 
             self.settings_scene = arcade.Scene()
 
@@ -386,7 +394,6 @@ class Views:
                             self.window.size = (1024, 786)
                             game = Views.GameMenu()
                             self.window.show_view(game)
-                            init_file()
 
                         def create_save(event=None):
                             try:
@@ -610,11 +617,13 @@ class Views:
                 case "END_text":
                     return None
                 case "CHANEL":
+                    am.stop_voice()
+                    am.stop_sound()
+                    am.stop_music()
                     self.window.set_fullscreen(False)
                     self.window.size = (1024, 786)
                     game = Views.GameMenu(False)
                     self.window.show_view(game)
-                    init_file()
 
         def talk(self, now):
             global dialog_text_text, cname_text_text
@@ -656,6 +665,7 @@ class Views:
                             dialog_text_colour = lc.get_character(nowe['character']).colour
                             text_anchor = lc.get_character(nowe['character']).text_anch
                         else:
+                            next(pon)
                             self.actions.talk_generator = pon
 
                         return "END_text"
@@ -866,71 +876,103 @@ class Views:
                 self.main: Views.GameView = main
                 self.active_generators_consistently = []
                 self.active_generators_together = []
-                self.talk_generator = None
+                self.talk_generator: Optional[types.GeneratorType] = None
+                self.dt_accumulator = 0.0
 
             def _fadein(self, now: dict):
                 global wait_trigger
                 wait_trigger.on()
-                start_time = time.time()
-                duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other(
-                    "fade_speed") > 0 else 0
+
+                duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
+                progress = 0.0
+                last_alpha = self.main.scene["fade"].alpha
+                min_step = 1  # Минимальное изменение alpha для обновления
 
                 while True:
+                    dt = yield
 
-                    elapsed = time.time() - start_time
+                    if dt is None or dt <= 0:
+                        continue
 
-                    if elapsed >= duration:
-                        self.main.scene["fade"].alpha = 255
+                    progress = min(progress + dt / duration, 1.0)
+                    new_alpha = int(progress * 255)
+
+                    if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
+                        self.main.scene["fade"].alpha = new_alpha
+                        last_alpha = new_alpha
+
+                    if progress >= 1.0:
                         wait_trigger.off()
-                        return None
-
-                    progress = elapsed / duration
-                    alpha = int(progress * 255)
-
-                    self.main.scene["fade"].alpha = alpha
-
-                    yield
+                        return
 
             def _fadeout(self, now: dict):
                 global wait_trigger
                 wait_trigger.on()
-                start_time = time.time()
-                duration = now["time"] + sm.volume.get_other("fade_speed") if now["time"] + sm.volume.get_other("fade_speed") > 0 else 0
+
+                duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
+                progress = 0.0
+                last_alpha = self.main.scene["fade"].alpha
+                min_step = 1
 
                 while True:
+                    dt = yield
 
-                    elapsed = time.time() - start_time
-                    if elapsed >= duration:
-                        alpha = 0
+                    if dt is None or dt <= 0:
+                        continue
+
+                    progress = min(progress + dt / duration, 1.0)
+                    new_alpha = 255 - int(progress * 255)
+
+                    if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
+                        self.main.scene["fade"].alpha = new_alpha
+                        last_alpha = new_alpha
+
+                    if progress >= 1.0:
+                        self.main.scene["fade"].alpha = 0
                         wait_trigger.off()
-                        return None
-
-                    progress = elapsed / duration
-                    alpha = 255 - int(progress * 255)
-
-                    self.main.scene["fade"].alpha = alpha
-
-                    yield
+                        return
 
             def _move(self, now: dict):
                 sprite = self.main.scene["characters"][now["character"]]
-                if now["pos"][0] == -1:
-                    now["pos"] = (sprite.center_x / self.main.width, now["pos"][0])
-                if now["pos"][1] == -1:
-                    now["pos"] = (now["pos"][0],  sprite.center_y / self.main.height)
-                while True:
-                    dx = self.main.width * now["pos"][0] - sprite.center_x
-                    dy = self.main.height * now["pos"][1] - sprite.center_y
-                    distance = (dx ** 2 + dy ** 2) ** 0.5
+                now["speed"] = now["speed"] * 1000
 
-                    if distance > now["speed"]:
-                        sprite.center_x += dx / distance * now["speed"]
-                        sprite.center_y += dy / distance * now["speed"]
-                        yield
-                    else:
-                        sprite.center_x = self.main.width * now["pos"][0]
-                        sprite.center_y = self.main.height * now["pos"][1]
+                if now["pos"][0] == -1:
+                    now["pos"] = (sprite.center_x / self.main.width, now["pos"][1])
+                if now["pos"][1] == -1:
+                    now["pos"] = (now["pos"][0], sprite.center_y / self.main.height)
+
+                target_x = self.main.width * now["pos"][0]
+                target_y = self.main.height * now["pos"][1]
+                speed = abs(now["speed"]) if now["speed"] != 0 else 0.001
+
+                start_x = sprite.center_x
+                start_y = sprite.center_y
+                full_distance = ((target_x - start_x) ** 2 + (target_y - start_y) ** 2) ** 0.5
+
+                if full_distance < 1:
+                    return None
+
+                while True:
+                    dt = yield
+
+                    if dt is None or dt <= 0:
+                        continue
+
+                    current_x = sprite.center_x
+                    current_y = sprite.center_y
+                    dx = target_x - current_x
+                    dy = target_y - current_y
+
+                    distance = (dx ** 2 + dy ** 2) ** 0.5
+                    step = speed * dt
+
+                    if distance <= step:
+                        sprite.center_x = target_x
+                        sprite.center_y = target_y
                         break
+                    else:
+                        sprite.center_x += (dx / distance) * step
+                        sprite.center_y += (dy / distance) * step
 
             def _wait(self, now):
                 global wait_trigger
@@ -943,30 +985,53 @@ class Views:
 
                 wait_trigger.off()
 
+            def _process_dt(self, raw_dt: float):
+                if raw_dt is None or raw_dt <= 0:
+                    return None
+                self.dt_accumulator += raw_dt
+                if self.dt_accumulator < 0.001:
+                    return None
+
+                effective_dt = self.dt_accumulator
+                self.dt_accumulator = 0
+                return min(effective_dt, 0.1)
+
             def update(self, delta_time: float):
-                if self.talk_generator:
-                    try:
-                        next(self.talk_generator)
-                    except StopIteration:
-                        self.talk_generator = None
+                delta_time = self._process_dt(delta_time)
 
                 if self.active_generators_together:
                     for gen in self.active_generators_together[:]:
+                        gen: types.GeneratorType = gen
+                        try:
+                            gen.send(delta_time)
+                        except StopIteration:
+                            self.active_generators_together.remove(gen)
+                        except TypeError:
+                            try:
+                                next(gen)
+                            except StopIteration:
+                                self.active_generators_together.remove(gen)
+
+                if self.active_generators_consistently:
+                    gen: types.GeneratorType = self.active_generators_consistently[:][0]
+                    print(gen)
+                    try:
+                        gen.send(delta_time)
+                    except StopIteration:
+                        self.active_generators_consistently.remove(gen)
+                    except TypeError:
                         try:
                             next(gen)
                         except StopIteration:
                             self.active_generators_together.remove(gen)
 
-                if self.active_generators_consistently:
-                    gen = self.active_generators_consistently[:][0]
-                    print(gen)
+                if self.talk_generator:
                     try:
-                        next(gen)
+                        self.talk_generator.send(delta_time)
                     except StopIteration:
-                        self.active_generators_consistently.remove(gen)
+                        self.talk_generator = None
 
-            def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"],
-                             now: dict,
+            def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"],now: dict,
                              stream: Literal["consistently", "together"] = "together"):
 
                 method_map = {
@@ -981,8 +1046,12 @@ class Views:
                 target_list.append(method_map[name](now))
 
     class GameMenu(Main_template):
-        def __init__(self, show_lc: bool = True):
+        def __init__(self, show_lc: bool = True, first_load: bool = False):
             super().__init__()
+
+            self.window.set_vsync(False)
+
+            self.first_load = first_load
 
             self.loading_screen = arcade.Sprite("game/images/gui/JE3000_logo-export.png", 1)
             self.loading_screen.position = (int(self.center_x), int(self.center_y))
@@ -1004,10 +1073,6 @@ class Views:
             self.is_loading = False
             self.is_mouse_pressed = False
 
-            am.stop_music()
-            am.stop_voice()
-            am.stop_sound()
-
             if show_lc:
                 self.show_ls()
 
@@ -1023,6 +1088,10 @@ class Views:
                         break
                     self.loading_screen_fade.alpha = 255 - i * 2
                     yield
+                yield
+
+                init_file(self.first_load)
+
                 for i in range(20, 50):
                     yield
                 self.loading_screen_fade.alpha = 0
@@ -1174,6 +1243,9 @@ class Views:
         def generate_buttons(self):
 
             def return_to_main_menu(event=None):
+                am.stop_voice()
+                am.stop_sound()
+                am.stop_music()
                 game = Views.GameMenu(False)
                 self.window.show_view(game)
 
@@ -1283,6 +1355,9 @@ class Views:
                 volumes = data['options']
 
                 def return_to_main_menu(event=None):
+                    am.stop_voice()
+                    am.stop_sound()
+                    am.stop_music()
                     game = Views.GameMenu(False)
                     self.window.show_view(game)
 
@@ -1406,6 +1481,7 @@ class Views:
 class Character():
 
     def __init__(self, name: str, char_id: Optional[str] = None, colour: str = "", name_colour: str = "", c_scale: float = 1.0, text_anch: str = "left", lps: int = 60):
+        sm = Saves_manager()
         def hex_to_rgb(hex_color: str):
             if hex_color:
                 hex_color = hex_color.lstrip("#")
@@ -1547,40 +1623,61 @@ class Character():
 
                         if char == ".":
                             if not fast:
-                                old_time = time.time()
-                                while time.time() < old_time + 0.1:
-                                    yield
+                                remaining_time = 0.1
+                                while remaining_time > 0:
+                                    dt = yield
+
+                                    if dt is None or dt <= 0:
+                                        continue
+
+                                    remaining_time -= dt
 
                         elif char == ",":
                             if not fast:
-                                old_time = time.time()
-                                while time.time() < old_time + 0.05:
-                                    yield
+                                remaining_time = 0.05
+                                while remaining_time > 0:
+                                    dt = yield
+                                    if dt is None or dt <= 0:
+                                        continue
+                                    remaining_time -= dt
+
                         elif char.startswith("{") and str(char).endswith("}"):
                             char = char[1:][:-1]
 
                             if char.startswith("w"):
                                 i -= 1
-                                old_time = time.time()
-                                while time.time() < old_time + float(char.split("=")[-1]):
-                                    yield
-                            yield
+
+                                remaining_time = float(char.split("=")[-1])
+                                while remaining_time > 0:
+                                    dt = yield
+                                    if dt is None or dt <= 0:
+                                        continue
+                                    remaining_time -= dt
+
+                            dt = yield
                             if char.startswith("f"):
                                 i -= 1
                                 fast = True
 
                         if not fast:
-                            old_time = time.time()
-                            while time.time() < old_time + 1 / self.lps:
-                                yield
+                            remaining_time = 1 / self.lps
+                            while remaining_time > 0:
+                                dt = yield
+                                if dt is None or dt <= 0:
+                                    continue
+                                remaining_time -= dt
+
                     self.action = None
                     return None
                 else:
                     if not fast:
-                        old_time = time.time()
-                        while time.time() < old_time + 1 / self.lps:
-                            yield
-                    yield
+                        remaining_time = 1 / self.lps
+                        while remaining_time > 0:
+                            dt = yield
+                            if dt is None or dt <= 0:
+                                continue
+                            remaining_time -= dt
+                    dt = yield
 
         return _talk()
 
@@ -1706,8 +1803,10 @@ class AudioManager:
         self.sound = AudioChannel(modifier=sm.volume.get_sound(), volume_type="sound")
         self.voice = AudioChannel(modifier=sm.volume.get_voice(), volume_type="voice", default_volume=2.0)
 
-    def play_music(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
-
+    def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
+        """
+        Отличается от play_music тем, что поддерживает эффекты, а также возвращает генератор
+        """
         match effect:
             case "FADE":
                 def fadeout_music():
@@ -1726,8 +1825,14 @@ class AudioManager:
                     yield
                 return music()
 
-    def play_sound(self, path, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
+    def play_music(self, path: str, loop: bool = False, volume: float = 1.0):
+        self.music.play(path, loop=loop, local_volume=volume)
 
+
+    def play_sound_gen(self, path, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
+        """
+        Отличается от play_sound тем, что поддерживает эффекты, а также возвращает генератор
+        """
         match effect:
             case "FADE":
                 def fadeout_sound():
@@ -1746,11 +1851,14 @@ class AudioManager:
                     yield
                 return sound()
 
+    def play_sound(self, path, loop: bool = False, volume: float = 1.0):
+        self.sound.play(path, loop=loop, local_volume=volume)
+
 
     def play_voice(self, path, loop=False):
         self.voice.play(path, loop=loop, speed=random.randint(99, 101) / 100)
 
-    def stop_music(self, effect: Optional[str] = None):
+    def stop_music_gen(self, effect: Optional[str] = None):
         match effect:
             case "FADE":
                 def fadeout_music():
@@ -1767,7 +1875,10 @@ class AudioManager:
                     yield
                 return music()
 
-    def stop_sound(self, effect: Optional[str] = None):
+    def stop_music(self):
+        self.music.stop()
+
+    def stop_sound_gen(self, effect: Optional[str] = None):
         match effect:
             case "FADE":
                 def fadeout_sound():
@@ -1786,16 +1897,21 @@ class AudioManager:
                     yield
                 return sound()
 
+    def stop_sound(self):
+        self.sound.stop()
+
     def stop_voice(self):
         self.voice.stop()
 
 
-def init_file():
+def init_file(hard_load: bool = False):
     """
     Инициализирует основные классы
     """
-    global sm, am, lc, wwl
+    global sm, am
+    if hard_load:
+        global lc, wwl
+        lc = ListCharacters()
+        wwl = Wwl()
     sm = Saves_manager()
     am = AudioManager()
-    lc = ListCharacters()
-    wwl = Wwl()

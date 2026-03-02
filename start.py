@@ -5,14 +5,12 @@ import random
 import json
 sys.path.insert(0, os.path.dirname(__file__))
 import engine
-from engine.main import Views, init_file
+from engine.main import Views
 
 WINDOW_TITLE = f"Game name"
 engine.main.GAME_NAME = "Game Name"
 
 def main():
-
-    init_file()
 
     with open("game/other/splashes.json", "r", encoding="UTF-8") as splashes:
         splashes = json.load(splashes)
@@ -21,7 +19,7 @@ def main():
         splash = splash.format(username=str(os.getenv("USERNAME") or os.getenv("USER")))[1:]
 
     window = arcade.Window(width=1024, height=786, title=f"{WINDOW_TITLE}: {splash}", resizable=False)
-    game = Views.GameMenu()
+    game = Views.GameMenu(first_load = True)
     window.show_view(game)
     arcade.run()
 
