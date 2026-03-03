@@ -1,11 +1,10 @@
-import pathlib
 import arcade
 import pyglet
 from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
-from typing import Optional, Literal, Tuple, Dict
+from typing import Optional, Literal, Tuple
 import types
 import time
 import re
@@ -20,6 +19,7 @@ from scene import Scene
 from lore_viewer import Wwl
 from waiter import Waiter
 from saves import Saves_manager
+from list_generator import ListActiveGenerators
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
@@ -79,6 +79,7 @@ class Views:
                 "Scene": self.Scene(game_view),
                 "Audio" : self.Audio(game_view),
                 "Lore" : self.Lore(game_view),
+                "SpriteEffects" : self.SpriteEffects(),
                 "wait" : self.wait
             }
 
@@ -123,7 +124,11 @@ class Views:
             def __init__(self, Game_view):
                 self.Game_view = Game_view
 
-            def show_sprite(self, character: str, at: Optional[Tuple[str, tuple]] = None, stream: Literal["consistently", "together"] = "consistently"):
+            def show_sprite(self, character: str,
+                            at: Optional[Tuple[str, tuple]] = None,
+                            effect: Optional[classmethod] = None,
+                            stream: Literal["consistently", "together"] = "consistently"):
+
                 char_id = character.split(" ")[0]
                 sprite = lc.get_character(char_id).show(character)
                 if at is not None:
@@ -148,29 +153,49 @@ class Views:
                     if char_id in self.Game_view.scene["characters"]:
                         sprite.position = self.Game_view.scene["characters"][char_id].position
                         sprite.scale = self.Game_view.scene["characters"][char_id].scale
+                    else:
+                        sprite.center_x = self.Game_view.width // 2
+                        sprite.center_y = self.Game_view.height * 0.2
+
+                if effect is not None:
+                    sprite.alpha = 0
+                else:
+                    sprite.alpha = 255
 
                 def target():
                     self.Game_view.scene.add_sprite("characters", character.split(" ")[0], sprite)
                     yield
 
-                if stream == "consistently":
-                    self.Game_view.actions.active_generators_consistently.append(target())
-                elif stream == "together":
-                    self.Game_view.actions.active_generators_together.append(target())
+                self.Game_view.actions.active_generators.add_generator(stream, target(), "show_sprite")
+                if effect is not None:
+                    self.Game_view.actions.active_generators.add_generator(
+                        stream,
+                        effect.effect(character.split(" ")[0], "characters", self.Game_view),
+                        "show_sprite_effect"
+                    )
 
-            def hide_sprite(self, character: str, stream: Literal["consistently", "together"] = "consistently"):
+            def hide_sprite(self, character: str, effect: Optional[classmethod] = None, stream: Literal["consistently", "together"] = "consistently"):
+
                 def target():
                     self.Game_view.scene.delete_sprite("characters", character)
                     yield
 
-                if stream == "consistently":
-                    self.Game_view.actions.active_generators_consistently.append(target())
-                elif stream == "together":
-                    self.Game_view.actions.active_generators_together.append(target())
+                if effect is not None:
+                    self.Game_view.actions.active_generators.add_generator(
+                        stream,
+                        effect.effect(character, "characters", self.Game_view, 0),
+                        "hide_sprite_effect"
+                    )
+                self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
 
-            def set_bg(self, file_name: str, scale: float, layer: int = 0):
+            def set_scene(self,
+                          file_name: str,
+                          scale: float,
+                          layer: int = 0,
+                          effect: Optional[classmethod] = None,
+                          stream: Literal["consistently", "together"] = "consistently"):
+
                 self.Game_view.scene.clear_layer("characters")
-                self.Game_view.scene.clear_layer("bg")
                 texture = arcade.load_texture(f"game/images/scenes/{file_name}")
                 sprite = arcade.Sprite(
                     texture,
@@ -178,7 +203,29 @@ class Views:
                     center_x=self.Game_view.width * 0.5,
                     center_y=self.Game_view.height * 0.5
                 )
-                self.Game_view.scene.add_sprite("bg", f"bg_{layer}", sprite)
+
+                bg_id = int(layer)
+                if effect is not None:
+                    sprite.alpha = 0
+                    bg_id = -1
+                else:
+                    self.Game_view.scene.clear_layer("bg")
+
+                def target(bg_id):
+                    self.Game_view.scene.add_sprite(f"bg", f"bg_{bg_id}", sprite)
+                    yield
+
+                def edit_layer_name_and_del_old(bg_id, layer):
+                    old_bg = self.Game_view.scene["bg"][f"bg_{bg_id}"]
+                    self.Game_view.scene.clear_layer("bg")
+                    self.Game_view.scene["bg"][f"bg_{layer}"] = old_bg
+                    yield
+
+                self.Game_view.actions.active_generators.add_generator(stream, target(bg_id), "set_scene")
+                if effect is not None:
+                    self.Game_view.actions.active_generators.add_generator(stream, effect.effect(f"bg_{bg_id}", "bg", self.Game_view), "set_scene_effect")
+                    self.Game_view.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")
+
 
             def move(self, character: str, position: tuple, speed: float, stream: Literal["consistently", "together"] = "consistently"):
                 now = {"character" : character, "pos" : position, "speed" : speed}
@@ -224,23 +271,56 @@ class Views:
             def __init__(self, Game_view):
                 self.Game_view = Game_view
 
-            def play(self, channel: Literal["music", "sound"], file_name: str, volume: float=1.0, loop: Optional[bool] = None, effect: Optional[str] = None):
+            def play(self, channel: Literal["music", "sound"], file_name: str, volume: float=1.0, loop: Optional[bool] = None, effect: Optional[str] = None, stream: Literal["consistently", "together"] = "together"):
                 match channel:
                     case "music":
                         loop = True if loop is None else loop
                         target = am.play_music_gen(f"game/music/{file_name}", loop, volume, effect)
-                        self.Game_view.actions.active_generators_together.append(target)
+                        self.Game_view.actions.active_generators.add_generator(stream, target, "play_music")
                     case "sound":
                         loop = False if loop is None else loop
                         target = am.play_sound_gen(f"game/sounds/{file_name}", loop, volume, effect)
-                        self.Game_view.actions.active_generators_together.append(target)
+                        self.Game_view.actions.active_generators.add_generator(stream, target, "play_sound")
 
-            def stop(self, channel: Literal["music", "sound"], effect: Optional[str] = None):
+            def stop(self, channel: Literal["music", "sound"], effect: Optional[str] = None, stream: Literal["consistently", "together"] = "together"):
                 match channel:
                     case "music":
-                        self.Game_view.actions.active_generators_together.append(am.stop_music_gen(effect))
+                        self.Game_view.actions.active_generators.add_generator(stream, am.stop_music_gen(effect), "stop_music")
                     case "sound":
-                        self.Game_view.actions.active_generators_together.append(am.stop_sound_gen(effect))
+                        self.Game_view.actions.active_generators.add_generator(stream, am.stop_sound_gen(effect), "stop_sound")
+
+        class SpriteEffects:
+
+            class Dissolve:
+                def __init__(self, duration: float = 1.0):
+                    self.name = "DISSOLVE"
+                    self.duration = duration
+
+                def effect(self, sprite_name: str, layer: str, Game_view: classmethod, target_alpha: int = 255):
+                    global wait_trigger
+                    wait_trigger.on()
+
+                    if sprite_name not in Game_view.scene[layer]:
+                        yield
+                        return
+
+                    sprite = Game_view.scene[layer][sprite_name]
+                    duration = max(self.duration + sm.volume.get_other("fade_speed"), 0.001)
+
+                    start_alpha = sprite.alpha
+                    progress = 0.0
+
+                    while progress < 1.0:
+                        dt = yield
+
+                        if dt is None or dt <= 0:
+                            continue
+
+                        progress = min(progress + dt / duration, 1.0)
+
+                        new_alpha = int(start_alpha + (target_alpha - start_alpha) * progress)
+                        sprite.alpha = new_alpha
+                    wait_trigger.off()
 
         def wait(self, duration: float):
             global wait_trigger
@@ -340,6 +420,8 @@ class Views:
             self.waiting_dialogue = Waiter(True)
             self.waiting_settings = Waiter()
 
+            self.last_text_skip = time.time()
+
             self.last_text = " "
 
             def create_widgets():
@@ -384,8 +466,7 @@ class Views:
                         volumes = data['options']
 
                         def return_to_main_menu(event=None):
-                            self.actions.active_generators_consistently.clear()
-                            self.actions.active_generators_together.clear()
+                            self.actions.active_generators.clear()
 
                             am.stop_sound()
                             am.stop_music()
@@ -604,6 +685,15 @@ class Views:
             return text
 
         def talk_manager(self, pos_offset: Optional[int] = None):
+            if wwl.get_thing(pos_offset, edit_main=False)["action"] == "SAY":
+                current_time = time.time()
+                if current_time - self.last_text_skip < 0.05:
+                    self.last_text_skip = current_time
+                    self.waiting_dialogue.off()
+                    return
+
+                self.last_text_skip = current_time
+
             now = wwl.get_thing(pos_offset)
             res = self.talk(now)
 
@@ -647,26 +737,9 @@ class Views:
                         self.dialog_texts = []
 
                         self.start_trigger = False
-                        pon = lc.get_character(now["character"]).talk(self.format_text(now["args"]))
+                        gen = lc.get_character(now["character"]).talk(self.format_text(now["args"]))
 
-                        if self.actions.talk_generator is not None:
-                            self.actions.talk_generator = None
-                            i = -2
-                            while True:
-                                nowe = wwl.get_thing(pos_offset = i, edit_main=False)
-                                if nowe['action'] == 'SAY':
-                                    wwl.pose += (i + 2)
-                                    break
-                                else:
-                                    i -= 1
-                            dialog_text_text = format_dialogue(nowe['args'])
-                            cname_text_text = lc.get_character(nowe['character']).c_name
-                            cname_text_colour = lc.get_character(nowe['character']).name_colour
-                            dialog_text_colour = lc.get_character(nowe['character']).colour
-                            text_anchor = lc.get_character(nowe['character']).text_anch
-                        else:
-                            next(pon)
-                            self.actions.talk_generator = pon
+                        self.actions.active_generators.add_generator("consistently", gen, "talk")
 
                         return "END_text"
 
@@ -688,10 +761,6 @@ class Views:
                         print(f"Неопознанная команда: {now}")
 
         def on_draw(self):
-            """
-            Render the screen.
-            """
-
             if not self.start_trigger:
                 self.clear()
                 self.scene.draw()
@@ -781,6 +850,10 @@ class Views:
                 self.waiting_dialogue.on()
             if key == arcade.key.S:
                 self.show_settings()
+            if key == arcade.key.B:
+                print(self.scene["characters"])
+                for i, o in self.scene["characters"].items():
+                    print(i, o.position, o.alpha)
 
         def on_mouse_release(self, x, y, button, modifiers):
             if (int(button) == 1) and not self.waiting_settings:
@@ -874,9 +947,7 @@ class Views:
         class Actions:
             def __init__(self, main):
                 self.main: Views.GameView = main
-                self.active_generators_consistently = []
-                self.active_generators_together = []
-                self.talk_generator: Optional[types.GeneratorType] = None
+                self.active_generators = ListActiveGenerators()
                 self.dt_accumulator = 0.0
 
             def _fadein(self, now: dict):
@@ -886,7 +957,7 @@ class Views:
                 duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
                 progress = 0.0
                 last_alpha = self.main.scene["fade"].alpha
-                min_step = 1  # Минимальное изменение alpha для обновления
+                min_step = 1
 
                 while True:
                     dt = yield
@@ -985,51 +1056,8 @@ class Views:
 
                 wait_trigger.off()
 
-            def _process_dt(self, raw_dt: float):
-                if raw_dt is None or raw_dt <= 0:
-                    return None
-                self.dt_accumulator += raw_dt
-                if self.dt_accumulator < 0.001:
-                    return None
-
-                effective_dt = self.dt_accumulator
-                self.dt_accumulator = 0
-                return min(effective_dt, 0.1)
-
             def update(self, delta_time: float):
-                delta_time = self._process_dt(delta_time)
-
-                if self.active_generators_together:
-                    for gen in self.active_generators_together[:]:
-                        gen: types.GeneratorType = gen
-                        try:
-                            gen.send(delta_time)
-                        except StopIteration:
-                            self.active_generators_together.remove(gen)
-                        except TypeError:
-                            try:
-                                next(gen)
-                            except StopIteration:
-                                self.active_generators_together.remove(gen)
-
-                if self.active_generators_consistently:
-                    gen: types.GeneratorType = self.active_generators_consistently[:][0]
-                    print(gen)
-                    try:
-                        gen.send(delta_time)
-                    except StopIteration:
-                        self.active_generators_consistently.remove(gen)
-                    except TypeError:
-                        try:
-                            next(gen)
-                        except StopIteration:
-                            self.active_generators_together.remove(gen)
-
-                if self.talk_generator:
-                    try:
-                        self.talk_generator.send(delta_time)
-                    except StopIteration:
-                        self.talk_generator = None
+                self.active_generators.update(delta_time)
 
             def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"],now: dict,
                              stream: Literal["consistently", "together"] = "together"):
@@ -1041,17 +1069,13 @@ class Views:
                     "wait": self._wait
                 }
 
-                target_list = (self.active_generators_together if stream == "together" else self.active_generators_consistently)
-
-                target_list.append(method_map[name](now))
+                self.active_generators.add_generator(stream, method_map[name](now), name)
 
     class GameMenu(Main_template):
-        def __init__(self, show_lc: bool = True, first_load: bool = False):
+        def __init__(self, show_lc: bool = True):
             super().__init__()
 
             self.window.set_vsync(False)
-
-            self.first_load = first_load
 
             self.loading_screen = arcade.Sprite("game/images/gui/JE3000_logo-export.png", 1)
             self.loading_screen.position = (int(self.center_x), int(self.center_y))
@@ -1090,7 +1114,7 @@ class Views:
                     yield
                 yield
 
-                init_file(self.first_load)
+                init_file(True)
 
                 for i in range(20, 50):
                     yield
@@ -1109,10 +1133,6 @@ class Views:
             self.loading_generator = loading(self)
 
         def on_draw(self):
-            """
-            Render the screen.
-            """
-
             self.clear()
             self.manager.draw()
             arcade.draw_sprite(self.loading_screen)
@@ -1121,11 +1141,6 @@ class Views:
             super().on_draw()
 
         def on_update(self, delta_time):
-            """
-            All the logic to move, and the game logic goes here.
-            Normally, you'll call update() on the sprite lists that
-            need it.
-            """
             if not self.is_loading:
                 self.manager.enable()
             else:

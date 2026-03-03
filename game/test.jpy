@@ -1,19 +1,22 @@
 
 label main
-    Scene.set_bg("bg_office.jpg", 1.5)
+    Scene.set_scene("bch_city.png", 1.0)
     Audio.play("music", "Hello_Charlotte_Swedish_Fish_Elo.mp3", volume=0.6, effect="FADE")
     Scene.show_sprite(character="masorubka hey", at="left")
     Scene.fade("fadeout", duration=2.0)
     <masorubka> "Ребята! Новый JopaJam! Мы наконец можем приступить к следующей игре!"
+    Scene.set_scene("bg_office.jpg", 1.5, effect=SpriteEffects.Dissolve(1.0))
 
-    Scene.show_sprite(character="edwin smile", at="right")
+    Scene.show_sprite(character="edwin smile", at="right", effect=SpriteEffects.Dissolve(1.0))
     <edwin> "Чудесно! Еще одна стрессовая неделя игроделанья..."
-    Scene.show_sprite(character="masorubka ponder")
+    Scene.show_sprite(character="masorubka ponder", effect=SpriteEffects.Dissolve(1.0), at="left")
     <masorubka> "Погодь..."
+    Audio.play("sound", "sfx/gaster-vanish.mp3")
+    Scene.hide_sprite("edwin", effect=SpriteEffects.Dissolve(1.0))
     <masorubka> "Эм... \n Мы же даже не в одном городе живём... \n Какого хрена мы все работаем в каком-то офисе?"
-    Scene.show_sprite(character="edwin neutral")
+    Scene.show_sprite(character="edwin neutral", at="right")
     <edwin> "А... \n Это?..."
-    Scene.show_sprite(character="edwin smile")
+    Scene.show_sprite(character="edwin smile", at="right")
     <edwin> "Так мы игру уже сделали!"
     <edwin> "Просто, видимо, чьей-то идеей было сделать пролог в виде того, как мы эту игру делали и вообще как пришли к такой идее."
     <edwin> "Эдакая "Метаирония", которая понапихана, где только можно, в любых подобных проектах вроде нашего. Как будто это дико оригинально и "Типа" оправдывает всю дичь на экране."
@@ -50,21 +53,21 @@ label main
     Scene.show_sprite("masorubka ponder")
     <masorubka> "Нам надо что-то, что мы можем потянуть... И, желательно, чтобы без нейронок."
 
-    Scene.show_sprite("rony yay", at="center")
+    Scene.show_sprite("rony yay", at="center", effect=SpriteEffects.Dissolve(0.1))
     <rony> "О! {w=0.2}А давайте всё-таки реализуем мою идею с эпической новеллой, где Джек и Дебилыч - это два вида хтонических ангелов, и вместе им необходимо предотвратить катастрофический конец света при помощи..."
     Scene.show_sprite("masorubka bitey")
     <masorubka> "А идеи, которые не требуют глубокого анализа и тысячи сложнейших сцен, для простого конкурса игровых поделок есть?"
     Scene.show_sprite("rony oh")
     <masorubka> "Мы за своё существование сделали только одну игру, мы просто не потянем такой объём!"
     Scene.move("rony", position=(0.67, -1), speed=2.0, stream="together")
-    Scene.show_sprite("bromand neutral", at="center")
+    Scene.show_sprite("bromand neutral", at="center", effect=SpriteEffects.Dissolve(0.1))
     <bromand> "Ребят, может, спросить Юни? Она всё-таки наш босс, как-никак."
 
     Scene.show_sprite("masorubka neutral", at=(0.1, -1), stream="together")
     Scene.move("masorubka", position=(0.1, -1), speed=2.5, stream="together")
     Scene.show_sprite("edwin neutral", at=(0.9, -1), stream="together")
     Scene.move("edwin", position=(0.9, -1), speed=2.5, stream="together")
-    Scene.show_sprite("uni", at=(0.3, 0.45), stream="together")
+    Scene.show_sprite("uni", at=(0.3, 0.45), stream="together", effect=SpriteEffects.Dissolve(0.1))
     <uni> "Народ!!!!!!!!!!!!!!  ! ! ! !! ! !!!!"
     <uni> "Мы делаем ЯоЙ!!!!!!!!!!!!"
     <uni> "С Джеком и его Альтернативами!!!!!!!"
