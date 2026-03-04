@@ -1,5 +1,4 @@
 import arcade
-import pyglet
 from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 import arcade.gui as agui
@@ -19,7 +18,6 @@ from scene import Scene
 from lore_viewer import Wwl
 from waiter import Waiter
 from saves import Saves_manager
-from list_generator import ListActiveGenerators
 from namespace import Namespace
 from actions import Actions
 from audio import AudioManager
