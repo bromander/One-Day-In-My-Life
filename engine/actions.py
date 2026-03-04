@@ -1,0 +1,124 @@
+import time
+from typing import Optional, Literal, Tuple
+import sys, os
+import arcade
+sys.path.append(os.path.dirname(__file__))
+from saves import Saves_manager
+from list_generator import ListActiveGenerators
+from saves import Saves_manager as sm
+
+class Actions:
+    def __init__(self, main):
+        self.main = main
+        self.active_generators = ListActiveGenerators()
+        self.dt_accumulator = 0.0
+
+    def _fadein(self, now: dict):
+
+        duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
+        progress = 0.0
+        last_alpha = self.main.scene["fade"].alpha
+        min_step = 1
+
+        while True:
+            dt = yield
+
+            if dt is None or dt <= 0:
+                continue
+
+            progress = min(progress + dt / duration, 1.0)
+            new_alpha = int(progress * 255)
+
+            if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
+                self.main.scene["fade"].alpha = new_alpha
+                last_alpha = new_alpha
+
+            if progress >= 1.0:
+                return
+
+    def _fadeout(self, now: dict):
+
+        duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
+        progress = 0.0
+        last_alpha = self.main.scene["fade"].alpha
+        min_step = 1
+
+        while True:
+            dt = yield
+
+            if dt is None or dt <= 0:
+                continue
+
+            progress = min(progress + dt / duration, 1.0)
+            new_alpha = 255 - int(progress * 255)
+
+            if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
+                self.main.scene["fade"].alpha = new_alpha
+                last_alpha = new_alpha
+
+            if progress >= 1.0:
+                self.main.scene["fade"].alpha = 0
+                return
+
+    def _move(self, now: dict):
+        sprite = self.main.scene["characters"][now["character"]]
+        now["speed"] = now["speed"] * 1000
+
+        if now["pos"][0] == -1:
+            now["pos"] = (sprite.center_x / self.main.width, now["pos"][1])
+        if now["pos"][1] == -1:
+            now["pos"] = (now["pos"][0], sprite.center_y / self.main.height)
+
+        target_x = self.main.width * now["pos"][0]
+        target_y = self.main.height * now["pos"][1]
+        speed = abs(now["speed"]) if now["speed"] != 0 else 0.001
+
+        start_x = sprite.center_x
+        start_y = sprite.center_y
+        full_distance = ((target_x - start_x) ** 2 + (target_y - start_y) ** 2) ** 0.5
+
+        if full_distance < 1:
+            return None
+
+        while True:
+            dt = yield
+
+            if dt is None or dt <= 0:
+                continue
+
+            current_x = sprite.center_x
+            current_y = sprite.center_y
+            dx = target_x - current_x
+            dy = target_y - current_y
+
+            distance = (dx ** 2 + dy ** 2) ** 0.5
+            step = speed * dt
+
+            if distance <= step:
+                sprite.center_x = target_x
+                sprite.center_y = target_y
+                break
+            else:
+                sprite.center_x += (dx / distance) * step
+                sprite.center_y += (dy / distance) * step
+
+    def _wait(self, now):
+        start_time = time.time()
+
+        while time.time() - start_time < now["time"]:
+            yield
+
+    def update(self, delta_time: float):
+        self.active_generators.update(delta_time)
+
+    def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"], now: dict,
+                     stream: Literal["consistently", "together"] = "together"):
+
+        method_map = {
+            "fadein": self._fadein,
+            "fadeout": self._fadeout,
+            "move_sprite": self._move,
+            "wait": self._wait
+        }
+
+        self.active_generators.add_generator(stream, method_map[name](now), name)
