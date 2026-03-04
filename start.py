@@ -3,7 +3,6 @@ import sys
 import arcade
 import random
 import json
-sys.path.insert(0, os.path.dirname(__file__))
 import engine
 from engine.main import Views
 

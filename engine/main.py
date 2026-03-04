@@ -12,15 +12,14 @@ import random
 import json
 import uuid
 import sys
-sys.path.append(os.path.dirname(__file__))
-from gui import UISliderVertical
-from scene import Scene
-from lore_viewer import Wwl
-from waiter import Waiter
-from saves import Saves_manager
-from namespace import Namespace
-from actions import Actions
-from audio import AudioManager
+from .gui import UISliderVertical
+from .scene import Scene
+from .lore_viewer import Wwl
+from .waiter import Waiter
+from .saves import Saves_manager
+from .namespace import Namespace
+from .actions import Actions
+from .audio import AudioManager
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
@@ -232,7 +231,7 @@ class Views:
                                 {
                                     "id": str(i),
                                     "path": str(o.texture.file_path),
-                                    "size": round(i.size),
+                                    "size": o.size,
                                     "pos": o.position
                                 }
                                 for i, o in self.scene["characters"].items()
@@ -242,7 +241,7 @@ class Views:
                                 {
                                     "layer" :  0,
                                     "path" : str(i.texture.file_path),
-                                    "size" : round(i.size),
+                                    "size" : i.size,
                                     "pos" : i.position
                                 }
                                 for i in self.scene["bg"].values()
@@ -255,7 +254,7 @@ class Views:
 
                             }
                             Saves_manager().save.create_save(self.session_id,
-                                                defines=self.NAMESPACE["define"].defines,
+                                                defines=self.NAMESPACE["Define"].defines,
                                                 position=wwl.pose-1,
                                                 label=wwl.label,
                                                 scene=scene)
@@ -392,7 +391,7 @@ class Views:
                     wwl.label = save["label"]
                     wwl.pose = save["position"]
                     for i, o in save["defines"].items():
-                        self.NAMESPACE["define"].defines[i] = o
+                        self.NAMESPACE["Define"].defines[i] = o
 
                     scene = save["scene"]
 

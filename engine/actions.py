@@ -2,10 +2,8 @@ import time
 from typing import Optional, Literal, Tuple
 import sys, os
 import arcade
-sys.path.append(os.path.dirname(__file__))
-from saves import Saves_manager
-from list_generator import ListActiveGenerators
-from saves import Saves_manager as sm
+from .list_generator import ListActiveGenerators
+from .saves import Saves_manager as sm
 
 class Actions:
     def __init__(self, main):

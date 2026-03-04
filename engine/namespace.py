@@ -1,8 +1,7 @@
 from typing import Optional, Literal, Tuple
 import sys, os
 import arcade
-sys.path.append(os.path.dirname(__file__))
-from saves import Saves_manager
+from .saves import Saves_manager
 
 
 class Namespace:

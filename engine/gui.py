@@ -1,4 +1,3 @@
-import arcade
 import arcade.gui
 import warnings
 from typing_extensions import override

@@ -3,8 +3,7 @@ import sys, os
 import arcade
 import random
 import pyglet.media.player
-sys.path.append(os.path.dirname(__file__))
-from saves import Saves_manager as sm
+from .saves import Saves_manager as sm
 
 
 class AudioChannel:
