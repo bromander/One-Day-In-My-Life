@@ -4,6 +4,9 @@ import types
 
 class ListActiveGenerators:
     def __init__(self):
+        """
+        Отвечает за управление всеми генераторами
+        """
         # Используем кортежи (descr, gen) вместо словарей для лучшей производительности
         self.active_generators_consistently: List[Tuple[str, types.GeneratorType]] = []
         self.active_generators_together: List[Tuple[str, types.GeneratorType]] = []
@@ -33,7 +36,14 @@ class ListActiveGenerators:
         ]
 
     def add_generator(self, stream: Literal["together", "consistently"],
-                      gen: types.GeneratorType, descr: str) -> None:
+                      gen: types.GeneratorType,
+                      descr: str) -> None:
+        """
+        Добавляет генератор
+        :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
+        :param gen: Объект-генератор
+        :param descr: Название генератора
+        """
         if descr == self._talk_description:
             self._remove_talk_generators()
 
@@ -77,6 +87,10 @@ class ListActiveGenerators:
             self.active_generators_consistently.pop(0)
 
     def update(self, delta_time: float) -> None:
+        """
+        Обновляет генераторы
+        :param delta_time: Промежуток между кадрами
+        """
         processed_dt = self._process_dt(delta_time)
         if processed_dt is None:
             return
@@ -85,5 +99,10 @@ class ListActiveGenerators:
         self._update_consistently(processed_dt)
 
     def clear(self) -> None:
+        """
+        удаляет все добавленные генераторы
+        :return:
+        """
+        self.dt_accumulator = 0.0
         self.active_generators_together.clear()
         self.active_generators_consistently.clear()

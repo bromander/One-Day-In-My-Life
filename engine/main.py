@@ -67,11 +67,13 @@ cname_text_colour = arcade.color.BLACK
 dialog_text_colour = arcade.color.BLACK
 
 class Views:
-    def init(self):
-        return self.GameMenu, self.SettingsMenu, self.SaveMenu, self.GameView
 
     class Main_template(arcade.View):
-        def __init__(self):
+        def __init__(self) -> None:
+            """
+            Является "Шаблоном".
+            Создаёт счётчик ФПС и отвечает за курсор
+            """
             super().__init__()
             self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
             self.window.background_color = arcade.color.WHITE
@@ -93,7 +95,8 @@ class Views:
                     anchor_y="top",
                 )
             }
-        def on_update(self, delta_time: float) -> bool | None:
+
+        def on_update(self, delta_time: float) -> None:
             self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
             self.window.set_mouse_visible(False)
 
@@ -118,7 +121,7 @@ class Views:
                     self.fps['last_print_time'] = time.time()
 
 
-        def on_draw(self) -> bool | None:
+        def on_draw(self) -> None:
             sm = Saves_manager()
             arcade.draw_sprite(self.cursor_texture)
             if sm.volume.get_other("show_fps"):
@@ -134,6 +137,10 @@ class Views:
     class GameView(Main_template):
 
         def __init__(self, session_id: Optional[str] = None) -> None:
+            """
+            Отвечает за основное окно новельной части
+            :param session_id: Айди сессии
+            """
             super().__init__()
 
             self.window.set_vsync(True)
@@ -190,7 +197,6 @@ class Views:
                 sprite.alpha = 0
                 self.scene.add_sprite("fade", "", sprite)
 
-                #settings bg
                 def create_settings():
                     texture = arcade.load_texture("game/images/gui/in_game_settings.png")
 
@@ -378,11 +384,15 @@ class Views:
                     create_settings_buttons()
 
                 create_settings()
+
             create_widgets()
 
             self.start_trigger: bool = True
 
             def load_saves(session_id):
+                """
+                Загружает сохранение
+                """
                 if session_id is None:
                     self.session_id = str(uuid.uuid4())
                 else:
@@ -418,7 +428,7 @@ class Views:
 
             self.NAMESPACE = Namespace(self, ListCharacters, wwl, am, wait_trigger)
 
-        def format_text(self, text: str):
+        def format_text(self, text: str) -> str:
             pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
             text = re.split(pattern, str(text))
             for e, i in enumerate(text):
@@ -427,7 +437,10 @@ class Views:
             text = "".join(text).replace("\\\\", "\\")
             return text
 
-        def talk_manager(self, pos_offset: Optional[int] = None):
+        def talk_manager(self, pos_offset: Optional[int] = None) -> None:
+            """
+            Получает инструкции сценария и запускает функцию talk(), обрабатывая её результаты
+            """
             if wwl.get_thing(pos_offset, edit_main=False)["action"] == "SAY":
                 current_time = time.time()
                 if current_time - self.last_text_skip < 0.05:
@@ -458,7 +471,12 @@ class Views:
                     game = Views.GameMenu(False)
                     self.window.show_view(game)
 
-        def talk(self, now):
+        def talk(self, now) -> None:
+            """
+            Запускает основные действия сценария
+            :param now:
+            :return:
+            """
             global dialog_text_text, cname_text_text
             global cname_text_colour, dialog_text_colour
             global text_anchor
@@ -503,7 +521,7 @@ class Views:
                     case _:
                         print(f"Неопознанная команда: {now}")
 
-        def on_draw(self):
+        def on_draw(self) -> None:
             if not self.start_trigger:
                 self.clear()
                 self.scene.draw()
@@ -515,7 +533,7 @@ class Views:
                 self.settings_manager.draw()
             super().on_draw()
 
-        def show_menu(self, data):
+        def show_menu(self, data) -> None:
             global wait_trigger
 
             def jump(label: str):
@@ -546,7 +564,7 @@ class Views:
 
             self.menu_manager.add(ui_anchor_layout)
 
-        def show_settings(self, state: Optional[bool] = None):
+        def show_settings(self, state: Optional[bool] = None) -> None:
             settings = self.settings_scene["in_game_settings"]
 
             if state is not None:
@@ -558,7 +576,7 @@ class Views:
             self.settings_h_box.visible = turn_on
             settings.alpha = 255 if turn_on else 0
 
-        def on_update(self, delta_time):
+        def on_update(self, delta_time) -> None:
 
             self.delta_time = delta_time
 
@@ -588,7 +606,7 @@ class Views:
             
             super().on_update(delta_time)
 
-        def on_key_press(self, key, modifiers):
+        def on_key_press(self, key, modifiers) -> None:
             if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.waiting_settings:
                 self.waiting_dialogue.on()
             if key == arcade.key.S:
@@ -598,11 +616,11 @@ class Views:
                 for i, o in self.scene["characters"].items():
                     print(i, o.position, o.alpha)
 
-        def on_mouse_release(self, x, y, button, modifiers):
+        def on_mouse_release(self, x, y, button, modifiers) -> None:
             if (int(button) == 1) and not self.waiting_settings:
                 self.waiting_dialogue.on()
 
-        def update_main_windows(self):
+        def update_main_windows(self) -> None:
 
             def create_dialog_text():
 
@@ -652,8 +670,12 @@ class Views:
                             x_pos = self.width * 0.18
                         elif text_anchor == "center":
                             x_pos = self.width // 2
-                        else:
+                        elif text_anchor == "right":
                             x_pos = self.width * 0.82
+                        elif type(text_anchor) is float:
+                            x_pos = self.width * text_anchor
+                        elif type(text_anchor) is int:
+                            x_pos = int
 
                         t = arcade.Text(
                             text=sline,
@@ -688,7 +710,11 @@ class Views:
             create_cname_text()
 
     class GameMenu(Main_template):
-        def __init__(self, show_lc: bool = True):
+        def __init__(self, show_lc: bool = True) -> None:
+            """
+            Отвечает за главное меню игры
+            :param show_lc: если True, отображает загрузочный экран и инициализирует основные класса
+            """
             super().__init__()
 
             self.window.set_vsync(False)
@@ -716,8 +742,10 @@ class Views:
             if show_lc:
                 self.show_ls()
 
-
-        def show_ls(self):
+        def show_ls(self) -> None:
+            """
+            Отображает загрузочный экран
+            """
             def loading(self):
                 self.loading_screen_fade.alpha = 255
                 for i in range(0, int(250 / 2)):
@@ -748,7 +776,7 @@ class Views:
             self.is_loading = True
             self.loading_generator = loading(self)
 
-        def on_draw(self):
+        def on_draw(self) -> None:
             self.clear()
             self.manager.draw()
             arcade.draw_sprite(self.loading_screen)
@@ -756,7 +784,7 @@ class Views:
             arcade.draw_sprite(self.why)
             super().on_draw()
 
-        def on_update(self, delta_time):
+        def on_update(self, delta_time) -> None:
             if not self.is_loading:
                 self.manager.enable()
             else:
@@ -775,12 +803,12 @@ class Views:
         def on_mouse_release(self, x: int, y: int, button: int, modifiers: int) -> EVENT_HANDLE_STATE:
             self.is_mouse_pressed = False
 
-        def on_key_press(self, key: int, modifiers: int) -> bool | None:
+        def on_key_press(self, key: int, modifiers: int) -> None:
             if (key == arcade.key.L and modifiers & arcade.key.MOD_SHIFT) and not self.is_loading:
                 self.why.alpha = 255
                 self.is_loading  = True
 
-        def show_main_windows(self):
+        def show_main_windows(self) -> None:
 
             def create_menu_buttons():
 
@@ -852,6 +880,9 @@ class Views:
 
     class SaveMenu(Main_template):
         def __init__(self):
+            """
+            Отвечает за экран загрузки сохранений
+            """
             super().__init__()
 
             saves = sm.save.get_all_saves()
@@ -871,7 +902,7 @@ class Views:
 
             self.generate_buttons()
 
-        def generate_buttons(self):
+        def generate_buttons(self) -> None:
 
             def return_to_main_menu(event=None):
                 am.stop_voice()
@@ -943,7 +974,10 @@ class Views:
                 self.slider.value += -scroll_y
 
     class SettingsMenu(Main_template):
-        def __init__(self):
+        def __init__(self) -> None:
+            """
+            Отвечает за меню настроек
+            """
             super().__init__()
 
             self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=0)
@@ -964,7 +998,7 @@ class Views:
 
             self.show_main_windows()
 
-        def on_draw(self):
+        def on_draw(self) -> None:
             self.clear()
             self.manager.draw()
             super().on_draw()
@@ -978,7 +1012,7 @@ class Views:
                 sm.volume.set_other("fade_speed", round(self.fade_speed_slider.value, 2))
             super().on_update(delta_time)
 
-        def show_main_windows(self):
+        def show_main_windows(self) -> None:
 
             def create_menu_buttons():
                 with open("game/data.JSON", "r", encoding="UTF-8") as data:
@@ -1109,10 +1143,27 @@ class Views:
 
 
 
-class Character():
+class Character:
 
-    def __init__(self, name: str, char_id: Optional[str] = None, colour: str = "", name_colour: str = "", c_scale: float = 1.0, text_anch: str = "left", lps: int = 60):
-        sm = Saves_manager()
+    def __init__(self, name: str,
+                 char_id: Optional[str] = None,
+                 colour: str = "",
+                 name_colour: str = "",
+                 c_scale: float = 1.0,
+                 text_anch: Tuple[int, float, Literal["left", "right", "center"]] = "left",
+                 lps: int = 60) -> None:
+
+        """
+        Создаёт персонажа.
+        :param name: Имя персонажа
+        :param char_id: Айди персонажа (должно совпадать с его папкой, и названиями спрайтов)
+        :param colour: Цвет текста речи (в HEX формате)
+        :param name_colour: Цвет текста имени (в HEX формате)
+        :param c_scale: Размер спрайта
+        :param text_anch: Положение текста на экране (left, right, center)/ int - координата X / float - координата (width * text_anch)
+        :param lps: Letters per frame: Скорость появления букв в секунду.
+        """
+
         def hex_to_rgb(hex_color: str):
             if hex_color:
                 hex_color = hex_color.lstrip("#")
@@ -1146,12 +1197,7 @@ class Character():
         self.colour = hex_to_rgb(colour)
         self.name_colour = hex_to_rgb(name_colour)
         self.c_scale = c_scale
-        self.def_lps = lps
-        if self.def_lps == 60:
-            self.lps = sm.volume.get_other("lps")
-        else:
-            self.lps = lps
-
+        self.lps = lps
         self.action = None
         self.last_text = " "
 
@@ -1165,8 +1211,13 @@ class Character():
 
         self.text_anch = text_anch
 
+    def talk(self, text: str) -> None:
+        """
+        Форматирует текст и создаёт генератор, который проигрывает речь персонажа.
+        :param text: Речь персонажа
+        :return: Генератор
+        """
 
-    def talk(self, text: str):
         global dialog_text_colour, cname_text_colour
         global dialog_text_text, cname_text_text
         global text_anchor
@@ -1176,8 +1227,7 @@ class Character():
                 return text
             return text[:index] + new_char + text[index + 1:]
 
-        if self.def_lps == 60:
-            self.lps = sm.volume.get_other("lps")
+        now_lps = self.lps * (self.lps / sm.volume.get_other("lps"))
 
         dialog_text_text_alt = [" "]
         string_index_alt = 0
@@ -1215,7 +1265,7 @@ class Character():
         dialog_text_text = dialog_text_text_alt.copy()
         cname_text_text = ""
 
-        def _talk():
+        def _talk(now_lps):
             global dialog_text_text, cname_text_text
             string_index = 0
             fast = False
@@ -1291,7 +1341,7 @@ class Character():
                                 fast = True
 
                         if not fast:
-                            remaining_time = 1 / self.lps
+                            remaining_time = 1 / now_lps
                             while remaining_time > 0:
                                 dt = yield
                                 if dt is None or dt <= 0:
@@ -1302,7 +1352,7 @@ class Character():
                     return None
                 else:
                     if not fast:
-                        remaining_time = 1 / self.lps
+                        remaining_time = 1 / now_lps
                         while remaining_time > 0:
                             dt = yield
                             if dt is None or dt <= 0:
@@ -1310,17 +1360,21 @@ class Character():
                             remaining_time -= dt
                     dt = yield
 
-        return _talk()
+        return _talk(now_lps)
 
-    def show(self, sprite: str, scale: Optional[int] = None) -> arcade.Sprite:
-        if scale is None:
-            scale = self.c_scale
+    def show(self, sprite: str) -> arcade.Sprite:
+        """
+        Возвращает спрайт персонажа
+        :param sprite: Название спрайта
+        """
         now_sprite = self.sprites[sprite]
-        now_sprite.scale = scale
         return now_sprite
 
 class ListCharacters:
-    def __init__(self):
+    def __init__(self) -> None:
+        """
+        Хранит в себе список всех персонажей
+        """
         self.characters = {
             "j" : Character("Джопа", "j", name_colour="#D2691E", colour="#CD853F"),
             "aj": Character("АнтиДжек", "aj", name_colour="#3f87cd", c_scale=0.5, colour="#2167C4"),
@@ -1334,11 +1388,11 @@ class ListCharacters:
             "uni" : Character("Юни/", char_id="uni", name_colour="#00FF7F", colour="#00FF7F", c_scale=0.8)
         }
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> dict[str : Character]:
         return self.characters[item]
 
 
-def init_file(hard_load: bool = False):
+def init_file(hard_load: bool = False) -> None:
     """
     Инициализирует основные классы
     """

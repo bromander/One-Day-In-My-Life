@@ -1,7 +1,7 @@
 
 label main
     Scene.set_scene("bch_city.png", 1.0)
-    Audio.play("music", "Hello_Charlotte_Swedish_Fish_Elo.mp3", volume=0.6, effect="FADE")
+    Audio.play("music", "Hello_Charlotte_Swedish_Fish_Elo.mp3", volume=0.6, effect="fade")
     Scene.show_sprite(character="masorubka hey", at="left")
     Scene.fade("fadeout", duration=2.0)
     <masorubka> "Ребята! Новый JopaJam! Мы наконец можем приступить к следующей игре!"
@@ -19,9 +19,9 @@ label main
     Scene.show_sprite(character="edwin smile", at="right")
     <edwin> "Так мы игру уже сделали!"
     <edwin> "Просто, видимо, чьей-то идеей было сделать пролог в виде того, как мы эту игру делали и вообще как пришли к такой идее."
-    <edwin> "Эдакая "Метаирония", которая понапихана, где только можно, в любых подобных проектах вроде нашего. Как будто это дико оригинально и "Типа" оправдывает всю дичь на экране."
+    <edwin> "Эдакая \"Метаирония\", которая понапихана, где только можно, в любых подобных проектах вроде нашего. Как будто это дико оригинально и \"Типа\" оправдывает всю дичь на экране."
     Scene.show_sprite(character="masorubka frustrated")
-    Scene.show_sprite(character="edwin smile")
+    Scene.show_sprite(character="edwin neutral")
     <edwin> "К сожалению, даже если б это была моя идея, я ни за что в этом не признался бы."
     Scene.show_sprite(character="masorubka neutral")
     <masorubka> "А так у нас вообще есть идеи для игры? Конечно, предыдущая всем понравилась, но надо придумать что-то новое."

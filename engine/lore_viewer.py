@@ -7,6 +7,9 @@ from typing import Optional
 class Wwl:
 
     def __init__(self):
+        """
+        Отвечает за обработку сценариев
+        """
 
         def find_files(extension: str):
             results = {}
@@ -89,6 +92,10 @@ class Wwl:
         return label
 
     def get_thing(self, pos_offset: Optional[int] = None, edit_main: bool = True):
+        """
+        Возвращает готовую инструкцию действий на текущее положение в сценарии
+        :param edit_main: Если False, текущее положение в сценарии не изменится
+        """
         if edit_main:
             self.pose += pos_offset if pos_offset is not None else 0
             if len(self._get_lore()) - 1 < self.pose:

@@ -24,7 +24,7 @@ All other files in this repository is distributed under the Apache 2.0 license.
 Полный текст лицензии находится в `engine/LICENSE`.
 
 ### Ассеты
-Все ассеты в папке `game` данного проекта распространяется под лицензией "Creative Commons Attribution 4.0 International".
+Все ассеты в папке `game` данного проекта распространяются под лицензией "Creative Commons Attribution 4.0 International".
 
 Полный текст лицензии находится в `game/LICENSE`.
 

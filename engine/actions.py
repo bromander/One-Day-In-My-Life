@@ -6,7 +6,12 @@ from .list_generator import ListActiveGenerators
 from .saves import Saves_manager as sm
 
 class Actions:
-    def __init__(self, main):
+    def __init__(self, main) -> None:
+        """
+        Хранит в себе некоторые функции-генераторы.
+        Отвечает за обновление всех генераторов
+        :param main:
+        """
         self.main = main
         self.active_generators = ListActiveGenerators()
         self.dt_accumulator = 0.0
@@ -63,12 +68,26 @@ class Actions:
         now["speed"] = now["speed"] * 1000
 
         if now["pos"][0] == -1:
-            now["pos"] = (sprite.center_x / self.main.width, now["pos"][1])
-        if now["pos"][1] == -1:
-            now["pos"] = (now["pos"][0], sprite.center_y / self.main.height)
+            x_norm = sprite.center_x / self.main.width
+        elif isinstance(now["pos"][0], int):
+            x_norm = now["pos"][0] / self.main.width
+        elif isinstance(now["pos"][0], float):
+            x_norm = now["pos"][0]
+        else:
+            x_norm = 0.5
 
-        target_x = self.main.width * now["pos"][0]
-        target_y = self.main.height * now["pos"][1]
+        if now["pos"][1] == -1:
+            y_norm = sprite.center_y / self.main.height
+        elif isinstance(now["pos"][1], int):
+            y_norm = now["pos"][1] / self.main.height
+        elif isinstance(now["pos"][1], float):
+            y_norm = now["pos"][1]
+        else:
+            y_norm = 0.5
+
+        target_x = self.main.width * x_norm
+        target_y = self.main.height * y_norm
+
         speed = abs(now["speed"]) if now["speed"] != 0 else 0.001
 
         start_x = sprite.center_x
@@ -106,11 +125,18 @@ class Actions:
         while time.time() - start_time < now["time"]:
             yield
 
-    def update(self, delta_time: float):
+    def update(self, delta_time: float) -> None:
         self.active_generators.update(delta_time)
 
-    def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"], now: dict,
-                     stream: Literal["consistently", "together"] = "together"):
+    def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"],
+                     now: dict,
+                     stream: Literal["consistently", "together"] = "together") -> None:
+        """
+        Запускает нужный генератор
+        :param name: Название генератора
+        :param now: Параметры для этого генератора (которых создаёт lore_viewer)
+        :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
+        """
 
         method_map = {
             "fadein": self._fadein,

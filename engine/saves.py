@@ -2,6 +2,9 @@ import  json, os
 
 class Saves_manager:
     def  __init__(self):
+        """
+        Отвечает за работу с сохранением различных данных.
+        """
 
         if not os.path.exists("game/data.JSON"):
             with open("game/data.JSON", "w", encoding="UTF-8") as file:
@@ -24,6 +27,7 @@ class Saves_manager:
         self.defines = {}
 
     class persistent:
+
         @staticmethod
         def get_persistent(name: str):
             with open("game/data.JSON", "r", encoding="UTF-8") as file:
@@ -36,6 +40,15 @@ class Saves_manager:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["persistent"][name] = data
+            with open("game/data.JSON", "w", encoding="UTF-8") as file:
+                json.dump(file_data, file, indent=4, ensure_ascii=False)
+
+        @staticmethod
+        def del_persistent(name: str):
+            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+                file_data_old = dict(json.load(file))
+            file_data = file_data_old.copy()
+            del file_data["persistent"][name]
             with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
