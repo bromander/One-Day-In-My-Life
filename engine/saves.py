@@ -1,4 +1,5 @@
 import  json, os
+import Exceptions
 
 class Saves_manager:
     def  __init__(self):
@@ -32,6 +33,10 @@ class Saves_manager:
         def get_persistent(name: str):
             with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
+
+            if name not in file["persistent"]:
+                raise Exceptions.PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
+
             return file["persistent"].get(name, None)
 
         @staticmethod
@@ -48,7 +53,12 @@ class Saves_manager:
             with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
+
+            if name not in file_data["persistent"]:
+                raise Exceptions.PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
+
             del file_data["persistent"][name]
+
             with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
@@ -85,7 +95,12 @@ class Saves_manager:
             with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
+
+            if name not in file_data["options"]:
+                raise Exceptions.VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
+
             file_data["options"][name] = value
+
             with open("game/data.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
@@ -112,6 +127,10 @@ class Saves_manager:
         def get_other(name: str):
             with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
+
+            if name not in file["options"]:
+                raise Exceptions.VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
+
             return file["options"].get(name, None)
 
     class save:
@@ -134,6 +153,10 @@ class Saves_manager:
         def get_save(session_id: str) -> dict:
             with open("game/data.JSON", "r", encoding="UTF-8") as file:
                 file_data = dict(json.load(file))
+
+            if session_id not in file_data["saves"]:
+                raise Exceptions.SaveDoesNotExistError(f"Save \"{session_id}\" does not exist!")
+
             return file_data["saves"][session_id]
 
         @staticmethod

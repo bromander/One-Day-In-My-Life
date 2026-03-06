@@ -20,6 +20,7 @@ from .saves import Saves_manager
 from .namespace import Namespace
 from .actions import Actions
 from .audio import AudioManager
+import Exceptions
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
@@ -1366,7 +1367,11 @@ class Character:
         """
         Возвращает спрайт персонажа
         :param sprite: Название спрайта
+        :raises FileNotFoundError: Если спрайт не был найден
         """
+        if sprite not in self.sprites:
+            raise FileNotFoundError(f"Character sprite \"{sprite}\" was not found in \"./game/images/characters/{self.char_id}/{sprite}\"")
+
         now_sprite = self.sprites[sprite]
         return now_sprite
 

@@ -4,6 +4,7 @@ import sys, os
 import arcade
 from .list_generator import ListActiveGenerators
 from .saves import Saves_manager as sm
+from .Exceptions import ActionNotFoundError
 
 class Actions:
     def __init__(self, main) -> None:
@@ -136,6 +137,7 @@ class Actions:
         :param name: Название генератора
         :param now: Параметры для этого генератора (которых создаёт lore_viewer)
         :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
+        :raises ActionNotFoundError: Если name не существует
         """
 
         method_map = {
@@ -144,5 +146,8 @@ class Actions:
             "move_sprite": self._move,
             "wait": self._wait
         }
+
+        if name not in method_map:
+            raise ActionNotFoundError(f"Action \"{name}\" now found!")
 
         self.active_generators.add_generator(stream, method_map[name](now), name)

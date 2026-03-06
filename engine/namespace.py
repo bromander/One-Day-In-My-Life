@@ -2,6 +2,7 @@ from typing import Optional, Literal, Tuple
 import sys, os
 import arcade
 from .saves import Saves_manager
+import Exceptions
 
 
 class Namespace:
@@ -232,6 +233,8 @@ class Namespace:
             :param layer: Слой
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :raises ValueError: Если layer < 0
+            :raises FileNotFoundError: Если файл сцены не был найден
             """
 
             if layer < 0:
@@ -289,14 +292,17 @@ class Namespace:
             :param type: Тип фейда "fadein" или "fadeout"
             :param duration: Продолжительность анимации
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :raises ActionNotFoundError: Если type не существует
             """
             match type:
                 case "fadein":
                     self.Game_view.actions.start_action("fadein", {"time": duration}, stream=stream)
                 case "fadeout":
                     self.Game_view.actions.start_action("fadeout", {"time": duration}, stream=stream)
+                case _:
+                    raise Exceptions.ActionNotFoundError(f"Action \"{type}\" now found!")
 
-        def show_menu(self, buttons: dict) -> None:
+        def show_menu(self, buttons: dict[str : str]) -> None:
             '''
             Показывает меню выбора для переключения между лейблами
             Пример параметра buttons:
@@ -351,6 +357,7 @@ class Namespace:
             :param loop: Если True, музыка будет играть циклично
             :param effect: Название эффекта
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :raises ChannelDoesNotExistError: Если channel не существует
             """
             match channel:
                 case "music":
@@ -361,6 +368,8 @@ class Namespace:
                     loop = False if loop is None else loop
                     target = self.AudioManager.play_sound_gen(f"game/sounds/{file_name}", loop, volume, effect)
                     self.Game_view.actions.active_generators.add_generator(stream, target, "play_sound")
+                case _:
+                    raise Exceptions.ChannelDoesNotExistError(f"Channel {channel} does not exist")
 
         def stop(self, channel: Literal["music", "sound"],
                  effect: Optional[Literal["fade"]] = None,
@@ -370,12 +379,15 @@ class Namespace:
             :param channel: Канал ("music" / "sound")
             :param effect: Название эффекта
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :raises ChannelDoesNotExistError: Если channel не существует
             """
             match channel:
                 case "music":
                     self.Game_view.actions.active_generators.add_generator(stream, self.AudioManager.stop_music_gen(effect), "stop_music")
                 case "sound":
                     self.Game_view.actions.active_generators.add_generator(stream, self.AudioManager.stop_sound_gen(effect), "stop_sound")
+                case N:
+                    raise Exceptions.ChannelDoesNotExistError(f"Channel {N} does not exist")
 
     class SpriteEffects:
 
@@ -415,6 +427,5 @@ class Namespace:
         """
         Заставляет игру... Ждать
         :param duration:
-        :return:
         """
         self.Game_view.actions.start_action("wait", {"time": duration})

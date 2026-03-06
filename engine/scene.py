@@ -1,6 +1,7 @@
 import arcade
 import os
 from typing import Optional, List, Tuple, Literal
+import Exceptions
 
 class Scene:
     def  __init__(self) -> None:
@@ -54,17 +55,29 @@ class Scene:
         Удаляет спрайт со сцены
         :param layer: Слой
         :param name: Название спрайта
+        :raises LayerDoesNotExistError: Если слой не существует
         """
+        if layer not in self.data:
+            raise Exceptions.LayerDoesNotExistError(f"Layer {layer} does not exist!")
+
         if layer != "fade":
             if name in self.data[layer]:
                 del self.data[layer][name]
+            else:
+                raise Exceptions.SpriteDoesNotExistError(f"Sprite {name} does not exist in layer {layer}!")
         else:
-            self.data[layer].clear()
+            self.data["fade"] = arcade.Sprite()
 
     def clear_layer(self, layer: Tuple[Literal["bg", "characters", "gui", "fade"], str]) -> None:
         """
         Очищает слой
+
+        :var layer Слой
+        :raises LayerDoesNotExistError
         """
+        if layer not in self.data:
+            raise Exceptions.LayerDoesNotExistError(f"Layer {layer} does not exist!")
+
         self.data[layer].clear()
 
     def update(self) -> None:
@@ -106,7 +119,6 @@ class Scene:
         """
         Созадёт копию сцены на данный момент
         Максимальное кол-во записываемых сцен - 5. Если становится больше, старые сохранения начинают удалятся
-        :return:
         """
         self.save_points.append(self.data)
         if len(self.save_points) >= 5:
@@ -115,6 +127,10 @@ class Scene:
     def load_savepoint(self, sp_id: int = 0) -> None:
         """
         Загружает копию сцены
-        :param sp_id: Индекс сцены
+        :param sp_id: Индекс сцены:
+        :raises IndexError: если нет сохранений
         """
+        if len(self.save_points) < 0:
+            raise IndexError("There is no save points!")
+
         self.data = self.save_points[sp_id]
