@@ -1,7 +1,7 @@
 import types
 from typing import Optional, Literal, Tuple
 import sys, os
-import arcade
+from arcade import load_sound, sound
 import random
 import pyglet.media.player
 from .saves import Saves_manager as sm
@@ -32,13 +32,12 @@ class AudioChannel:
             self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
             # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
 
-    def play(self, file: Tuple[str, arcade.sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None) -> None:
+    def play(self, file: Tuple[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None) -> None:
         """
         Начинает проигрывать звук
         :param file: Путь к файлу/уже готовый саунд
         :param loop: Если True, звук будет зацикливаться
         :param speed: Скорость проигрывания
-        :return:
         """
         self.stop()
 
@@ -46,12 +45,15 @@ class AudioChannel:
             self._local_modifier = local_volume
 
         if type(file) is str:
-            sound = arcade.load_sound(file)
-        elif type(file) is arcade.sound.Sound:
-            sound = file
+            file_sound = load_sound(file)
+        elif type(file) is sound.Sound:
+            file_sound = file
+        else:
+            raise TypeError("Sound type is not the desired data type")
+
         volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
 
-        self.player = sound.play(volume=volume, loop=loop, speed=speed)
+        self.player = file_sound.play(volume=volume, loop=loop, speed=speed)
 
     def stop(self) -> None:
         """

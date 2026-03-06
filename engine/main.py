@@ -4,14 +4,12 @@ from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
 from typing import Optional, Literal, Tuple
-import types
 import time
 import re
 import os
 import random
 import json
 import uuid
-import sys
 from .gui import UISliderVertical
 from .scene import Scene
 from .lore_viewer import Wwl
@@ -20,7 +18,6 @@ from .saves import Saves_manager
 from .namespace import Namespace
 from .actions import Actions
 from .audio import AudioManager
-import Exceptions
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 

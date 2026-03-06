@@ -1,8 +1,6 @@
 from typing import Optional, Literal, Tuple
-import sys, os
-import arcade
 from .saves import Saves_manager
-import Exceptions
+from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
 
 class Namespace:
@@ -300,7 +298,7 @@ class Namespace:
                 case "fadeout":
                     self.Game_view.actions.start_action("fadeout", {"time": duration}, stream=stream)
                 case _:
-                    raise Exceptions.ActionNotFoundError(f"Action \"{type}\" now found!")
+                    raise ActionNotFoundError(f"Action \"{type}\" now found!")
 
         def show_menu(self, buttons: dict[str : str]) -> None:
             '''
@@ -369,7 +367,7 @@ class Namespace:
                     target = self.AudioManager.play_sound_gen(f"game/sounds/{file_name}", loop, volume, effect)
                     self.Game_view.actions.active_generators.add_generator(stream, target, "play_sound")
                 case _:
-                    raise Exceptions.ChannelDoesNotExistError(f"Channel {channel} does not exist")
+                    raise ChannelDoesNotExistError(f"Channel {channel} does not exist")
 
         def stop(self, channel: Literal["music", "sound"],
                  effect: Optional[Literal["fade"]] = None,
@@ -387,7 +385,7 @@ class Namespace:
                 case "sound":
                     self.Game_view.actions.active_generators.add_generator(stream, self.AudioManager.stop_sound_gen(effect), "stop_sound")
                 case N:
-                    raise Exceptions.ChannelDoesNotExistError(f"Channel {N} does not exist")
+                    raise ChannelDoesNotExistError(f"Channel {N} does not exist")
 
     class SpriteEffects:
 

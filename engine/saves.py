@@ -1,5 +1,5 @@
 import  json, os
-import Exceptions
+from .Exceptions import PersistentDoesNotExistError, VolumeDoesNotExistError, SaveDoesNotExistError
 
 class Saves_manager:
     def  __init__(self):
@@ -35,7 +35,7 @@ class Saves_manager:
                 file = dict(json.load(file))
 
             if name not in file["persistent"]:
-                raise Exceptions.PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
+                raise PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
 
             return file["persistent"].get(name, None)
 
@@ -55,7 +55,7 @@ class Saves_manager:
             file_data = file_data_old.copy()
 
             if name not in file_data["persistent"]:
-                raise Exceptions.PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
+                raise PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
 
             del file_data["persistent"][name]
 
@@ -97,7 +97,7 @@ class Saves_manager:
             file_data = file_data_old.copy()
 
             if name not in file_data["options"]:
-                raise Exceptions.VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
+                raise VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
 
             file_data["options"][name] = value
 
@@ -129,7 +129,7 @@ class Saves_manager:
                 file = dict(json.load(file))
 
             if name not in file["options"]:
-                raise Exceptions.VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
+                raise VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
 
             return file["options"].get(name, None)
 
@@ -155,7 +155,7 @@ class Saves_manager:
                 file_data = dict(json.load(file))
 
             if session_id not in file_data["saves"]:
-                raise Exceptions.SaveDoesNotExistError(f"Save \"{session_id}\" does not exist!")
+                raise SaveDoesNotExistError(f"Save \"{session_id}\" does not exist!")
 
             return file_data["saves"][session_id]
 

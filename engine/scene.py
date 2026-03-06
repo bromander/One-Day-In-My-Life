@@ -1,18 +1,18 @@
-import arcade
+from arcade import Sprite, draw_sprite
 import os
 from typing import Optional, List, Tuple, Literal
-import Exceptions
+from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError
 
 class Scene:
     def  __init__(self) -> None:
         """
         Отвечает за работу со спрайтами со всей сцены
         """
-        self.data: dict[str: Tuple[dict[str: arcade.Sprite], arcade.Sprite]] = {
+        self.data: dict[str: Tuple[dict[str: Sprite], Sprite]] = {
             "bg": {},
             "characters": {},
             "gui": {},
-            "fade": arcade.Sprite()
+            "fade": Sprite()
         }
         self.save_points = []
 
@@ -25,7 +25,7 @@ class Scene:
                     for file in files:
                         if file.lower().endswith(i.lower()):
                             full_path = os.path.join(root, file)
-                            results[file] = arcade.Sprite(full_path.replace("\\", "/"))
+                            results[file] = Sprite(full_path.replace("\\", "/"))
 
             return results
 
@@ -37,7 +37,7 @@ class Scene:
 
     def add_sprite(self, layer: Tuple[Literal["bg", "characters", "gui", "fade"], str],
                    name: Tuple[str, int],
-                   sprite: arcade.Sprite) -> None:
+                   sprite: Sprite) -> None:
         """
         Добавляет спрайт на сцену
         :param layer: Слой
@@ -58,15 +58,15 @@ class Scene:
         :raises LayerDoesNotExistError: Если слой не существует
         """
         if layer not in self.data:
-            raise Exceptions.LayerDoesNotExistError(f"Layer {layer} does not exist!")
+            raise LayerDoesNotExistError(f"Layer {layer} does not exist!")
 
         if layer != "fade":
             if name in self.data[layer]:
                 del self.data[layer][name]
             else:
-                raise Exceptions.SpriteDoesNotExistError(f"Sprite {name} does not exist in layer {layer}!")
+                raise SpriteDoesNotExistError(f"Sprite {name} does not exist in layer {layer}!")
         else:
-            self.data["fade"] = arcade.Sprite()
+            self.data["fade"] = Sprite()
 
     def clear_layer(self, layer: Tuple[Literal["bg", "characters", "gui", "fade"], str]) -> None:
         """
@@ -76,7 +76,7 @@ class Scene:
         :raises LayerDoesNotExistError
         """
         if layer not in self.data:
-            raise Exceptions.LayerDoesNotExistError(f"Layer {layer} does not exist!")
+            raise LayerDoesNotExistError(f"Layer {layer} does not exist!")
 
         self.data[layer].clear()
 
@@ -85,7 +85,7 @@ class Scene:
         Обновляет спрайты всей сцены
         """
         for i in self.data.values():
-            if type(i) is arcade.Sprite:
+            if type(i) is Sprite:
                 i.update()
             elif type(i) is dict:
                 for o in i.values():
@@ -104,16 +104,16 @@ class Scene:
 
                 for layer in range(max_layer, min_layer - 1, -1):
                     if layer in bg_items:
-                        arcade.draw_sprite(bg_items[layer])
+                        draw_sprite(bg_items[layer])
 
         for o, i in self.data.items():
             if o == 'bg':
                 continue
-            elif isinstance(i, arcade.Sprite):
-                arcade.draw_sprite(i)
+            elif isinstance(i, Sprite):
+                draw_sprite(i)
             elif isinstance(i, dict):
                 for o in i.values():
-                    arcade.draw_sprite(o)
+                    draw_sprite(o)
 
     def create_savepoint(self) -> None:
         """
