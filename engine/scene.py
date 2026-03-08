@@ -12,7 +12,7 @@ class Scene:
             "bg": {},
             "characters": {},
             "gui": {},
-            "fade": Sprite()
+            "fade": {"fade" : Sprite(), "splash": Sprite()}
         }
         self.save_points = []
 
@@ -35,8 +35,8 @@ class Scene:
     def __getitem__(self, item):
         return self.data[item]
 
-    def add_sprite(self, layer: Tuple[Literal["bg", "characters", "gui", "fade"], str],
-                   name: Tuple[str, int],
+    def add_sprite(self, layer: Literal["bg", "characters", "gui", "fade"],
+                   name: str,
                    sprite: Sprite) -> None:
         """
         Добавляет спрайт на сцену
@@ -44,10 +44,7 @@ class Scene:
         :param name: Название спрайта
         :param sprite: Сам спрайт
         """
-        if layer == "fade":
-            self.data["fade"] = sprite
-        else:
-            self.data[layer][name] = sprite
+        self.data[layer][name] = sprite
 
     def delete_sprite(self, layer: Tuple[Literal["bg", "characters", "gui", "fade"], str],
                       name: str) -> None:
@@ -60,13 +57,10 @@ class Scene:
         if layer not in self.data:
             raise LayerDoesNotExistError(f"Layer {layer} does not exist!")
 
-        if layer != "fade":
-            if name in self.data[layer]:
-                del self.data[layer][name]
-            else:
-                raise SpriteDoesNotExistError(f"Sprite {name} does not exist in layer {layer}!")
+        if name in self.data[layer]:
+            del self.data[layer][name]
         else:
-            self.data["fade"] = Sprite()
+            raise SpriteDoesNotExistError(f"Sprite {name} does not exist in layer {layer}!")
 
     def clear_layer(self, layer: Tuple[Literal["bg", "characters", "gui", "fade"], str]) -> None:
         """

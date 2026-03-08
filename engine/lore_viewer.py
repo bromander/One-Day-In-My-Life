@@ -29,7 +29,7 @@ class Wwl:
                 for o, p in enumerate(f.split("\n")):
                     p = p.strip("\n ")
                     if p.startswith("label"):
-                        p =  p.split(" ")
+                        p = re.split(r"[() ]", p)
                         self.files[e]["content"][p[1]] = "\n".join(f.split("\n")[o:])
 
         self.pose = 0
@@ -58,6 +58,88 @@ class Wwl:
             for o in self.files[i]["content"]:
                 self.files[i]["content"][o] = replace_lines_starting_with_tag(self.files[i]["content"][o])
 
+    def parse_label_string(self, label_str, default_values, param_names):
+
+        content = re.sub(r'^label\s+main\s*\(\s*', '', label_str)
+        content = re.sub(r'\s*\)\s*:\s*$', '', content)
+
+        params_list = []
+        current_param = ''
+        in_quotes = False
+        quote_char = ''
+        bracket_count = 0
+
+        for char in content:
+            if char in ['"', "'"] and not in_quotes:
+                in_quotes = True
+                quote_char = char
+                current_param += char
+            elif char == quote_char and in_quotes:
+                in_quotes = False
+                quote_char = ''
+                current_param += char
+            elif char == '(' and not in_quotes:
+                bracket_count += 1
+                current_param += char
+            elif char == ')' and not in_quotes:
+                bracket_count -= 1
+                current_param += char
+            elif char == ',' and not in_quotes and bracket_count == 0:
+                params_list.append(current_param.strip())
+                current_param = ''
+            else:
+                current_param += char
+
+        if current_param.strip():
+            params_list.append(current_param.strip())
+
+        params = {}
+        position = 0
+
+        for param_str in params_list:
+            named_match = re.match(r'(\w+)\s*=\s*(.+)', param_str)
+
+            if named_match:
+                key, value = named_match.groups()
+                value = value.strip()
+
+                if (value.startswith('"') and value.endswith('"')) or \
+                        (value.startswith("'") and value.endswith("'")):
+                    params[key] = value[1:-1]
+                elif value == 'True':
+                    params[key] = True
+                elif value == 'False':
+                    params[key] = False
+                elif value.replace('.', '').replace('-', '').isdigit():
+                    params[key] = float(value) if '.' in value else int(value)
+                else:
+                    params[key] = value
+            else:
+                value = param_str.strip()
+
+                if (value.startswith('"') and value.endswith('"')) or \
+                        (value.startswith("'") and value.endswith("'")):
+                    param_value = value[1:-1]
+                elif value == 'True':
+                    param_value = True
+                elif value == 'False':
+                    param_value = False
+                elif value.replace('.', '').replace('-', '').isdigit():
+                    param_value = float(value) if '.' in value else int(value)
+                else:
+                    param_value = value
+
+                if position < len(param_names):
+                    param_name = param_names[position]
+                    if param_name not in params:
+                        params[param_name] = param_value
+
+                position += 1
+
+        result = default_values.copy()
+        result.update(params)
+
+        return result
 
     def _get_lore(self):
         start_label = None
@@ -82,6 +164,18 @@ class Wwl:
                     label.append({"action" : "SAY", "character" : str(dial[0]), "args" : text})
 
                 case n if i.strip().startswith("label"):
+
+                    default_values = {
+                        'name': '',
+                        'description': '',
+                        'duration': 1.0,
+                        'show_splash': False
+                    }
+                    param_names = ['name', 'description', 'duration', 'show_splash']
+                    data = self.parse_label_string(i.strip(" "), default_values, param_names)
+
+                    label.append({"action": "SHOW_SPLASH", "data": data})
+
                     continue
 
                 case n if i.strip().startswith("talk("):

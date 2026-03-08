@@ -165,6 +165,8 @@ class Views:
             self.menu_manager.disable()
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
+            self.splash_manager = agui.UIManager()
+
             self.waiting_dialogue = Waiter(True)
             self.waiting_settings = Waiter()
 
@@ -193,7 +195,41 @@ class Views:
                     center_y=self.height * 0.5
                 )
                 sprite.alpha = 0
-                self.scene.add_sprite("fade", "", sprite)
+                self.scene.add_sprite("fade", "fade", sprite)
+
+                #splash
+                texture = arcade.load_texture("game/images/gui/splash.png")
+
+                sprite = arcade.Sprite(
+                    texture,
+                    center_x=self.width * 0.5,
+                    center_y=self.height * 0.5
+                )
+                sprite.alpha = 0
+                self.scene.add_sprite("fade", "splash", sprite)
+
+                text = agui.UILabel(
+                    " ",
+                    y=self.height * 0.82,
+                    align="center",
+                    width=self.width,
+                    font_name=FONT_NAME,
+                    text_color=(255, 255, 255, 0),
+                    font_size=72
+                )
+                text_small = agui.UILabel(
+                    " ",
+                    y=self.height * 0.77,
+                    align="center",
+                    width=self.width,
+                    font_name=FONT_NAME,
+                    text_color=(255, 255, 255, 0),
+                    font_size=28
+                )
+
+                self.splash_manager.add(text)
+                self.splash_manager.add(text_small)
+
 
                 def create_settings():
                     texture = arcade.load_texture("game/images/gui/in_game_settings.png")
@@ -463,7 +499,7 @@ class Views:
                 case "END_text":
                     return None
 
-        def talk(self, now) -> None:
+        def talk(self, now) -> str:
             """
             Запускает основные действия сценария
             :param now:
@@ -486,6 +522,11 @@ class Views:
                         res = res if res is not None else "NEXT"
                         return res
 
+                    case "SHOW_SPLASH":
+                        if now["data"]['show_splash']:
+                            self.actions.start_action("show_splash", now["data"], "together")
+                        return "NEXT"
+
                     case _:
                         print(f"Неопознанная команда: {now}")
 
@@ -493,6 +534,7 @@ class Views:
             if not self.start_trigger:
                 self.clear()
                 self.scene.draw()
+                self.splash_manager.draw()
                 arcade.draw_sprite(self.dialog_window)
                 self.update_main_windows()
                 self.dialog_text_batch.draw()
@@ -559,6 +601,8 @@ class Views:
 
             self.settings_scene.update(delta_time)
             self.menu_manager.enable()
+
+            self.splash_manager.enable()
 
             if self.waiting_settings:
                 self.settings_manager.enable()

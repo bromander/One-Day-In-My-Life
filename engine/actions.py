@@ -1,5 +1,8 @@
 import time
 from typing import Optional, Literal, Tuple
+
+import arcade
+
 from .list_generator import ListActiveGenerators
 from .saves import Saves_manager as sm
 from .Exceptions import ActionNotFoundError
@@ -19,7 +22,7 @@ class Actions:
 
         duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
         progress = 0.0
-        last_alpha = self.main.scene["fade"].alpha
+        last_alpha = self.main.scene["fade"]["fade"].alpha
         min_step = 1
 
         while True:
@@ -32,7 +35,7 @@ class Actions:
             new_alpha = int(progress * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
-                self.main.scene["fade"].alpha = new_alpha
+                self.main.scene["fade"]["fade"].alpha = new_alpha
                 last_alpha = new_alpha
 
             if progress >= 1.0:
@@ -42,7 +45,7 @@ class Actions:
 
         duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
         progress = 0.0
-        last_alpha = self.main.scene["fade"].alpha
+        last_alpha = self.main.scene["fade"]["fade"].alpha
         min_step = 1
 
         while True:
@@ -55,11 +58,11 @@ class Actions:
             new_alpha = 255 - int(progress * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
-                self.main.scene["fade"].alpha = new_alpha
+                self.main.scene["fade"]["fade"].alpha = new_alpha
                 last_alpha = new_alpha
 
             if progress >= 1.0:
-                self.main.scene["fade"].alpha = 0
+                self.main.scene["fade"]["fade"].alpha = 0
                 return
 
     def _move(self, now: dict):
@@ -124,12 +127,75 @@ class Actions:
         while time.time() - start_time < now["time"]:
             yield
 
+    def _show_splash(self, now):
+
+        self.main.splash_manager.children[0][0].text = now["name"]
+        self.main.splash_manager.children[0][1].text = now["description"]
+
+        duration = max(now["duration"] + sm.volume.get_other("fade_speed"), 0.001)
+        progress = 0.0
+        last_alpha = self.main.scene["fade"]["splash"].alpha
+        min_step = 1
+
+        while True:
+            dt = yield
+
+            if dt is None or dt <= 0:
+                continue
+
+
+            progress = min(progress + dt / duration, 1.0)
+            new_alpha = int(progress * 255)
+
+            if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
+                self.main.splash_manager.children[0][0].update_font(font_color=(255, 255, 255, new_alpha))
+                self.main.splash_manager.children[0][1].update_font(font_color=(255, 255, 255, new_alpha))
+
+                self.main.scene["fade"]["splash"].alpha = new_alpha
+                last_alpha = new_alpha
+
+            if progress >= 1.0:
+                break
+
+        remaining_time = now["duration"]
+        while remaining_time > 0:
+            dt = yield
+            if dt is None or dt <= 0:
+                continue
+            remaining_time -= dt
+
+
+        duration = max(now["duration"]/2 + sm.volume.get_other("fade_speed"), 0.001)
+        progress = 0.0
+        last_alpha = self.main.scene["fade"]["splash"].alpha
+        min_step = 1
+
+        while True:
+            dt = yield
+
+            if dt is None or dt <= 0:
+                continue
+
+            progress = min(progress + dt / duration, 1.0)
+            new_alpha = 255 - int(progress * 255)
+
+            if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
+                self.main.splash_manager.children[0][0].update_font(font_color=(255, 255, 255, new_alpha))
+                self.main.splash_manager.children[0][1].update_font(font_color=(255, 255, 255, new_alpha))
+
+                self.main.scene["fade"]["splash"].alpha = new_alpha
+                last_alpha = new_alpha
+
+            if progress >= 1.0:
+                self.main.scene["fade"]["splash"].alpha = 0
+                return
+
     def update(self, delta_time: float) -> None:
         self.active_generators.update(delta_time)
 
-    def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait"],
+    def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait", "show_splash"],
                      now: dict,
-                     stream: Literal["consistently", "together"] = "together") -> None:
+                     stream: Literal["consistently", "together"]) -> None:
         """
         Запускает нужный генератор
         :param name: Название генератора
@@ -142,7 +208,8 @@ class Actions:
             "fadein": self._fadein,
             "fadeout": self._fadeout,
             "move_sprite": self._move,
-            "wait": self._wait
+            "wait": self._wait,
+            "show_splash" : self._show_splash
         }
 
         if name not in method_map:

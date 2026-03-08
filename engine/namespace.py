@@ -438,7 +438,7 @@ class Namespace:
         Заставляет игру... Ждать
         :param duration:
         """
-        self.Game_view.actions.start_action("wait", {"time": duration})
+        self.Game_view.actions.start_action("wait", {"time": duration}, "consistently")
 
     def end(self, Wwl, Game_view):
         Wwl.label = "main"

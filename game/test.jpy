@@ -1,9 +1,9 @@
 
-label main
+label main("ГЛАВА 5", "МОМЕНТ, КОГДА ОН НАС УБИВАЕТ", show_splash = True):
     Scene.set_scene("bch_city.png", 1.0)
     Audio.play("music", "Hello_Charlotte_Swedish_Fish_Elo.mp3", volume=0.6, effect="fade")
     Scene.show_sprite(character="masorubka hey", at="left")
-    Scene.fade("fadeout", duration=2.0)
+    #Scene.fade("fadeout", duration=2.0)
     <masorubka> "Ребята! Новый JopaJam! Мы наконец можем приступить к следующей игре!"
     Scene.set_scene("bg_office.jpg", 1.5, effect=SpriteEffects.Dissolve(1.0))
 
