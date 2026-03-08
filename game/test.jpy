@@ -81,4 +81,5 @@ label main
     Audio.stop("music")
     Audio.play("sound", "sfx/the-alien-annihilation.mp3", volume=1.0)
     <narr> "ЭЭЭЭЭЭЭЭЭ?!"
-    END.
+    Scene.fade("fadeout", duration=1.0)
+    END()

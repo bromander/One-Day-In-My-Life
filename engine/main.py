@@ -426,14 +426,14 @@ class Views:
 
             self.NAMESPACE = Namespace(self, ListCharacters, wwl, am, wait_trigger)
 
-        def format_text(self, text: str) -> str:
-            pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
-            text = re.split(pattern, str(text))
-            for e, i in enumerate(text):
-                if i.startswith("[") and i.endswith("]"):
-                    text[e] = self.NAMESPACE.get(i.strip("[]"), "NONE")
-            text = "".join(text).replace("\\\\", "\\")
-            return text
+        def chanel(self):
+            am.stop_voice()
+            am.stop_sound()
+            am.stop_music()
+            self.window.set_fullscreen(False)
+            self.window.size = (1024, 786)
+            game = Views.GameMenu(False)
+            self.window.show_view(game)
 
         def talk_manager(self, pos_offset: Optional[int] = None) -> None:
             """
@@ -450,6 +450,8 @@ class Views:
 
             now = wwl.get_thing(pos_offset)
             res = self.talk(now)
+            self.start_trigger = False
+
 
             match res:
                 case "NEXT":
@@ -460,14 +462,6 @@ class Views:
                     return None
                 case "END_text":
                     return None
-                case "CHANEL":
-                    am.stop_voice()
-                    am.stop_sound()
-                    am.stop_music()
-                    self.window.set_fullscreen(False)
-                    self.window.size = (1024, 786)
-                    game = Views.GameMenu(False)
-                    self.window.show_view(game)
 
         def talk(self, now) -> None:
             """
@@ -487,34 +481,10 @@ class Views:
 
                 match now['action']:
 
-                    case "SAY":
-                        def format_dialogue(text: str):
-                            text = re.sub(r'\{[^}]*\}', '', text)
-                            text = text.replace(r'\n ', '\n')
-                            return text.split('\n')
-
-                        self.dialog_texts = []
-
-                        self.start_trigger = False
-                        gen = lc[now["character"]].talk(self.format_text(now["args"]))
-
-                        self.actions.active_generators.add_generator("consistently", gen, "talk")
-
-                        return "END_text"
-
-                    case "END":
-
-                        wwl.label = "main"
-                        wwl.pose = 0
-
-                        dialog_text_text = [" "]
-                        cname_text_text = ""
-                        return "CHANEL"
-
-
                     case "EXECUTE":
-                        self.NAMESPACE.execute(now["data"])
-                        return "NEXT"
+                        res = self.NAMESPACE.execute(now["data"])
+                        res = res if res is not None else "NEXT"
+                        return res
 
                     case _:
                         print(f"Неопознанная команда: {now}")

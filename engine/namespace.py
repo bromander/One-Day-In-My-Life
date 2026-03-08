@@ -1,3 +1,6 @@
+import sys
+from io import StringIO
+import re
 from typing import Optional, Literal, Tuple
 from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
@@ -27,18 +30,24 @@ class Namespace:
             "Audio": self.Audio(GameView, AudioManager),
             "Lore": self.Lore(GameView),
             "SpriteEffects": self.SpriteEffects(),
-            "wait": self.wait
+            "wait" : lambda duration: self.wait(duration),
+            "talk" : self.talk,
+            "end" : lambda: self.end(self.Wwl, self.Game_view)
         }
+        self.returning = None
 
     def __getitem__(self, item):
         return self.NAMESPACE[item]
 
-    def execute(self, command: str) -> None:
+    def execute(self, command: str) -> str:
         """
         Выполняет код в своём окружении
         :param command: Строка с кодом
         """
         exec(command, self.NAMESPACE)
+        old_ret = self.returning
+        self.returning = None
+        return old_ret
 
     def get(self, key: str, default: any = None) -> any:
         return self.NAMESPACE.get(key, default)
@@ -128,56 +137,59 @@ class Namespace:
             char_id = character.split(" ")[0]
             sprite = self.ListCharacters[char_id].show(character)
 
+            screen_width = self.Game_view.width
+            screen_height = self.Game_view.height
+
             if at is not None:
 
                 sprite.center_y = sprite.height / 2
                 match at:
                     case "center":
-                        sprite.center_x = self.Game_view.width // 2
+                        sprite.center_x = screen_width // 2
                     case "left":
-                        sprite.center_x = (self.Game_view.width // 2) * 0.4
+                        sprite.center_x = (screen_width // 2) * 0.4
                     case "right":
-                        sprite.center_x = (self.Game_view.width // 2) * 1.6
+                        sprite.center_x = (screen_width // 2) * 1.6
                     case _ if isinstance(at, tuple) and len(at) == 2:
 
                         if at[0] == -1:
-                            x_norm = self.Game_view.scene["characters"][char_id].position[0] / self.Game_view.width
+                            x_norm = self.Game_view.scene["characters"][char_id].position[0] / screen_width
                         elif isinstance(at[0], int):
-                            x_norm = at[0] / self.Game_view.width
+                            x_norm = at[0] / screen_width
 
                         elif isinstance(at[0], float):
                             if 0 <= at[0] <= 1:
                                 x_norm = at[0]
                             else:
-                                x_norm = at[0] / self.Game_view.width
+                                x_norm = at[0] / screen_width
 
                         else:
                             x_norm = 0
 
 
                         if at[1] == -1:
-                            y_norm = self.Game_view.scene["characters"][char_id].position[1] / self.Game_view.height
+                            y_norm = self.Game_view.scene["characters"][char_id].position[1] / screen_height
 
                         elif isinstance(at[1], int):
-                                y_norm = at[1] / self.Game_view.height
+                                y_norm = at[1] / screen_height
 
                         elif isinstance(at[1], float):
                             if 0 <= at[1] <= 1:
                                 y_norm = at[1]
                             else:
-                                y_norm = at[1] / self.Game_view.height
+                                y_norm = at[1] / screen_height
                         else:
                             y_norm = 0
 
-                        sprite.center_x = self.Game_view.width * x_norm
-                        sprite.center_y = self.Game_view.height * y_norm
+                        sprite.center_x = screen_width * x_norm
+                        sprite.center_y = screen_height * y_norm
             else:
                 if char_id in self.Game_view.scene["characters"]:
                     sprite.position = self.Game_view.scene["characters"][char_id].position
                     sprite.scale = self.Game_view.scene["characters"][char_id].scale
                 else:
-                    sprite.center_x = self.Game_view.width // 2
-                    sprite.center_y = self.Game_view.height * 0.2
+                    sprite.center_x = screen_width // 2
+                    sprite.center_y = screen_height * 0.2
 
             if effect is not None:
                 sprite.alpha = 0
@@ -427,3 +439,23 @@ class Namespace:
         :param duration:
         """
         self.Game_view.actions.start_action("wait", {"time": duration})
+
+    def end(self, Wwl, Game_view):
+        Wwl.label = "main"
+        Wwl.pose = 0
+        Game_view.chanel()
+
+
+    def talk(self, character: str, text: str):
+        def format_text(text: str) -> str:
+            pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
+            text = re.split(pattern, str(text))
+            for e, i in enumerate(text):
+                if i.startswith("[") and i.endswith("]"):
+                    text[e] = self.get(i.strip("[]"), "NONE")
+            text = "".join(text).replace("\\\\", "\\")
+            return text
+        gen = self.ListCharacters[character].talk(format_text(text))
+
+        self.Game_view.actions.active_generators.add_generator("consistently", gen, "talk")
+        self.returning = "End_text"

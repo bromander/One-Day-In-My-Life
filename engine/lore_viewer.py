@@ -12,7 +12,7 @@ class Wwl:
 
         def find_files(extension: str):
             results = {}
-            start_path = os.getcwd()
+            start_path = f"{os.getcwd()}\\game"
 
             for root, dirs, files in os.walk(start_path):
                 for file in files:
@@ -36,6 +36,29 @@ class Wwl:
         self.label = "main"
         self.lore = self._get_lore()
 
+        def replace_lines_starting_with_tag(text):
+            lines = text.splitlines()
+            result_lines = []
+
+            for line in lines:
+                leading_spaces = re.match(r'^(\s*)', line).group(1)
+
+                if line.lstrip().startswith('<'):
+                    line = line.replace("<>", "<narr>")
+                    dial = re.split(r"[<>]", str(line.lstrip()))
+                    dial = [x for x in dial if x]
+                    new_line = leading_spaces + f"talk(\"{dial[0]}\", {dial[1]})"
+                    result_lines.append(new_line)
+                else:
+                    result_lines.append(line)
+
+            return '\n'.join(result_lines)
+
+        for i in self.files:
+            for o in self.files[i]["content"]:
+                self.files[i]["content"][o] = replace_lines_starting_with_tag(self.files[i]["content"][o])
+
+
     def _get_lore(self):
         start_label = None
         for e, i in self.files.items():
@@ -58,14 +81,11 @@ class Wwl:
 
                     label.append({"action" : "SAY", "character" : str(dial[0]), "args" : text})
 
-                case n if i.startswith("END"):
-                    label.append({"action": "END"})
-
-                case n if i.startswith("#"):
-                    continue
-
                 case n if i.strip().startswith("label"):
                     continue
+
+                case n if i.strip().startswith("talk("):
+                    label.append({"action": "EXECUTE", "data": i})
 
                 case _:
                     if not i.strip().startswith("label"):
@@ -75,10 +95,9 @@ class Wwl:
                             next_line = files[index].strip()
 
                             if (next_line.startswith("<") or
-                                    next_line.startswith("END") or
-                                    next_line.startswith("#") or
                                     next_line.startswith("$") or
                                     next_line.startswith("{") or
+                                    next_line.startswith("talk(") or
                                     next_line.startswith("label")):
                                 break
 
