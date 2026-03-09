@@ -18,6 +18,7 @@ from .saves import Saves_manager
 from .namespace import Namespace
 from .actions import Actions
 from .audio import AudioManager
+from .presence import Discord_act
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
@@ -525,6 +526,7 @@ class Views:
                     case "SHOW_SPLASH":
                         if now["data"]['show_splash']:
                             self.actions.start_action("show_splash", now["data"], "together")
+                        da.update(now["data"]["name"], now["data"]["description"])
                         return "NEXT"
 
                     case _:
@@ -1412,10 +1414,11 @@ def init_file(hard_load: bool = False) -> None:
     """
     Инициализирует основные классы
     """
-    global sm, am
+    global sm, am, da
     if hard_load:
         global lc, wwl
         lc = ListCharacters()
         wwl = Wwl()
     sm = Saves_manager()
     am = AudioManager()
+    da = Discord_act()

@@ -165,30 +165,7 @@ class Actions:
             remaining_time -= dt
 
 
-        duration = max(now["duration"]/2 + sm.volume.get_other("fade_speed"), 0.001)
-        progress = 0.0
-        last_alpha = self.main.scene["fade"]["splash"].alpha
-        min_step = 1
 
-        while True:
-            dt = yield
-
-            if dt is None or dt <= 0:
-                continue
-
-            progress = min(progress + dt / duration, 1.0)
-            new_alpha = 255 - int(progress * 255)
-
-            if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
-                self.main.splash_manager.children[0][0].update_font(font_color=(255, 255, 255, new_alpha))
-                self.main.splash_manager.children[0][1].update_font(font_color=(255, 255, 255, new_alpha))
-
-                self.main.scene["fade"]["splash"].alpha = new_alpha
-                last_alpha = new_alpha
-
-            if progress >= 1.0:
-                self.main.scene["fade"]["splash"].alpha = 0
-                return
 
     def update(self, delta_time: float) -> None:
         self.active_generators.update(delta_time)

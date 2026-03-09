@@ -1,5 +1,5 @@
 
-label main("ГЛАВА 5", "МОМЕНТ, КОГДА ОН НАС УБИВАЕТ", show_splash = True):
+label main("Глава 5", "Момент, когда он нас убивает", show_splash = True):
     Scene.set_scene("bch_city.png", 1.0)
     Audio.play("music", "Hello_Charlotte_Swedish_Fish_Elo.mp3", volume=0.6, effect="fade")
     Scene.show_sprite(character="masorubka hey", at="left")
