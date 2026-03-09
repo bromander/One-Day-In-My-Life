@@ -7,8 +7,8 @@ class Saves_manager:
         Отвечает за работу с сохранением различных данных.
         """
 
-        if not os.path.exists("game/data.JSON"):
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
+        if not os.path.exists("game/saves.JSON"):
+            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
                 data = {
                     "saves": {},
                     "persistent" : {},
@@ -31,7 +31,7 @@ class Saves_manager:
 
         @staticmethod
         def get_persistent(name: str):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
 
             if name not in file["persistent"]:
@@ -41,16 +41,16 @@ class Saves_manager:
 
         @staticmethod
         def set_persistent(name: str, data: any):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["persistent"][name] = data
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
         @staticmethod
         def del_persistent(name: str):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
 
@@ -59,40 +59,40 @@ class Saves_manager:
 
             del file_data["persistent"][name]
 
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
     class volume:
         @staticmethod
         def set_music(value: float):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["options"]["volume"]["music"] = value
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
         @staticmethod
         def set_sound(value: float):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["options"]["volume"]["sound"] = value
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
         @staticmethod
         def set_voice(value: float):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["options"]["volume"]["voice"] = value
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
         @staticmethod
         def set_other(name: str, value: float):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
 
@@ -101,31 +101,31 @@ class Saves_manager:
 
             file_data["options"][name] = value
 
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
 
         @staticmethod
         def get_music():
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             return file["options"]["volume"].get("music", None)
 
         @staticmethod
         def get_sound():
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             return file["options"]["volume"].get("sound", None)
 
         @staticmethod
         def get_voice():
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             return file["options"]["volume"].get("voice", None)
 
         @staticmethod
         def get_other(name: str):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
 
             if name not in file["options"]:
@@ -137,7 +137,7 @@ class Saves_manager:
 
         @staticmethod
         def create_save(session_id: str, defines: dict, position: int, label: str, scene: dict):
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
             file_data["saves"][session_id] = {
@@ -146,12 +146,12 @@ class Saves_manager:
                 "defines" : defines,
                 "scene" : scene
             }
-            with open("game/data.JSON", "w", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
                 json.dump(file_data, file, indent=4, ensure_ascii=False)
 
         @staticmethod
         def get_save(session_id: str) -> dict:
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data = dict(json.load(file))
 
             if session_id not in file_data["saves"]:
@@ -161,6 +161,6 @@ class Saves_manager:
 
         @staticmethod
         def get_all_saves() -> dict:
-            with open("game/data.JSON", "r", encoding="UTF-8") as file:
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data = dict(json.load(file))
             return [[i, o] for i, o in file_data["saves"].items()]

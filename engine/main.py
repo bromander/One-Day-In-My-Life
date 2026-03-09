@@ -244,7 +244,7 @@ class Views:
                     self.settings_scene["in_game_settings"].alpha = 0
 
                     def create_settings_buttons():
-                        with open("game/data.JSON", "r", encoding="UTF-8") as data:
+                        with open("game/saves.JSON", "r", encoding="UTF-8") as data:
                             data = json.load(data)
                         volumes = data['options']
 
@@ -443,7 +443,7 @@ class Views:
                         bg_sprite = arcade.Sprite(i["path"])
                         bg_sprite.size = tuple(i["size"])
                         bg_sprite.position = tuple(i["pos"])
-                        self.scene.add_sprite("bg", f"bg_{i["layer"]}", bg_sprite)
+                        self.scene.add_sprite("bg", i["layer"], bg_sprite)
 
                     for i in scene["characters"]:
                         character_sprite = arcade.Sprite(i["path"])
@@ -1027,7 +1027,7 @@ class Views:
         def show_main_windows(self) -> None:
 
             def create_menu_buttons():
-                with open("game/data.JSON", "r", encoding="UTF-8") as data:
+                with open("game/saves.JSON", "r", encoding="UTF-8") as data:
                     data = json.load(data)
                 volumes = data['options']
 
