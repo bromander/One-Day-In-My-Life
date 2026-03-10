@@ -23,6 +23,7 @@ class Actions:
         duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
         progress = 0.0
         last_alpha = self.main.scene["fade"]["fade"].alpha
+        fade_sprite = self.main.scene["fade"]["fade"]
         min_step = 1
 
         while True:
@@ -35,7 +36,7 @@ class Actions:
             new_alpha = int(progress * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
-                self.main.scene["fade"]["fade"].alpha = new_alpha
+                fade_sprite.alpha = new_alpha
                 last_alpha = new_alpha
 
             if progress >= 1.0:
@@ -46,6 +47,7 @@ class Actions:
         duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
         progress = 0.0
         last_alpha = self.main.scene["fade"]["fade"].alpha
+        fade_sprite = self.main.scene["fade"]["fade"]
         min_step = 1
 
         while True:
@@ -58,11 +60,11 @@ class Actions:
             new_alpha = 255 - int(progress * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
-                self.main.scene["fade"]["fade"].alpha = new_alpha
+                fade_sprite.alpha = new_alpha
                 last_alpha = new_alpha
 
             if progress >= 1.0:
-                self.main.scene["fade"]["fade"].alpha = 0
+                fade_sprite.alpha = 0
                 return
 
     def _move(self, now: dict):
