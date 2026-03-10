@@ -7,7 +7,6 @@ class ListActiveGenerators:
         """
         Отвечает за управление всеми генераторами
         """
-        # Используем кортежи (descr, gen) вместо словарей для лучшей производительности
         self.active_generators_consistently: List[Tuple[str, types.GeneratorType]] = []
         self.active_generators_together: List[Tuple[str, types.GeneratorType]] = []
         self.dt_accumulator = 0.0
@@ -26,10 +25,6 @@ class ListActiveGenerators:
         return min(effective_dt, 0.1)
 
     def _remove_talk_generators(self):
-        self.active_generators_together = [
-            item for item in self.active_generators_together
-            if item[0] != self._talk_description
-        ]
         self.active_generators_consistently = [
             item for item in self.active_generators_consistently
             if item[0] != self._talk_description
@@ -40,19 +35,19 @@ class ListActiveGenerators:
                       descr: str) -> None:
         """
         Добавляет генератор
-        :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
+        :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
         :param gen: Объект-генератор
         :param descr: Название генератора
         """
         if descr == self._talk_description:
             self._remove_talk_generators()
 
-        target_list = (self.active_generators_together if stream == "together"
-                       else self.active_generators_consistently)
+        target_list = (self.active_generators_together if stream == "together" else self.active_generators_consistently)
         target_list.append((descr, gen))
 
     def _process_generator(self, gen_tuple: Tuple[str, types.GeneratorType],
                            delta_time: float) -> bool:
+
         _, generator = gen_tuple
 
         try:

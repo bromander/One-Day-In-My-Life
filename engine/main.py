@@ -463,6 +463,9 @@ class Views:
 
             self.NAMESPACE = Namespace(self, ListCharacters, wwl, am, wait_trigger)
 
+            self.talk_manager(clicked=False)
+
+
         def chanel(self):
             am.stop_voice()
             am.stop_sound()
@@ -472,18 +475,21 @@ class Views:
             game = Views.GameMenu(False)
             self.window.show_view(game)
 
-        def talk_manager(self, pos_offset: Optional[int] = None) -> None:
+        def talk_manager(self, pos_offset: Optional[int] = None, clicked: bool = True) -> None:
             """
             Получает инструкции сценария и запускает функцию talk(), обрабатывая её результаты
             """
-            if wwl.get_thing(pos_offset, edit_main=False)["action"] == "SAY":
-                current_time = time.time()
-                if current_time - self.last_text_skip < 0.05:
-                    self.last_text_skip = current_time
-                    self.waiting_dialogue.off()
-                    return
 
-                self.last_text_skip = current_time
+            gen = self.actions.active_generators.active_generators_consistently
+            if gen:
+                if clicked:
+                    if gen[0][0] != 'talk':
+                        return
+                    else:
+                        if time.time() - self.last_text_skip < 0.01:
+                            return
+                        else:
+                            self.last_text_skip = time.time()
 
             now = wwl.get_thing(pos_offset)
             res = self.talk(now)
@@ -492,7 +498,7 @@ class Views:
 
             match res:
                 case "NEXT":
-                    self.talk_manager()
+                    self.talk_manager(clicked=False)
                 case "REPEAT":
                     return None
                 case "END":
@@ -514,7 +520,7 @@ class Views:
             while True:
 
                 if now is None:
-                    return None
+                    return "NEXT"
 
                 match now['action']:
 
@@ -596,10 +602,10 @@ class Views:
 
             self.actions.update(delta_time)
 
-            if self.waiting_dialogue:
-                if not wait_trigger:
-                    self.talk_manager()
-                    self.waiting_dialogue.off()
+            #if self.waiting_dialogue:
+            #    if not wait_trigger:
+            #        self.talk_manager()
+            #        self.waiting_dialogue.off()
 
             self.settings_scene.update(delta_time)
             self.menu_manager.enable()
@@ -622,7 +628,7 @@ class Views:
 
         def on_key_press(self, key, modifiers) -> None:
             if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.waiting_settings:
-                self.waiting_dialogue.on()
+                self.talk_manager()
             if key == arcade.key.S:
                 self.show_settings()
             if key == arcade.key.B:
@@ -632,7 +638,7 @@ class Views:
 
         def on_mouse_release(self, x, y, button, modifiers) -> None:
             if (int(button) == 1) and not self.waiting_settings:
-                self.waiting_dialogue.on()
+                self.talk_manager()
 
         def update_main_windows(self) -> None:
 

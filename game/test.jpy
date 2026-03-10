@@ -1,11 +1,14 @@
 
-label main("Глава 5", "Момент, когда он нас убивает", show_splash = True):
+label main("Глава 1", "Момент, когда он нас убивает", show_splash = True):
     Scene.set_scene("bch_city.png", 1.0)
     Audio.play("music", "Hello_Charlotte_Swedish_Fish_Elo.mp3", volume=0.6, effect="fade")
     Scene.show_sprite(character="masorubka hey", at="left")
     #Scene.fade("fadeout", duration=2.0)
     <masorubka> "Ребята! Новый JopaJam! Мы наконец можем приступить к следующей игре!"
     Scene.set_scene("bg_office.jpg", 1.5, effect=SpriteEffects.Dissolve(1.0))
+
+    def prent():
+        print("hello_world!")
 
     Scene.show_sprite(character="edwin smile", at="right", effect=SpriteEffects.Dissolve(1.0))
     <edwin> "Чудесно! Еще одна стрессовая неделя игроделанья..."
@@ -73,13 +76,21 @@ label main("Глава 5", "Момент, когда он нас убивает"
     <uni> "С Джеком и его Альтернативами!!!!!!!"
     <uni> "И все там в школе..."
     <uni> "В ЮБКАХ!!!!!!!!!!!!!!!!"
-    Scene.show_sprite("bromand flashbacking")
-    Scene.show_sprite("masorubka bitey")
-    Scene.show_sprite("edwin oh no")
-    Scene.show_sprite("rony woah")
+    Scene.show_sprite("bromand flashbacking", stream="together")
+    Scene.show_sprite("masorubka bitey", stream="together")
+    Scene.show_sprite("edwin oh no", stream="together")
+    Scene.show_sprite("rony woah", stream="together")
 
     Audio.stop("music")
     Audio.play("sound", "sfx/the-alien-annihilation.mp3", volume=1.0)
+    wait(5.0)
     <narr> "ЭЭЭЭЭЭЭЭЭ?!"
     Scene.fade("fadeout", duration=1.0)
-    END()
+    Lore.jump("Continue")
+
+
+label Continue("Глава 2", "Смерть в нищите", show_splash = True):
+    <narr> "Это был прекрасный летний день"
+    <narr> "Биба решил выйти на улицу и встретить своего лучшего друга"
+    Audio.play("sound", "sfx/the-alien-annihilation.mp3", volume=1.0)
+    end()

@@ -28,7 +28,7 @@ class Namespace:
             "Define": self.Define(),
             "Scene": self.Scene(GameView, ListCharacters(), Wwl, Wait_trigger),
             "Audio": self.Audio(GameView, AudioManager),
-            "Lore": self.Lore(GameView),
+            "Lore": self.Lore(GameView, Wwl),
             "SpriteEffects": self.SpriteEffects(),
             "wait" : lambda duration: self.wait(duration),
             "talk" : self.talk,
@@ -327,12 +327,13 @@ class Namespace:
             self.Game_view.show_menu(buttons)
 
     class Lore:
-        def __init__(self, Game_view) -> None:
+        def __init__(self, Game_view, Wwl) -> None:
             """
             Обеспечивает работу с перемещением по сюжету сценария
             :param Game_view: Объект класса Game_view
             """
             self.Game_view = Game_view
+            self.Wwl = Wwl
 
         def jump(self, label: str, position: int = 0) -> None:
             """

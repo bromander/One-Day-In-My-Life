@@ -1,5 +1,6 @@
 import os
 import re
+import ast
 from typing import Optional
 
 
@@ -60,7 +61,7 @@ class Wwl:
 
     def parse_label_string(self, label_str, default_values, param_names):
 
-        content = re.sub(r'^label\s+main\s*\(\s*', '', label_str)
+        content = re.sub(r'^label\s+[^(]*\(\s*', '', label_str)
         content = re.sub(r'\s*\)\s*:\s*$', '', content)
 
         params_list = []
@@ -173,13 +174,12 @@ class Wwl:
                     }
                     param_names = ['name', 'description', 'duration', 'show_splash']
                     data = self.parse_label_string(i.strip(" "), default_values, param_names)
-
                     label.append({"action": "SHOW_SPLASH", "data": data})
 
                     continue
 
                 case n if i.strip().startswith("talk("):
-                    label.append({"action": "EXECUTE", "data": i})
+                    label.append({"action": "EXECUTE", "data": i, "super" : "SAY"}) # Добавляем super, чтобы отличить от остальных EXECUTE
 
                 case _:
                     if not i.strip().startswith("label"):
@@ -197,11 +197,36 @@ class Wwl:
 
                             data += files[index][4:] + "\n"
                             index += 1
-                        label.append({"action": "EXECUTE", "data": data})
+
+                        code_blocks = self._split_python_code(data)
+                        for block in code_blocks:
+                            if block.strip():
+                                label.append({"action": "EXECUTE", "data": block})
                     else:
                         print(f"Не найдена команда: {i.strip()}")
-
+        #print(label)
         return label
+
+    def _split_python_code(self, code):
+        """Разбивает Python код на отдельные top-level блоки"""
+        blocks = []
+        lines = code.splitlines()
+
+        try:
+            tree = ast.parse(code)
+        except SyntaxError as e:
+            return [code]
+
+        for node in tree.body:
+            start_line = node.lineno - 1
+            end_line = getattr(node, 'end_lineno', start_line)
+
+            block_lines = lines[start_line:end_line]
+            if block_lines:
+                block = '\n'.join(block_lines)
+                blocks.append(block)
+
+        return blocks
 
     def get_thing(self, pos_offset: Optional[int] = None, edit_main: bool = True):
         """
