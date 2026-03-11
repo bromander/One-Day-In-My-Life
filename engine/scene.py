@@ -1,7 +1,7 @@
 from arcade import Sprite, draw_sprite, Texture, load_texture
 import os
 from pathlib import Path
-from typing import Optional, List, Tuple, Literal
+from typing import Optional, List, Tuple, Literal, Union
 from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError
 
 class Scene:
@@ -9,7 +9,7 @@ class Scene:
         """
         Отвечает за работу со спрайтами со всей сцены
         """
-        self.data: dict[str: Tuple[dict[str: Sprite], Sprite]] = {
+        self.data: dict[str, Union[dict[str, Sprite], Sprite]] = {
             "bg": {},
             "sprites": {},
             "gui": {},
@@ -33,30 +33,22 @@ class Scene:
             return results
 
         self.textures = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPG"])
-        self.hashed_sprites = {}
 
 
-    def get_texture(self, filename):
+    def get_texture(self, filename: str) -> Optional[Texture]:
         return self.textures.get(filename, None)
 
-    def has_texture(self, filename):
+    def has_texture(self, filename: str) -> bool:
         if self.get_texture(filename) is None:
             return False
         return True
 
-    def get_sprite(self, filename):
-        if filename in self.hashed_sprites:
-            print("already_have!")
-            original = self.hashed_sprites[filename]
-            return Sprite(original.texture)
-
+    def get_sprite(self, filename: str) -> Optional[Sprite]:
         texture = self.textures.get(filename, None)
         if texture:
             sprite = Sprite(texture)
-            self.hashed_sprites[filename] = sprite
             return sprite
         return None
-
 
     def __getitem__(self, item):
         return self.data[item]
@@ -112,15 +104,14 @@ class Scene:
         self.data[layer].clear()
 
     def update(self) -> None:
-        """
-        Обновляет спрайты всей сцены
-        """
-        for i in self.data.values():
-            if type(i) is Sprite:
-                i.update()
-            elif type(i) is dict:
-                for o in i.values():
-                    i.update()
+        """Обновляет все спрайты"""
+        for layer_content in self.data.values():
+            if isinstance(layer_content, Sprite):
+                layer_content.update()
+            elif isinstance(layer_content, dict):
+                for sprite in layer_content.values():
+                    if isinstance(sprite, Sprite):
+                        sprite.update()
 
     def draw(self) -> None:
         """
