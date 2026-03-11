@@ -1223,9 +1223,9 @@ class Character:
 
         self.char_id = char_id
 
-        self.talk_sounds = [arcade.load_sound(f"./game/sounds/character_voice/{self.char_id}/{f}") for f in
-                                         os.listdir(f"./game/sounds/character_voice/{self.char_id}") if
-                                         os.path.isfile(os.path.join(f"./game/sounds/character_voice/{self.char_id}", f))] if char_id is not None else []
+        self.talk_sounds = [arcade.load_sound(f"./game/sounds/voice/{self.char_id}/{f}") for f in
+                                         os.listdir(f"./game/sounds/voice/{self.char_id}") if
+                                         os.path.isfile(os.path.join(f"./game/sounds/voice/{self.char_id}", f))] if char_id is not None else []
 
         self.sprites = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"])
 
@@ -1237,7 +1237,6 @@ class Character:
         :param text: Речь персонажа
         :return: Генератор
         """
-
         global dialog_text_colour, cname_text_colour
         global dialog_text_text, cname_text_text
         global text_anchor
@@ -1252,7 +1251,7 @@ class Character:
         dialog_text_text_alt = [" "]
         string_index_alt = 0
         _text_alt = []
-        for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', text):
+        for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', repr(text).strip(r"'")):
 
             char = str(char)
 
@@ -1299,7 +1298,7 @@ class Character:
 
                     _text = []
                     index = 0
-                    for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', text):
+                    for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', repr(text).strip(r"'")):
                         i += 1
                         char = str(char)
 
@@ -1319,7 +1318,7 @@ class Character:
                         index += 1
 
                         if ((index % 4 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
-                            if os.path.isdir(f"./game/sounds/character_voice/{self.char_id}"):
+                            if os.path.isdir(f"./game/sounds/voice/{self.char_id}"):
                                 am.play_voice(random.choice(self.talk_sounds))
 
                         if char == ".":

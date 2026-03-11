@@ -120,7 +120,7 @@ class AudioManager:
 
             for i in extension:
                 for root, dirs, files in os.walk(start_path):
-                    if "character_voice" in root.split("\\"):
+                    if "voice" in root.split("\\"):
                         continue
                     for file in files:
                         if file.lower().endswith(i.lower()):

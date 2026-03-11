@@ -82,7 +82,7 @@ label main("Глава 1", "Момент, когда он нас убивает"
     Scene.show_sprite("rony woah", stream="together")
 
     Audio.stop("music")
-    Audio.play("sound", "sfx/the-alien-annihilation.mp3", volume=1.0)
+    Audio.play("sound", "the-alien-annihilation.mp3", volume=1.0)
     wait(5.0)
     <narr> "ЭЭЭЭЭЭЭЭЭ?!"
     Scene.fade("fadeout", duration=1.0)
@@ -92,5 +92,5 @@ label main("Глава 1", "Момент, когда он нас убивает"
 label Continue("Глава 2", "Смерть в нищите", show_splash = True):
     <narr> "Это был прекрасный летний день"
     <narr> "Биба решил выйти на улицу и встретить своего лучшего друга"
-    Audio.play("sound", "sfx/the-alien-annihilation.mp3", volume=1.0)
+    Audio.play("sound", "the-alien-annihilation.mp3", volume=1.0)
     end()

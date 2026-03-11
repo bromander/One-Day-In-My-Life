@@ -32,7 +32,6 @@ class Wwl:
                     if p.startswith("label"):
                         p = re.split(r"[() ]", p)
                         self.files[e]["content"][p[1]] = "\n".join(f.split("\n")[o:])
-
         self.pose = 0
         self.label = "main"
         self.lore = self._get_lore()
@@ -204,7 +203,6 @@ class Wwl:
                                 label.append({"action": "EXECUTE", "data": block})
                     else:
                         print(f"Не найдена команда: {i.strip()}")
-        #print(label)
         return label
 
     def _split_python_code(self, code):
