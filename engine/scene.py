@@ -1,5 +1,6 @@
-from arcade import Sprite, draw_sprite
+from arcade import Sprite, draw_sprite, Texture, load_texture
 import os
+from pathlib import Path
 from typing import Optional, List, Tuple, Literal
 from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError
 
@@ -10,7 +11,7 @@ class Scene:
         """
         self.data: dict[str: Tuple[dict[str: Sprite], Sprite]] = {
             "bg": {},
-            "characters": {},
+            "sprites": {},
             "gui": {},
             "fade": {"fade" : Sprite(), "splash": Sprite()}
         }
@@ -18,35 +19,71 @@ class Scene:
 
         def find_files(extension: list):
             results = {}
-            start_path = f"./game/images/scenes/"
+            start_path = f".\\game\\images\\"
 
             for i in extension:
                 for root, dirs, files in os.walk(start_path):
+                    if 'characters' in root.split(os.sep): # Пропускаем директорию со спрайтами персонажей т.к. за их спрайты отвечает уже сам объект Character
+                        continue
                     for file in files:
                         if file.lower().endswith(i.lower()):
-                            full_path = os.path.join(root, file)
-                            results[file] = Sprite(full_path.replace("\\", "/"))
+                            texture = load_texture(os.path.join(root, file))
+                            results[file] = texture
 
             return results
 
-        self.backgrounds = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPG"])
+        self.textures = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPG"])
+        self.hashed_sprites = {}
+
+
+    def get_texture(self, filename):
+        return self.textures.get(filename, None)
+
+    def has_texture(self, filename):
+        if self.get_texture(filename) is None:
+            return False
+        return True
+
+    def get_sprite(self, filename):
+        if filename in self.hashed_sprites:
+            print("already_have!")
+            original = self.hashed_sprites[filename]
+            return Sprite(original.texture)
+
+        texture = self.textures.get(filename, None)
+        if texture:
+            sprite = Sprite(texture)
+            self.hashed_sprites[filename] = sprite
+            return sprite
+        return None
 
 
     def __getitem__(self, item):
         return self.data[item]
 
-    def add_sprite(self, layer: Literal["bg", "characters", "gui", "fade"],
+    def add_sprite(self, layer: Literal["bg", "sprites", "gui", "fade"],
                    name: str,
-                   sprite: Sprite) -> None:
+                   sprite: Tuple[Sprite, Texture, str]) -> None:
         """
         Добавляет спрайт на сцену
         :param layer: Слой
         :param name: Название спрайта
-        :param sprite: Сам спрайт
+        :param sprite: Спрайт, путь или уже готовая текстура
         """
-        self.data[layer][name] = sprite
+        if isinstance(sprite, str):
+            sprite_new = self.get_sprite(sprite)
+            if sprite_new is None:
+                raise FileNotFoundError(f"File {sprite} not found!")
+            self.data[layer][name] = sprite_new
 
-    def delete_sprite(self, layer: Tuple[Literal["bg", "characters", "gui", "fade"], str],
+        elif isinstance(sprite, Sprite):
+            self.data[layer][name] = sprite
+
+        elif isinstance(sprite, Texture):
+            self.data[layer][name] = Sprite(sprite)
+
+
+    def delete_sprite(self, layer: Tuple[Literal["bg", "sprites", "gui", "fade"], str],
                       name: str) -> None:
         """
         Удаляет спрайт со сцены
@@ -62,7 +99,7 @@ class Scene:
         else:
             raise SpriteDoesNotExistError(f"Sprite {name} does not exist in layer {layer}!")
 
-    def clear_layer(self, layer: Tuple[Literal["bg", "characters", "gui", "fade"], str]) -> None:
+    def clear_layer(self, layer: Tuple[Literal["bg", "sprites", "gui", "fade"], str]) -> None:
         """
         Очищает слой
 

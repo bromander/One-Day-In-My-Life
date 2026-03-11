@@ -160,7 +160,7 @@ class Views:
             self.dialog_texts: list = []
             self.cname_text: Optional[arcade.Text] = None
 
-            self.scene = Scene()
+            self.scene = scene
 
             self.menu_manager = agui.UIManager()
             self.menu_manager.disable()
@@ -268,14 +268,14 @@ class Views:
                             except AttributeError:
                                 music_file = None
 
-                            characters = [
+                            sprites = [
                                 {
                                     "id": str(i),
                                     "path": str(o.texture.file_path),
                                     "size": o.size,
                                     "pos": o.position
                                 }
-                                for i, o in self.scene["characters"].items()
+                                for i, o in self.scene["sprites"].items()
                             ]
 
                             bg = [
@@ -290,7 +290,7 @@ class Views:
 
                             scene = {
                                 "bg" : bg,
-                                "characters" : characters,
+                                "sprites" : sprites,
                                 "music" : music_file
 
                             }
@@ -446,11 +446,11 @@ class Views:
                         bg_sprite.position = tuple(i["pos"])
                         self.scene.add_sprite("bg", i["layer"], bg_sprite)
 
-                    for i in scene["characters"]:
+                    for i in scene["sprites"]:
                         character_sprite = arcade.Sprite(i["path"])
                         character_sprite.size = tuple(i["size"])
                         character_sprite.position = tuple(i["pos"])
-                        self.scene.add_sprite("characters", i["id"], character_sprite)
+                        self.scene.add_sprite("sprites", i["id"], character_sprite)
 
                     if scene["music"] is not None:
                         am.play_music(scene["music"])
@@ -461,7 +461,7 @@ class Views:
 
             print(self.session_id)
 
-            self.NAMESPACE = Namespace(self, ListCharacters, wwl, am, wait_trigger)
+            self.NAMESPACE = Namespace(self, lc, wwl, am, wait_trigger)
 
             self.talk_manager(clicked=False)
 
@@ -632,8 +632,8 @@ class Views:
             if key == arcade.key.S:
                 self.show_settings()
             if key == arcade.key.B:
-                print(self.scene["characters"])
-                for i, o in self.scene["characters"].items():
+                print(self.scene["sprites"])
+                for i, o in self.scene["sprites"].items():
                     print(i, o.position, o.alpha)
 
         def on_mouse_release(self, x, y, button, modifiers) -> None:
@@ -1208,8 +1208,7 @@ class Character:
                 for root, dirs, files in os.walk(start_path):
                     for file in files:
                         if file.lower().endswith(i.lower()):
-                            full_path = os.path.join(root, file)
-                            results[file.split(".")[0]] = arcade.Sprite(full_path.replace("\\", "/"))
+                            results[file.split(".")[0]] = arcade.load_texture(os.path.join(root, file))
 
             return results
 
@@ -1227,7 +1226,7 @@ class Character:
                                          os.listdir(f"./game/sounds/voice/{self.char_id}") if
                                          os.path.isfile(os.path.join(f"./game/sounds/voice/{self.char_id}", f))] if char_id is not None else []
 
-        self.sprites = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"])
+        self.textures = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"])
 
         self.text_anch = text_anch
 
@@ -1387,10 +1386,10 @@ class Character:
         :param sprite: Название спрайта
         :raises FileNotFoundError: Если спрайт не был найден
         """
-        if sprite not in self.sprites:
+        if sprite not in self.textures:
             raise FileNotFoundError(f"Character sprite \"{sprite}\" was not found in \"./game/images/characters/{self.char_id}/{sprite}\"")
 
-        now_sprite = self.sprites[sprite]
+        now_sprite = arcade.Sprite(self.textures[sprite])
         return now_sprite
 
 class ListCharacters:
@@ -1421,9 +1420,10 @@ def init_file(hard_load: bool = False) -> None:
     """
     global sm, am, da
     if hard_load:
-        global lc, wwl
+        global lc, wwl, scene
         lc = ListCharacters()
         wwl = Wwl()
+        am = AudioManager()
+        scene = Scene()
     sm = Saves_manager()
-    am = AudioManager()
     da = Discord_act()

@@ -68,7 +68,7 @@ class Actions:
                 return
 
     def _move(self, now: dict):
-        sprite = self.main.scene["characters"][now["character"]]
+        sprite = self.main.scene["sprites"][now["character"]]
         now["speed"] = now["speed"] * 1000
 
         if now["pos"][0] == -1:

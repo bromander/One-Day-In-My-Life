@@ -18,7 +18,7 @@ class Namespace:
         """
 
         self.Game_view = GameView
-        self.ListCharacters = ListCharacters()
+        self.ListCharacters = ListCharacters
         self.Wwl = Wwl
         self.AudioManager = AudioManager
         self.Wait_trigger = Wait_trigger
@@ -26,7 +26,7 @@ class Namespace:
         self.NAMESPACE = {
             "Persistent": self.Persistent(),
             "Define": self.Define(),
-            "Scene": self.Scene(GameView, ListCharacters(), Wwl, Wait_trigger),
+            "Scene": self.Scene(GameView, ListCharacters, Wwl, Wait_trigger),
             "Audio": self.Audio(GameView, AudioManager),
             "Lore": self.Lore(GameView, Wwl),
             "SpriteEffects": self.SpriteEffects(),
@@ -122,7 +122,7 @@ class Namespace:
             self.Wwl = Wwl
             self.Wait_trigger = Wait_trigger
 
-        def show_sprite(self, character: str,
+        def show_character(self, character: str,
                         at: Optional[Tuple[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
                         effect: Optional[classmethod] = None,
                         stream: Literal["consistently", "together"] = "consistently") -> None:
@@ -153,7 +153,7 @@ class Namespace:
                     case _ if isinstance(at, tuple) and len(at) == 2:
 
                         if at[0] == -1:
-                            x_norm = self.Game_view.scene["characters"][char_id].position[0] / screen_width
+                            x_norm = self.Game_view.scene["sprites"][char_id].position[0] / screen_width
                         elif isinstance(at[0], int):
                             x_norm = at[0] / screen_width
 
@@ -168,7 +168,7 @@ class Namespace:
 
 
                         if at[1] == -1:
-                            y_norm = self.Game_view.scene["characters"][char_id].position[1] / screen_height
+                            y_norm = self.Game_view.scene["sprites"][char_id].position[1] / screen_height
 
                         elif isinstance(at[1], int):
                                 y_norm = at[1] / screen_height
@@ -184,9 +184,9 @@ class Namespace:
                         sprite.center_x = screen_width * x_norm
                         sprite.center_y = screen_height * y_norm
             else:
-                if char_id in self.Game_view.scene["characters"]:
-                    sprite.position = self.Game_view.scene["characters"][char_id].position
-                    sprite.scale = self.Game_view.scene["characters"][char_id].scale
+                if char_id in self.Game_view.scene["sprites"]:
+                    sprite.position = self.Game_view.scene["sprites"][char_id].position
+                    sprite.scale = self.Game_view.scene["sprites"][char_id].scale
                 else:
                     sprite.center_x = screen_width // 2
                     sprite.center_y = screen_height * 0.2
@@ -197,18 +197,18 @@ class Namespace:
                 sprite.alpha = 255
 
             def target():
-                self.Game_view.scene.add_sprite("characters", character.split(" ")[0], sprite)
+                self.Game_view.scene.add_sprite("sprites", character.split(" ")[0], sprite)
                 yield
 
             self.Game_view.actions.active_generators.add_generator(stream, target(), "show_sprite")
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(character.split(" ")[0], "characters", self.Game_view),
+                    effect.effect(character.split(" ")[0], "sprites", self.Game_view),
                     "show_sprite_effect"
                 )
 
-        def hide_sprite(self, character: str,
+        def hide_character(self, character: str,
                         effect: Optional[classmethod] = None,
                         stream: Literal["consistently", "together"] = "consistently") -> None:
             """
@@ -219,13 +219,13 @@ class Namespace:
             """
 
             def target():
-                self.Game_view.scene.delete_sprite("characters", character)
+                self.Game_view.scene.delete_sprite("sprites", character)
                 yield
 
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(character, "characters", self.Game_view, 0),
+                    effect.effect(character, "sprites", self.Game_view, 0),
                     "hide_sprite_effect"
                 )
             self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
@@ -250,12 +250,12 @@ class Namespace:
             if layer < 0:
                 raise ValueError("Layer must be greater than zero.")
 
-            self.Game_view.scene.clear_layer("characters")
+            self.Game_view.scene.clear_layer("sprites")
 
-            if file_name not in self.Game_view.scene.backgrounds:
-                raise FileNotFoundError(f"File \"game/images/scenes/{file_name}\" not found")
+            sprite = self.Game_view.scene.get_sprite(file_name)
+            if sprite is None:
+                raise FileNotFoundError(f"File {file_name} not found!")
 
-            sprite = self.Game_view.scene.backgrounds[file_name]
             sprite.center_x, sprite.center_y, sprite.scale = self.Game_view.width * 0.5, self.Game_view.height * 0.5, scale
 
             bg_id = int(layer)
