@@ -5,8 +5,10 @@ import sys, os
 from pathlib import Path
 from arcade import load_sound, sound
 import random
+from threading import Thread
 import pyglet.media.player
 from .saves import Saves_manager as sm
+from .files_manager import FilesManager
 
 
 class AudioChannel:
@@ -111,40 +113,23 @@ class AudioChannel:
             return False
 
 class AudioManager:
-    def __init__(self):
+    def __init__(self,  fm: FilesManager):
         """
         Управляет 3 основными каналами: music, sound, voice
         """
-        def find_files(extension: list, start_path):
-            results = {}
-
-            for i in extension:
-                for root, dirs, files in os.walk(start_path):
-                    if "voice" in root.split(os.sep):
-                        continue
-                    for file in files:
-                        if file.lower().endswith(i.lower()):
-                            full_path = os.path.join(root, file)
-                            results[file] = load_sound(full_path.replace("\\", "/"))
-            return results
-
-        self.sound_files = find_files([".mp3", ".wav", ".ogg"], f"./game/sounds")
-        self.music_files = find_files([".mp3", ".wav", ".ogg"], f"./game/music")
-
+        self.fm: FilesManager = fm
         self.music = AudioChannel(modifier=sm.volume.get_music(), volume_type="music")
         self.sound = AudioChannel(modifier=sm.volume.get_sound(), volume_type="sound")
         self.voice = AudioChannel(modifier=sm.volume.get_voice(), volume_type="voice", default_volume=2.0)
 
-    def play_music_gen(self, path: Tuple[str, Path], loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
+    def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
         """
         Отличается от play_music тем, что поддерживает эффекты
         :return: генератор
         """
-        path = Path(path)
-        if path.name in self.music_files:
-            path = self.music_files[path.name]
-        elif path.name in self.sound_files:
-            path = self.sound_files[path.name]
+
+        if path in self.fm.audios:
+            path = self.fm.audios[path]
 
         match effect:
             case "FADE":
@@ -164,26 +149,20 @@ class AudioManager:
                     yield
                 return music()
 
-    def play_music(self, path: Tuple[str, Path], loop: bool = False, volume: float = 1.0) -> None:
-        path = Path(path)
-        if path.name in self.music_files:
-            path = self.music_files[path.name]
-        elif path.name in self.sound_files:
-            path = self.sound_files[path.name]
+    def play_music(self, path: str, loop: bool = False, volume: float = 1.0) -> None:
+
+        if path in self.fm.audios:
+            path = self.fm.audios[path]
 
         self.music.play(path, loop=loop, local_volume=volume)
 
-    def play_sound_gen(self, path: Tuple[str, Path], loop: bool = False, volume: float = 1.0, effect: Optional[Literal["fade"]] = None):
+    def play_sound_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[Literal["fade"]] = None):
         """
         Отличается от play_sound тем, что поддерживает эффекты
         :return: генератор
         """
-        path = Path(path)
-        if path.name in self.music_files:
-            path = self.music_files[path.name]
-        elif path.name in self.sound_files:
-            path = self.sound_files[path.name]
-
+        if path in self.fm.audios:
+            path = self.fm.audios[path]
 
         match effect:
             case "fade":
@@ -203,16 +182,19 @@ class AudioManager:
                     yield
                 return sound()
 
-    def play_sound(self, path: Tuple[str, Path], loop: bool = False, volume: float = 1.0) -> None:
-        path = Path(path)
-        if path.name in self.music_files:
-            path = self.music_files[path.name]
-        elif path.name in self.sound_files:
-            path = self.sound_files[path.name]
+    def play_sound(self, path: str, loop: bool = False, volume: float = 1.0) -> None:
+
+        if path in self.fm.audios:
+            path = self.fm.audios[path]
+        print(path)
 
         self.sound.play(path, loop=loop, local_volume=volume)
 
     def play_voice(self, path: Tuple[str, sound.Sound], loop=False) -> None:
+
+        if path in self.fm.audios:
+            path = self.fm.audios[path]
+
         self.voice.play(path, loop=loop, speed=random.randint(99, 101) / 100)
 
     def stop_music_gen(self, effect: Optional[Literal["fade"]] = None):

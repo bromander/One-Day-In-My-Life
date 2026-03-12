@@ -1,3 +1,4 @@
+import threading
 import arcade
 from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
@@ -19,6 +20,7 @@ from .namespace import Namespace
 from .actions import Actions
 from .audio import AudioManager
 from .presence import Discord_act
+from .files_manager import FilesManager
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
@@ -257,7 +259,7 @@ class Views:
                             am.stop_voice()
                             self.window.set_fullscreen(False)
                             self.window.size = (1024, 786)
-                            game = Views.GameMenu()
+                            game = Views.GameMenu(show_lc=True)
                             self.window.show_view(game)
 
                         def create_save(event=None):
@@ -602,11 +604,6 @@ class Views:
 
             self.actions.update(delta_time)
 
-            #if self.waiting_dialogue:
-            #    if not wait_trigger:
-            #        self.talk_manager()
-            #        self.waiting_dialogue.off()
-
             self.settings_scene.update(delta_time)
             self.menu_manager.enable()
 
@@ -778,7 +775,7 @@ class Views:
                     yield
                 yield
 
-                init_file(True)
+                init_file()
 
                 for i in range(20, 50):
                     yield
@@ -1201,16 +1198,30 @@ class Character:
                 return arcade.color.WHITE
 
         def find_files(extension: list):
-            results = {}
-            start_path = f"./game/images/characters/{char_id}"
 
-            for i in extension:
+            results = {}
+            start_path = f".\\game\\images\\characters\\{char_id}"
+
+            extensions = [ext.lower() for ext in extension]
+
+            for ext in extensions:
                 for root, dirs, files in os.walk(start_path):
                     for file in files:
-                        if file.lower().endswith(i.lower()):
-                            results[file.split(".")[0]] = arcade.load_texture(os.path.join(root, file))
+                        if file.lower().endswith(ext):
+                            path = os.path.join(root, file)
+                            results[file.rsplit('.', 1)[0]] = arcade.load_texture(path)
 
+            self.textures = results
             return results
+
+        def find_sounds():
+            sounds = []
+            if self.char_id is not None:
+                for f in os.listdir(f"./game/sounds/voice/{self.char_id}"):
+                    if os.path.isfile(os.path.join(f"./game/sounds/voice/{self.char_id}", f)):
+                        sounds.append(arcade.load_sound(f"./game/sounds/voice/{self.char_id}/{f}"))
+            self.talk_sounds = sounds
+            return sounds
 
         self.c_name = name
         self.colour = hex_to_rgb(colour)
@@ -1222,11 +1233,13 @@ class Character:
 
         self.char_id = char_id
 
-        self.talk_sounds = [arcade.load_sound(f"./game/sounds/voice/{self.char_id}/{f}") for f in
-                                         os.listdir(f"./game/sounds/voice/{self.char_id}") if
-                                         os.path.isfile(os.path.join(f"./game/sounds/voice/{self.char_id}", f))] if char_id is not None else []
+        self.talk_sounds = []
 
-        self.textures = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"])
+        threading.Thread(target=find_sounds).start()
+
+        self.textures = fm.textures
+
+        threading.Thread(target=find_files, args=([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"],)).start()
 
         self.text_anch = text_anch
 
@@ -1414,16 +1427,25 @@ class ListCharacters:
         return self.characters[item]
 
 
-def init_file(hard_load: bool = False) -> None:
+def init_file() -> None:
     """
     Инициализирует основные классы
     """
-    global sm, am, da
-    if hard_load:
-        global lc, wwl, scene
-        lc = ListCharacters()
-        wwl = Wwl()
-        am = AudioManager()
-        scene = Scene()
+    global sm, am, da, lc, wwl, scene, fm
+
+    timee = time.time()
+    print("files_manager...")
+    fm = FilesManager()
+    print("Audio manager...")
+    am = AudioManager(fm)
+    print("Lore...")
+    wwl = Wwl(fm)
+    print("Scene...")
+    scene = Scene(fm)
+    print("characters...")
+    lc = ListCharacters()
+    print("Saves...")
     sm = Saves_manager()
+    print("Discord...")
     da = Discord_act()
+    print(f"Init done for {round(time.time() - timee, 2)}s") #7.7 - 7.4

@@ -2,6 +2,9 @@ import sys
 from io import StringIO
 import re
 from typing import Optional, Literal, Tuple
+
+from arcade import Sprite
+
 from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
@@ -122,12 +125,76 @@ class Namespace:
             self.Wwl = Wwl
             self.Wait_trigger = Wait_trigger
 
+        def _get_norm(self,
+                      at: Optional[Tuple[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]],
+                      sprite_name: str):
+
+            screen_width = self.Game_view.width
+            screen_height = self.Game_view.height
+
+            x_norm, y_norm = 0, 0.4
+
+            if sprite_name in self.Game_view.scene["sprites"]:
+                sprite = self.Game_view.scene["sprites"][sprite_name]
+            else:
+                sprite = Sprite(center_x=screen_width * x_norm, center_y=screen_height * y_norm)
+
+            match at:
+                case "center":
+                    x_norm = 0.5
+                case "left":
+                    x_norm = 0.2
+                case "right":
+                    x_norm = 0.8
+                case _ if isinstance(at, tuple) and len(at) == 2:
+
+                    if at[0] == -1:
+                        x_norm = sprite.position[0] / screen_width
+                    elif isinstance(at[0], int):
+                        x_norm = at[0] / screen_width
+
+                    elif isinstance(at[0], float):
+                        if 0 <= at[0] <= 1:
+                            x_norm = at[0]
+                        else:
+                            x_norm = at[0] / screen_width
+
+
+                    if at[1] == -1:
+                        y_norm = sprite.position[1] / screen_height
+
+                    elif isinstance(at[1], int):
+                            y_norm = at[1] / screen_height
+
+                    elif isinstance(at[1], float):
+                        if 0 <= at[1] <= 1:
+                            y_norm = at[1]
+                        else:
+                            y_norm = at[1] / screen_height
+
+            return x_norm, y_norm
+
+        def add_sprite(self, filename: str,
+                       at: Optional[Tuple[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
+                       effect: Optional[classmethod] = None,
+                       stream: Literal["consistently", "together"] = "consistently") -> None:
+            """
+            Добавляет спрайт на сцену
+            :param filename: Название спрайта
+            :param at: Позиция
+            :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
+            """
+
+            sprite = self.Game_view.scene.get_sprite(filename)
+
+
         def show_character(self, character: str,
                         at: Optional[Tuple[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
                         effect: Optional[classmethod] = None,
                         stream: Literal["consistently", "together"] = "consistently") -> None:
             """
-            Добавляет спрайт на сцену
+            Добавляет спрайт персонажа на сцену
             :param character: Айди персонажа
             :param at: Положение персонажа
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
@@ -142,47 +209,11 @@ class Namespace:
 
             if at is not None:
 
-                sprite.center_y = sprite.height / 2
-                match at:
-                    case "center":
-                        sprite.center_x = screen_width // 2
-                    case "left":
-                        sprite.center_x = (screen_width // 2) * 0.4
-                    case "right":
-                        sprite.center_x = (screen_width // 2) * 1.6
-                    case _ if isinstance(at, tuple) and len(at) == 2:
+                x_norm, y_norm = self._get_norm(at, char_id)
 
-                        if at[0] == -1:
-                            x_norm = self.Game_view.scene["sprites"][char_id].position[0] / screen_width
-                        elif isinstance(at[0], int):
-                            x_norm = at[0] / screen_width
+                sprite.center_x = screen_width * x_norm
+                sprite.center_y = screen_height * y_norm
 
-                        elif isinstance(at[0], float):
-                            if 0 <= at[0] <= 1:
-                                x_norm = at[0]
-                            else:
-                                x_norm = at[0] / screen_width
-
-                        else:
-                            x_norm = 0
-
-
-                        if at[1] == -1:
-                            y_norm = self.Game_view.scene["sprites"][char_id].position[1] / screen_height
-
-                        elif isinstance(at[1], int):
-                                y_norm = at[1] / screen_height
-
-                        elif isinstance(at[1], float):
-                            if 0 <= at[1] <= 1:
-                                y_norm = at[1]
-                            else:
-                                y_norm = at[1] / screen_height
-                        else:
-                            y_norm = 0
-
-                        sprite.center_x = screen_width * x_norm
-                        sprite.center_y = screen_height * y_norm
             else:
                 if char_id in self.Game_view.scene["sprites"]:
                     sprite.position = self.Game_view.scene["sprites"][char_id].position
@@ -373,11 +404,11 @@ class Namespace:
             match channel:
                 case "music":
                     loop = True if loop is None else loop
-                    target = self.AudioManager.play_music_gen(f"game/music/{file_name}", loop, volume, effect)
+                    target = self.AudioManager.play_music_gen(file_name, loop, volume, effect)
                     self.Game_view.actions.active_generators.add_generator(stream, target, "play_music")
                 case "sound":
                     loop = False if loop is None else loop
-                    target = self.AudioManager.play_sound_gen(f"game/sounds/{file_name}", loop, volume, effect)
+                    target = self.AudioManager.play_sound_gen(file_name, loop, volume, effect)
                     self.Game_view.actions.active_generators.add_generator(stream, target, "play_sound")
                 case _:
                     raise ChannelDoesNotExistError(f"Channel {channel} does not exist")

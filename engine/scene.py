@@ -1,11 +1,14 @@
+import time
 from arcade import Sprite, draw_sprite, Texture, load_texture
 import os
 from pathlib import Path
+import threading
 from typing import Optional, List, Tuple, Literal, Union
 from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError
+from .files_manager import FilesManager
 
 class Scene:
-    def  __init__(self) -> None:
+    def  __init__(self, fm: FilesManager) -> None:
         """
         Отвечает за работу со спрайтами со всей сцены
         """
@@ -17,26 +20,13 @@ class Scene:
         }
         self.save_points = []
 
-        def find_files(extension: list):
-            results = {}
-            start_path = f".\\game\\images\\"
+        self.fm: FilesManager = fm
 
-            for i in extension:
-                for root, dirs, files in os.walk(start_path):
-                    if 'characters' in root.split(os.sep): # Пропускаем директорию со спрайтами персонажей т.к. за их спрайты отвечает уже сам объект Character
-                        continue
-                    for file in files:
-                        if file.lower().endswith(i.lower()):
-                            texture = load_texture(os.path.join(root, file))
-                            results[file] = texture
-
-            return results
-
-        self.textures = find_files([".png", ".jpg", ".jpeg", ".PNG", ".JPG"])
+        self.textures = {}
 
 
     def get_texture(self, filename: str) -> Optional[Texture]:
-        return self.textures.get(filename, None)
+        return self.fm.textures.get(filename, None)
 
     def has_texture(self, filename: str) -> bool:
         if self.get_texture(filename) is None:
@@ -44,7 +34,7 @@ class Scene:
         return True
 
     def get_sprite(self, filename: str) -> Optional[Sprite]:
-        texture = self.textures.get(filename, None)
+        texture = self.fm.textures.get(filename, None)
         if texture:
             sprite = Sprite(texture)
             return sprite

@@ -14,7 +14,7 @@ label main("Глава 1", "Момент, когда он нас убивает"
     <edwin> "Чудесно! Еще одна стрессовая неделя игроделанья..."
     Scene.show_character(character="masorubka ponder", effect=SpriteEffects.Dissolve(1.0), at="left")
     <masorubka> "Погодь..."
-    Audio.play("sound", "sfx/gaster-vanish.mp3")
+    Audio.play("sound", "gaster-vanish.mp3")
     Scene.hide_character("edwin", effect=SpriteEffects.Dissolve(1.0))
     <masorubka> "Эм... \n Мы же даже не в одном городе живём... \n Какого хрена мы все работаем в каком-то офисе?"
     Scene.show_character(character="edwin neutral", at="right")

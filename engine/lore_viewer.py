@@ -2,14 +2,17 @@ import os
 import re
 import ast
 from typing import Optional
+from .files_manager import FilesManager
 
 
 class Wwl:
 
-    def __init__(self):
+    def __init__(self, fm: FilesManager):
         """
         Отвечает за обработку сценариев
         """
+
+        self.fm: FilesManager = fm
 
         def find_files(extension: str):
             results = {}
@@ -23,6 +26,7 @@ class Wwl:
             return results
 
         self.files = find_files(".jpy")
+        self.graf: dict[str : list[str]] = {}
 
         for e, i in self.files.items():
             with open(i["path"], "r", encoding="UTF-8") as f:
@@ -31,10 +35,26 @@ class Wwl:
                     p = p.strip("\n ")
                     if p.startswith("label"):
                         p = re.split(r"[() ]", p)
+                        now_label = str(p[1])
+
                         self.files[e]["content"][p[1]] = "\n".join(f.split("\n")[o:])
+
+                        for i in f.split("\n")[o:]:
+                            if i.strip().startswith("Lore.jump"):
+                                if now_label in self.graf:
+                                    self.graf[now_label].append(i.strip().split("\"")[1])
+                                else:
+                                    self.graf[now_label] = [i.strip().split("\"")[1]]
         self.pose = 0
         self.label = "main"
+
+        self.now_file = ""
+        for e, i in self.files.items():
+            if self.label in i['content']:
+                self.now_file = e
+
         self.lore = self._get_lore()
+        self._preload_assets("main")
 
         def replace_lines_starting_with_tag(text):
             lines = text.splitlines()
@@ -141,15 +161,41 @@ class Wwl:
 
         return result
 
+    def _preload_assets(self, label: Optional[str] = None):
+        def get_assets(string: str):
+            sprites = []
+            for i in string.split("\n"):
+                i = i.strip(" ")
+                potential_assets = re.findall(r'["\']([^"\']*)["\']', i)
+                for i in potential_assets:
+                    if i in self.fm.textures_paths or i in self.fm.audio_paths:
+                        sprites.append(i)
+
+            return sprites
+
+        if label is not None:
+
+            if label in self.graf:
+                assets = get_assets(self.files[self.now_file]["content"][label])
+                self.fm.load_assets(assets, label)
+        else:
+
+            if self.fm.last_loaded_label in self.graf:
+                for i in self.graf[self.fm.last_loaded_label]:
+                    assets = get_assets(self.files[self.now_file]["content"][i])
+                    self.fm.load_assets(assets, i)
+
     def _get_lore(self):
-        start_label = None
         for e, i in self.files.items():
             if self.label in i['content']:
-                start_label = e
+                self.now_file = e
 
         label = []
         index = 0
-        files = self.files[start_label]["content"][self.label].strip().split("\n")
+        files = self.files[self.now_file]["content"][self.label].strip().split("\n")
+
+        self._preload_assets()
+
         while len(files) > index:
             index += 1
             i = files[index-1].strip()
@@ -177,8 +223,6 @@ class Wwl:
 
                     continue
 
-                case n if i.strip().startswith("talk("):
-                    label.append({"action": "EXECUTE", "data": i, "super" : "SAY"}) # Добавляем super, чтобы отличить от остальных EXECUTE
 
                 case _:
                     if not i.strip().startswith("label"):
@@ -190,7 +234,6 @@ class Wwl:
                             if (next_line.startswith("<") or
                                     next_line.startswith("$") or
                                     next_line.startswith("{") or
-                                    next_line.startswith("talk(") or
                                     next_line.startswith("label")):
                                 break
 
