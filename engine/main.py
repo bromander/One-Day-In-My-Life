@@ -539,6 +539,7 @@ class Views:
 
                     case _:
                         print(f"Неопознанная команда: {now}")
+                        return "NEXT"
 
         def on_draw(self) -> None:
             if not self.start_trigger:

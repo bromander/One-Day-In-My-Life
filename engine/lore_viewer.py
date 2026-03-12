@@ -25,28 +25,47 @@ class Wwl:
                         results[file] = {"path": full_path.replace("\\", "/"), "content": {}}
             return results
 
+        def build_graf():
+            graf = {}
+            for file_name, file_data in self.files.items():
+                file_data = file_data["content"]
+                for label, data in file_data.items():
+                    for i in data.split("\n"):
+                        i = i.strip()
+                        if "Lore.jump" in i:
+                            label_to = re.findall(r'["\']([^"\']*)["\']', i)[0]
+                            if label in graf:
+                                graf[label].append(label_to)
+                            else:
+                                graf[label] = [label_to]
+            return graf
+
         self.files = find_files(".jpy")
-        self.graf: dict[str : list[str]] = {}
 
-        for e, i in self.files.items():
-            with open(i["path"], "r", encoding="UTF-8") as f:
-                f = f.read()
-                for o, p in enumerate(f.split("\n")):
-                    p = p.strip("\n ")
-                    if p.startswith("label"):
-                        p = re.split(r"[() ]", p)
-                        now_label = str(p[1])
+        for file_key, file_data in self.files.items():
+            with open(file_data["path"], "r", encoding="UTF-8") as f:
+                content = f.read()
+                lines = content.split("\n")
 
-                        self.files[e]["content"][p[1]] = "\n".join(f.split("\n")[o:])
+                label_positions = []
+                for line_num, line in enumerate(lines):
+                    line = line.strip("\n ")
+                    if line.startswith("label"):
+                        label_name = re.split(r"[() ]", line)[1]
+                        label_positions.append((label_name, line_num))
 
-                        for i in f.split("\n")[o:]:
-                            if i.strip().startswith("Lore.jump"):
-                                if now_label in self.graf:
-                                    self.graf[now_label].append(i.strip().split("\"")[1])
-                                else:
-                                    self.graf[now_label] = [i.strip().split("\"")[1]]
+                for i, (label_name, start_pos) in enumerate(label_positions):
+                    if i < len(label_positions) - 1:
+                        end_pos = label_positions[i + 1][1]
+                        block_text = "\n".join(lines[start_pos:end_pos])
+                    else:
+                        block_text = "\n".join(lines[start_pos:])
+
+                    file_data["content"][label_name] = block_text
+
         self.pose = 0
         self.label = "main"
+        self.graf: dict[str: list[str]] = build_graf()
 
         self.now_file = ""
         for e, i in self.files.items():
@@ -69,6 +88,8 @@ class Wwl:
                     dial = [x for x in dial if x]
                     new_line = leading_spaces + f"talk(\"{dial[0]}\", {dial[1]})"
                     result_lines.append(new_line)
+                elif line.lstrip().startswith('#'):
+                    continue
                 else:
                     result_lines.append(line)
 
@@ -77,6 +98,7 @@ class Wwl:
         for i in self.files:
             for o in self.files[i]["content"]:
                 self.files[i]["content"][o] = replace_lines_starting_with_tag(self.files[i]["content"][o])
+
 
     def parse_label_string(self, label_str, default_values, param_names):
 
@@ -174,7 +196,6 @@ class Wwl:
             return sprites
 
         if label is not None:
-
             if label in self.graf:
                 assets = get_assets(self.files[self.now_file]["content"][label])
                 self.fm.load_assets(assets, label)
@@ -200,14 +221,6 @@ class Wwl:
             index += 1
             i = files[index-1].strip()
             match i:
-
-                case n if i.startswith("<"):
-                    dial = re.split(r"[<>]", i)
-                    dial = [x for x in dial if x]
-
-                    text = "".join(dial[1:])[1:].strip("\"")
-
-                    label.append({"action" : "SAY", "character" : str(dial[0]), "args" : text})
 
                 case n if i.strip().startswith("label"):
 
