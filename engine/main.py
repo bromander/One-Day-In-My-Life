@@ -4,7 +4,7 @@ from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
-from typing import Optional, Literal, Tuple
+from typing import Optional, Literal, Tuple, Union
 import time
 import re
 import os
@@ -1449,4 +1449,4 @@ def init_file() -> None:
     sm = Saves_manager()
     print("Discord...")
     da = Discord_act()
-    print(f"Init done for {round(time.time() - timee, 2)}s") #7.7 - 7.4
+    print(f"Init done for {round(time.time() - timee, 2)}s")

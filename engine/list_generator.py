@@ -1,4 +1,4 @@
-from typing import Optional, Literal, Dict, Tuple, List
+from typing import Optional, Literal, Dict, Tuple, List, Union
 import types
 
 
@@ -7,8 +7,8 @@ class ListActiveGenerators:
         """
         Отвечает за управление всеми генераторами
         """
-        self.active_generators_consistently: List[Tuple[str, types.GeneratorType]] = []
-        self.active_generators_together: List[Tuple[str, types.GeneratorType]] = []
+        self.active_generators_consistently: List[Union[str, types.GeneratorType]] = []
+        self.active_generators_together: List[Union[str, types.GeneratorType]] = []
         self.dt_accumulator = 0.0
         self._talk_description = "talk"  # Константа для описания
 
@@ -45,7 +45,7 @@ class ListActiveGenerators:
         target_list = (self.active_generators_together if stream == "together" else self.active_generators_consistently)
         target_list.append((descr, gen))
 
-    def _process_generator(self, gen_tuple: Tuple[str, types.GeneratorType],
+    def _process_generator(self, gen_tuple: Union[str, types.GeneratorType],
                            delta_time: float) -> bool:
 
         _, generator = gen_tuple

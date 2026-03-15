@@ -1,11 +1,14 @@
 from pathlib import Path
 import os
-from typing import Union, Optional
+from typing import Union, Optional, Dict, Literal
 from threading import Thread
 from arcade import load_sound, load_texture, Texture, Sound
 
 class FilesManager:
-    def __init__(self):
+    def __init__(self, paths: Optional[dict]=None):
+
+        if paths is None:
+            paths = {"images": "./game/images", "music": "./game/music", "sounds": "./game/sounds"}
 
         def find_files(extensions: list[str],
                        start_path: Union[str, Path],
@@ -34,9 +37,9 @@ class FilesManager:
             return results
 
 
-        self.images_path = Path("./game/images").absolute()
-        self.music_path = Path("./game/music").absolute()
-        self.sounds_path = Path("./game/sounds").absolute()
+        self.images_path = Path(paths["images"]).absolute()
+        self.music_path = Path(paths["music"]).absolute()
+        self.sounds_path = Path(paths["sounds"]).absolute()
 
         self.image_extensions = [".png", ".jpg", ".jpeg", ".PNG", ".JPEG"]
         self.audio_extensions = [".mp3", ".wav", ".ogg"]
@@ -49,7 +52,7 @@ class FilesManager:
         self.textures: dict[str : Texture] = {}
         self.audios: dict[str : Sound] = {}
 
-    def load_assets(self, filenames: list[str], label: str):
+    def load_assets(self, filenames: list[str], label: str) -> Thread:
         self.last_loaded_label = label
 
         def load(filenames):
@@ -63,7 +66,9 @@ class FilesManager:
                         continue
                     self.audios[i] = load_sound(str(self.audio_paths[i]))
 
-        Thread(target=load, args=(filenames,)).start()
+        target = Thread(target=load, args=(filenames,))
+        target.start()
+        return target
 
     def get_character_textures(self, char_id: str):
         textures = {}

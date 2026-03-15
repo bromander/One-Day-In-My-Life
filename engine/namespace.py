@@ -1,7 +1,7 @@
 import sys
 from io import StringIO
 import re
-from typing import Optional, Literal, Tuple
+from typing import Optional, Literal, Tuple, Union
 
 from arcade import Sprite
 
@@ -126,7 +126,7 @@ class Namespace:
             self.Wait_trigger = Wait_trigger
 
         def _get_norm(self,
-                      at: Optional[Tuple[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]],
+                      at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]],
                       sprite_name: str):
 
             screen_width = self.Game_view.width
@@ -175,7 +175,7 @@ class Namespace:
             return x_norm, y_norm
 
         def add_sprite(self, filename: str,
-                       at: Optional[Tuple[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
+                       at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
                        effect: Optional[classmethod] = None,
                        stream: Literal["consistently", "together"] = "consistently") -> None:
             """
@@ -190,7 +190,7 @@ class Namespace:
 
 
         def show_character(self, character: str,
-                        at: Optional[Tuple[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
+                        at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
                         effect: Optional[classmethod] = None,
                         stream: Literal["consistently", "together"] = "consistently") -> None:
             """
@@ -311,18 +311,18 @@ class Namespace:
                 self.Game_view.actions.active_generators.add_generator(stream, effect.effect(bg_id, "bg", self.Game_view), "set_scene_effect")
                 self.Game_view.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")
 
-        def move(self, character: str,
+        def move(self, sprite: str,
                  position: tuple[Tuple[int, float]],
                  speed: float,
                  stream: Literal["consistently", "together"] = "consistently") -> None:
             """
             Перемещает персонажа из текущего положения в определённую координату
-            :param character: Айди пользователя
+            :param sprite: Название спрайта
             :param position: Положение
             :param speed: Скорость передвижения
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
             """
-            now = {"character": character, "pos": position, "speed": speed}
+            now = {"character": sprite, "pos": position, "speed": speed}
             self.Game_view.actions.start_action("move_sprite", now, stream=stream)
 
         def fade(self, type: Literal["fadein", "fadeout"],

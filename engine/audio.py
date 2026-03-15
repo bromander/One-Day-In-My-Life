@@ -1,6 +1,6 @@
 import types
 from pathlib import Path
-from typing import Optional, Literal, Tuple
+from typing import Optional, Literal, Tuple, Union
 import sys, os
 from pathlib import Path
 from arcade import load_sound, sound
@@ -37,7 +37,7 @@ class AudioChannel:
             self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
             # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
 
-    def play(self, file: Tuple[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None) -> None:
+    def play(self, file: Union[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None) -> None:
         """
         Начинает проигрывать звук
         :param file: Путь к файлу/уже готовый саунд
@@ -190,7 +190,7 @@ class AudioManager:
 
         self.sound.play(path, loop=loop, local_volume=volume)
 
-    def play_voice(self, path: Tuple[str, sound.Sound], loop=False) -> None:
+    def play_voice(self, path: Union[str, sound.Sound], loop=False) -> None:
 
         if path in self.fm.audios:
             path = self.fm.audios[path]

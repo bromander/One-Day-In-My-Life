@@ -3,7 +3,7 @@ from arcade import Sprite, draw_sprite, Texture, load_texture
 import os
 from pathlib import Path
 import threading
-from typing import Optional, List, Tuple, Literal, Union
+from typing import Optional, List, Union, Literal
 from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError
 from .files_manager import FilesManager
 
@@ -45,7 +45,7 @@ class Scene:
 
     def add_sprite(self, layer: Literal["bg", "sprites", "gui", "fade"],
                    name: str,
-                   sprite: Tuple[Sprite, Texture, str]) -> None:
+                   sprite: Union[Sprite, Texture, str]) -> None:
         """
         Добавляет спрайт на сцену
         :param layer: Слой
@@ -65,7 +65,7 @@ class Scene:
             self.data[layer][name] = Sprite(sprite)
 
 
-    def delete_sprite(self, layer: Tuple[Literal["bg", "sprites", "gui", "fade"], str],
+    def delete_sprite(self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str],
                       name: str) -> None:
         """
         Удаляет спрайт со сцены
@@ -81,7 +81,7 @@ class Scene:
         else:
             raise SpriteDoesNotExistError(f"Sprite {name} does not exist in layer {layer}!")
 
-    def clear_layer(self, layer: Tuple[Literal["bg", "sprites", "gui", "fade"], str]) -> None:
+    def clear_layer(self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str]) -> None:
         """
         Очищает слой
 

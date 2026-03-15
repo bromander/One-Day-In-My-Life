@@ -1,5 +1,5 @@
 import time
-from typing import Optional, Literal, Tuple
+from typing import Optional, Literal, Tuple, Union
 
 import arcade
 

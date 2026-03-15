@@ -11,3 +11,6 @@ class Waiter:
 
     def off(self) -> None:
         self.state = False
+
+    def switch(self) -> None:
+        self.state = not self.state

@@ -3,7 +3,7 @@ import warnings
 from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider
 import arcade
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 from arcade import uicolor
 from arcade.gui.events import UIMousePressEvent, UIMouseReleaseEvent, UIMouseMovementEvent, UIMouseDragEvent, UIOnUpdateEvent
 from arcade.gui import (

@@ -7,16 +7,16 @@ from .files_manager import FilesManager
 
 class Wwl:
 
-    def __init__(self, fm: FilesManager):
+    def __init__(self, fm: FilesManager, find_files_path: str = "./game"):
         """
         Отвечает за обработку сценариев
         """
 
         self.fm: FilesManager = fm
 
-        def find_files(extension: str):
+        def find_files(extension: str, find_files_path: str = "./game"):
             results = {}
-            start_path = f"{os.getcwd()}\\game"
+            start_path = find_files_path
 
             for root, dirs, files in os.walk(start_path):
                 for file in files:
@@ -33,6 +33,7 @@ class Wwl:
                     for i in data.split("\n"):
                         i = i.strip()
                         if "Lore.jump" in i:
+
                             label_to = re.findall(r'["\']([^"\']*)["\']', i)[0]
                             if label in graf:
                                 graf[label].append(label_to)
@@ -40,7 +41,7 @@ class Wwl:
                                 graf[label] = [label_to]
             return graf
 
-        self.files = find_files(".jpy")
+        self.files = find_files(".jpy", find_files_path)
 
         for file_key, file_data in self.files.items():
             with open(file_data["path"], "r", encoding="UTF-8") as f:
