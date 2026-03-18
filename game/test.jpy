@@ -5,7 +5,9 @@ label main("Глава 1", "Момент, когда он нас убивает"
     Scene.show_character(character="masorubka hey", at="left")
     Scene.fade("fadeout", duration=2.0)
     <masorubka> "Ребята! Новый JopaJam! Мы наконец можем приступить к следующей игре!"
-    Scene.set_scene("bg_office.jpg", 1.5, effect=SpriteEffects.Dissolve(1.0))
+    Lore.jump("pon")
+
+label pon("Глава хз", "Не момент когда он нас убивает", show_splash = True):
 
     def prent():
         print("hello_world!")
@@ -90,6 +92,8 @@ label main("Глава 1", "Момент, когда он нас убивает"
 
 
 label Continue("Глава 2", "Смерть в нищите", show_splash = True):
+    Scene.set_scene("bg_office.jpg", 1.5, effect=SpriteEffects.Dissolve(1.0))
+
     <narr> "Это был прекрасный летний день"
     <narr> "Биба решил выйти на улицу и встретить своего лучшего друга"
     Audio.play("sound", "the-alien-annihilation.mp3", volume=1.0)

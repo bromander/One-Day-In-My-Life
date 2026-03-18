@@ -47,13 +47,17 @@ class FilesManager:
         self.textures_paths: dict[str : Path] = find_files(self.image_extensions, self.images_path, ["gui"])
         self.audio_paths: dict[str : Path] = find_files(self.audio_extensions, self.music_path, ["voice"]) | find_files(self.audio_extensions, self.sounds_path, ["voice"])
 
-        self.last_loaded_label = ""
+        self.loaded_labels: list[str] = []
 
         self.textures: dict[str : Texture] = {}
         self.audios: dict[str : Sound] = {}
 
-    def load_assets(self, filenames: list[str], label: str) -> Thread:
-        self.last_loaded_label = label
+    def load_assets(self, filenames: list[str], label: str) -> Optional[Thread]:
+
+        if label in self.loaded_labels:
+            return None
+
+        self.loaded_labels.append(label)
 
         def load(filenames):
             for i in filenames:

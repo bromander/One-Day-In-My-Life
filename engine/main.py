@@ -11,7 +11,7 @@ import os
 import random
 import json
 import uuid
-from .gui import UISliderVertical
+from .gui import UISliderVertical, InGameSettings
 from .scene import Scene
 from .lore_viewer import Wwl
 from .waiter import Waiter
@@ -146,15 +146,6 @@ class Views:
 
             self.window.set_vsync(True)
 
-            self.settings_scene = arcade.Scene()
-
-            self.settings_manager = agui.UIManager()
-            self.settings_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
-            self.settings_v_box_1 = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
-            self.settings_v_box_1 = arcade.gui.widgets.layout.UIBoxLayout(space_between=10)
-            self.settings_h_box = arcade.gui.widgets.layout.UIBoxLayout(vertical=False, space_between=20)
-            self.settings_h_box.visible = False
-
             self.delta_time = 0.0
 
             self.dialog_window: Optional[arcade.Sprite] = None
@@ -165,13 +156,11 @@ class Views:
             self.scene = scene
 
             self.menu_manager = agui.UIManager()
-            self.menu_manager.disable()
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
             self.splash_manager = agui.UIManager()
 
             self.waiting_dialogue = Waiter(True)
-            self.waiting_settings = Waiter()
 
             self.last_text_skip = time.time()
 
@@ -233,199 +222,11 @@ class Views:
                 self.splash_manager.add(text)
                 self.splash_manager.add(text_small)
 
-
-                def create_settings():
-                    texture = arcade.load_texture("game/images/gui/in_game_settings.png")
-
-                    sprite = arcade.Sprite(
-                        texture,
-                        center_x=self.width * 0.5,
-                        center_y=self.height * 0.5,
-                        scale=1.0
-                    )
-                    self.settings_scene.add_sprite("in_game_settings", sprite)
-                    self.settings_scene["in_game_settings"].alpha = 0
-
-                    def create_settings_buttons():
-                        with open("game/saves.JSON", "r", encoding="UTF-8") as data:
-                            data = json.load(data)
-                        volumes = data['options']
-
-                        def return_to_main_menu(event=None):
-                            self.actions.active_generators.clear()
-
-                            am.stop_sound()
-                            am.stop_music()
-                            am.stop_voice()
-                            self.window.set_fullscreen(False)
-                            self.window.size = (1024, 786)
-                            game = Views.GameMenu(show_lc=True)
-                            self.window.show_view(game)
-
-                        def create_save(event=None):
-                            try:
-                                music_file = am.music.sound.file_name
-                            except FileNotFoundError:
-                                music_file = None
-                            except AttributeError:
-                                music_file = None
-
-                            sprites = [
-                                {
-                                    "id": str(i),
-                                    "path": str(o.texture.file_path),
-                                    "size": o.size,
-                                    "pos": o.position
-                                }
-                                for i, o in self.scene["sprites"].items()
-                            ]
-
-                            bg = [
-                                {
-                                    "layer" :  0,
-                                    "path" : str(i.texture.file_path),
-                                    "size" : i.size,
-                                    "pos" : i.position
-                                }
-                                for i in self.scene["bg"].values()
-                            ]
-
-                            scene = {
-                                "bg" : bg,
-                                "sprites" : sprites,
-                                "music" : music_file
-
-                            }
-                            Saves_manager().save.create_save(self.session_id,
-                                                defines=self.NAMESPACE["Define"].defines,
-                                                position=wwl.pose-1,
-                                                label=wwl.label,
-                                                scene=scene)
-
-
-                        return_button = agui.UIFlatButton(
-                            text="Главное меню",
-                            width=300,
-                            height=50,
-                            style=STYLE_DEFAULT_BUTTON
-                        )
-                        return_button.on_click = return_to_main_menu
-                        self.settings_v_box.add(return_button)
-
-                        save_button = agui.UIFlatButton(
-                            text="Сохранить",
-                            width=200,
-                            style=STYLE_DEFAULT_BUTTON
-                        )
-                        save_button.on_click = create_save
-                        self.settings_v_box.add(save_button)
-
-                        self.settings_v_box.add(arcade.gui.UISpace(height=20))
-
-                        music_volume_label = agui.UILabel(
-                            "Музыка",
-                            text_color=arcade.color.WHITE,
-                            font_size=20,
-                            font_name=FONT_NAME
-                        )
-                        self.settings_v_box.add(music_volume_label)
-
-                        music_volume_slider = agui.UISlider(
-                            value=volumes['volume']["music"] * 100,  # начальное значение
-                            min_value=0,
-                            max_value=200,
-                            width=300,
-                            height=20
-                        )
-                        self.settings_v_box.add(music_volume_slider)
-                        self.settings_v_box.add(arcade.gui.UISpace(height=10))
-
-                        sound_volume_label = agui.UILabel(
-                            "Звуки",
-                            text_color=arcade.color.WHITE,
-                            font_size=20,
-                            font_name=FONT_NAME
-                        )
-                        self.settings_v_box.add(sound_volume_label)
-
-                        sound_volume_slider = agui.UISlider(
-                            value=volumes['volume']["sound"] * 100,  # начальное значение
-                            min_value=0,
-                            max_value=200,
-                            width=300,
-                            height=20
-                        )
-                        self.settings_v_box.add(sound_volume_slider)
-                        self.settings_v_box.add(arcade.gui.UISpace(height=10))
-
-                        voice_volume_label = agui.UILabel(
-                            "Голос",
-                            text_color=arcade.color.WHITE,
-                            font_size=20,
-                            font_name=FONT_NAME
-                        )
-                        self.settings_v_box.add(voice_volume_label)
-
-                        voice_volume_slider = agui.UISlider(
-                            value=volumes['volume']["voice"] * 100,  # начальное значение
-                            min_value=0,
-                            max_value=200,
-                            width=300,
-                            height=20
-                        )
-                        self.settings_v_box.add(voice_volume_slider)
-
-
-
-                        lps_label = agui.UILabel(
-                            "Скорость появления букв",
-                            text_color=arcade.color.WHITE,
-                            font_size=20,
-                            font_name=FONT_NAME
-                        )
-                        self.settings_v_box_1.add(lps_label)
-                        self.lps_slider = agui.UISlider(
-                            value=volumes["lps"],  # начальное значение
-                            min_value=20,
-                            max_value=110,
-                            width=300,
-                            height=20
-                        )
-                        self.settings_v_box_1.add(self.lps_slider)
-                        self.settings_v_box_1.add(arcade.gui.UISpace(height=20))
-
-                        fade_speed_label = agui.UILabel(
-                            "Скорость переходов",
-                            text_color=arcade.color.WHITE,
-                            font_size=20,
-                            font_name=FONT_NAME
-                        )
-                        self.settings_v_box_1.add(fade_speed_label)
-                        self.fade_speed_slider = agui.UISlider(
-                            value=volumes["fade_speed"],  # начальное значение
-                            min_value=-10,
-                            max_value=10,
-                            width=300,
-                            height=20
-                        )
-                        self.settings_v_box_1.add(self.fade_speed_slider)
-
-                        self.settings_h_box.add(self.settings_v_box_1)
-                        self.settings_h_box.add(self.settings_v_box)
-
-                        ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-                        ui_anchor_layout.add(child=self.settings_h_box, anchor_x="left", align_x=80)
-
-                        self.settings_manager.add(ui_anchor_layout)
-
-                    create_settings_buttons()
-
-                create_settings()
-
             create_widgets()
 
             self.start_trigger: bool = True
 
+            self.session_id = ""
             def load_saves(session_id):
                 """
                 Загружает сохранение
@@ -466,6 +267,16 @@ class Views:
             self.NAMESPACE = Namespace(self, lc, wwl, am, wait_trigger)
 
             self.talk_manager(clicked=False)
+
+            self.settings_ui = InGameSettings(
+                self.session_id,
+                Views,
+                self.scene,
+                self.window,
+                am, wwl, self.NAMESPACE,
+                FONT_NAME, STYLE_DEFAULT_BUTTON,
+                self.actions
+            )
 
 
         def chanel(self):
@@ -550,8 +361,7 @@ class Views:
                 self.update_main_windows()
                 self.dialog_text_batch.draw()
                 self.menu_manager.draw()
-                self.settings_scene.draw()
-                self.settings_manager.draw()
+                self.settings_ui.draw()
             super().on_draw()
 
         def show_menu(self, data) -> None:
@@ -585,18 +395,6 @@ class Views:
 
             self.menu_manager.add(ui_anchor_layout)
 
-        def show_settings(self, state: Optional[bool] = None) -> None:
-            settings = self.settings_scene["in_game_settings"]
-
-            if state is not None:
-                turn_on = state
-            else:
-                turn_on = settings.alpha <= 0
-
-            (self.waiting_settings.on if turn_on else self.waiting_settings.off)()
-            self.settings_h_box.visible = turn_on
-            settings.alpha = 255 if turn_on else 0
-
         def on_update(self, delta_time) -> None:
 
             self.delta_time = delta_time
@@ -605,37 +403,38 @@ class Views:
 
             self.actions.update(delta_time)
 
-            self.settings_scene.update(delta_time)
-            self.menu_manager.enable()
-
-            self.splash_manager.enable()
-
-            if self.waiting_settings:
-                self.settings_manager.enable()
-            else:
-                self.settings_manager.disable()
-
-            if self.waiting_settings:
-                am.music.set_volume(round(self.settings_v_box.children[4].value / 100, 2))
-                am.sound.set_volume(round(self.settings_v_box.children[7].value / 100, 2))
-                am.voice.set_volume(round(self.settings_v_box.children[10].value / 100, 2))
-                sm.volume.set_other("lps", round(self.settings_v_box_1.children[1].value, 2))
-                sm.volume.set_other("fade_speed", round(self.settings_v_box_1.children[4].value, 2))
+            self.settings_ui.update()
             
             super().on_update(delta_time)
 
         def on_key_press(self, key, modifiers) -> None:
-            if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.waiting_settings:
+            if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.settings_ui.waiting_settings:
                 self.talk_manager()
             if key == arcade.key.S:
-                self.show_settings()
+                self.settings_ui.turn_visibl()
             if key == arcade.key.B:
-                print(self.scene["sprites"])
-                for i, o in self.scene["sprites"].items():
-                    print(i, o.position, o.alpha)
+                text = f"""
+                \n
+                Данные на текущий момент игры:
+                
+                ===== ЛЕЙБЛ =====
+                - Лейбл: {wwl.label}
+                - Позиция: {wwl.pose}
+                - Граф сюжета: {wwl.graf}
+                - Текущий файл сценария: {wwl.now_file}
+                - Найдено файлов сценария: {len(wwl.files)}
+                
+                ===== АССЕТЫ =====
+                - Текстуры: ЗАГРУЖЕНО: {len(fm.textures)}, НЕ ЗАГРУЖЕНО: {len(fm.textures_paths) - len(fm.textures)}
+                - Аудио: ЗАГРУЖЕНО: {len(fm.audios)}, НЕ ЗАГРУЖЕНО: {len(fm.audio_paths) - len(fm.audios)}
+                - Активные спрайты: {self.scene.len_loaded_textures}
+                \n
+                """
+
+                print("\n".join([i.lstrip(" ") for i in text.split("\n")]))
 
         def on_mouse_release(self, x, y, button, modifiers) -> None:
-            if (int(button) == 1) and not self.waiting_settings:
+            if (int(button) == 1) and not self.settings_ui.waiting_settings:
                 self.talk_manager()
 
         def update_main_windows(self) -> None:

@@ -22,6 +22,8 @@ class Scene:
 
         self.fm: FilesManager = fm
 
+        self.len_loaded_textures = 0
+
         self.textures = {}
 
 
@@ -95,6 +97,9 @@ class Scene:
 
     def update(self) -> None:
         """Обновляет все спрайты"""
+
+        len_sprites = 0
+
         for layer_content in self.data.values():
             if isinstance(layer_content, Sprite):
                 layer_content.update()
@@ -102,6 +107,14 @@ class Scene:
                 for sprite in layer_content.values():
                     if isinstance(sprite, Sprite):
                         sprite.update()
+
+        for i, v in self.data.items():
+            if isinstance(v, dict):
+                len_sprites += len(v.values())
+            else:
+                len_sprites += 1
+
+        self.len_loaded_textures  = len_sprites
 
     def draw(self) -> None:
         """

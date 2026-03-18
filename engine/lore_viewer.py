@@ -74,7 +74,6 @@ class Wwl:
                 self.now_file = e
 
         self.lore = self._get_lore()
-        self._preload_assets("main")
 
         def replace_lines_starting_with_tag(text):
             lines = text.splitlines()
@@ -184,7 +183,9 @@ class Wwl:
 
         return result
 
-    def _preload_assets(self, label: Optional[str] = None):
+    def _preload_assets(self, label):
+
+
         def get_assets(string: str):
             sprites = []
             for i in string.split("\n"):
@@ -196,16 +197,9 @@ class Wwl:
 
             return sprites
 
-        if label is not None:
-            if label in self.graf:
-                assets = get_assets(self.files[self.now_file]["content"][label])
-                self.fm.load_assets(assets, label)
-        else:
-
-            if self.fm.last_loaded_label in self.graf:
-                for i in self.graf[self.fm.last_loaded_label]:
-                    assets = get_assets(self.files[self.now_file]["content"][i])
-                    self.fm.load_assets(assets, i)
+        if label in self.graf:
+            assets = get_assets(self.files[self.now_file]["content"][label])
+            self.fm.load_assets(assets, label)
 
     def _get_lore(self):
         for e, i in self.files.items():
@@ -216,7 +210,7 @@ class Wwl:
         index = 0
         files = self.files[self.now_file]["content"][self.label].strip().split("\n")
 
-        self._preload_assets()
+        self._preload_assets(self.label)
 
         while len(files) > index:
             index += 1
@@ -299,8 +293,3 @@ class Wwl:
         else:
             lore = self._get_lore()[self.pose if pos_offset is None else self.pose + pos_offset]
             return lore
-
-
-if __name__ == "__main__":
-    wwl = Wwl()
-    print(wwl._get_lore())

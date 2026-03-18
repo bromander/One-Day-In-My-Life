@@ -136,7 +136,47 @@ class Saves_manager:
     class save:
 
         @staticmethod
-        def create_save(session_id: str, defines: dict, position: int, label: str, scene: dict):
+        def create_save(session_id, am, scene, NAMESPACE, wwl):
+            try:
+                music_file = am.music.sound.file_name
+            except FileNotFoundError:
+                music_file = None
+            except AttributeError:
+                music_file = None
+
+            sprites = [
+                {
+                    "id": str(i),
+                    "path": str(o.texture.file_path),
+                    "size": o.size,
+                    "pos": o.position
+                }
+                for i, o in scene["sprites"].items()
+            ]
+
+            bg = [
+                {
+                    "layer": 0,
+                    "path": str(i.texture.file_path),
+                    "size": i.size,
+                    "pos": i.position
+                }
+                for i in scene["bg"].values()
+            ]
+
+            scene = {
+                "bg": bg,
+                "sprites": sprites,
+                "music": music_file
+
+            }
+            Saves_manager().save._add_save(session_id,
+                                           defines=NAMESPACE["Define"].defines,
+                                           position=wwl.pose - 1,
+                                           label=wwl.label, scene=scene)
+
+        @staticmethod
+        def _add_save(session_id: str, defines: dict, position: int, label: str, scene: dict):
             with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file_data_old = dict(json.load(file))
             file_data = file_data_old.copy()
