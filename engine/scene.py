@@ -120,25 +120,23 @@ class Scene:
         """
         Рисует спрайты со всей сцены
         """
-        bg_items = self.data.get('bg', {})
+        data = self.data
+
+        bg_items = data.get('bg')
         if bg_items:
-            layers = [int(k) for k in bg_items.keys()]
-            if layers:
-                min_layer = min(layers)
-                max_layer = max(layers)
+            layers = sorted(bg_items.keys(), reverse=True)
+            for layer in layers:
+                draw_sprite(bg_items[layer])
 
-                for layer in range(max_layer, min_layer - 1, -1):
-                    if layer in bg_items:
-                        draw_sprite(bg_items[layer])
-
-        for o, i in self.data.items():
-            if o == 'bg':
+        for key, value in data.items():
+            if key == 'bg':
                 continue
-            elif isinstance(i, Sprite):
-                draw_sprite(i)
-            elif isinstance(i, dict):
-                for o in i.values():
-                    draw_sprite(o)
+
+            if isinstance(value, Sprite):
+                draw_sprite(value)
+            elif isinstance(value, dict):
+                for sprite in value.values():
+                    draw_sprite(sprite)
 
     def create_savepoint(self) -> None:
         """

@@ -997,23 +997,6 @@ class Character:
             else:
                 return arcade.color.WHITE
 
-        def find_files(extension: list):
-
-            results = {}
-            start_path = f".\\game\\images\\characters\\{char_id}"
-
-            extensions = [ext.lower() for ext in extension]
-
-            for ext in extensions:
-                for root, dirs, files in os.walk(start_path):
-                    for file in files:
-                        if file.lower().endswith(ext):
-                            path = os.path.join(root, file)
-                            results[file.rsplit('.', 1)[0]] = arcade.load_texture(path)
-
-            self.textures = results
-            return results
-
         def find_sounds():
             sounds = []
             if self.char_id is not None:
@@ -1036,10 +1019,6 @@ class Character:
         self.talk_sounds = []
 
         threading.Thread(target=find_sounds).start()
-
-        self.textures = fm.textures
-
-        threading.Thread(target=find_files, args=([".png", ".jpg", ".jpeg", ".PNG", ".JPEG"],)).start()
 
         self.text_anch = text_anch
 
@@ -1199,10 +1178,13 @@ class Character:
         :param sprite: Название спрайта
         :raises FileNotFoundError: Если спрайт не был найден
         """
-        if sprite not in self.textures:
+        textures = fm.get_character_textures(sprite)
+        print(textures)
+
+        if sprite not in textures:
             raise FileNotFoundError(f"Character sprite \"{sprite}\" was not found in \"./game/images/characters/{self.char_id}/{sprite}\"")
 
-        now_sprite = arcade.Sprite(self.textures[sprite])
+        now_sprite = arcade.Sprite(textures[sprite])
         return now_sprite
 
 class ListCharacters:

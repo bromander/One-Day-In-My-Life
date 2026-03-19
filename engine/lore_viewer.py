@@ -192,9 +192,15 @@ class Wwl:
                 i = i.strip(" ")
                 potential_assets = re.findall(r'["\']([^"\']*)["\']', i)
                 for i in potential_assets:
-                    if i in self.fm.textures_paths or i in self.fm.audio_paths:
-                        sprites.append(i)
-
+                    i = str(i)
+                    if len(i.split(".")) > 1:
+                        if i in self.fm.textures_paths or i in self.fm.audio_paths:
+                            sprites.append(i)
+                    else:
+                        for o in [".png", ".jpg", ".jpeg"]:
+                            i = i + o
+                            if i in self.fm.textures_paths or i in self.fm.audio_paths:
+                                sprites.append(i)
             return sprites
 
         if label not in self.fm.loaded_labels:
