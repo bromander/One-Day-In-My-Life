@@ -4,20 +4,13 @@ import arcade
 import random
 import json
 import engine
-import unittest
 from engine.main import Views
-from engine import tests
 
 WINDOW_TITLE = f"Game name"
 engine.main.GAME_NAME = "Game Name"
 
-run_test = False
 
 def main():
-
-    if run_test:
-        unittest.main(tests)
-        return
 
     with open("game/other/splashes.json", "r", encoding="UTF-8") as splashes:
         splashes = json.load(splashes)

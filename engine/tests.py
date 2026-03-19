@@ -1,5 +1,4 @@
 import unittest
-from mimesis import providers
 import os
 import time
 import random

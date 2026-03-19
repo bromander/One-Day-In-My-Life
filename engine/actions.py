@@ -1,7 +1,5 @@
-import time
+from time import time
 from typing import Optional, Literal, Tuple, Union
-
-import arcade
 
 from .list_generator import ListActiveGenerators
 from .saves import Saves_manager as sm
@@ -124,9 +122,9 @@ class Actions:
                 sprite.center_y += (dy / distance) * step
 
     def _wait(self, now):
-        start_time = time.time()
+        start_time = time()
 
-        while time.time() - start_time < now["time"]:
+        while time() - start_time < now["time"]:
             yield
 
     def _show_splash(self, now):

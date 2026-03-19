@@ -197,7 +197,7 @@ class Wwl:
 
             return sprites
 
-        if label in self.graf:
+        if label not in self.fm.loaded_labels:
             assets = get_assets(self.files[self.now_file]["content"][label])
             self.fm.load_assets(assets, label)
 
@@ -211,6 +211,9 @@ class Wwl:
         files = self.files[self.now_file]["content"][self.label].strip().split("\n")
 
         self._preload_assets(self.label)
+        if self.label in self.graf:
+            for i in self.graf[self.label]:
+                self._preload_assets(i)
 
         while len(files) > index:
             index += 1
