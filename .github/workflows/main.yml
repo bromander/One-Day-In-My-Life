@@ -40,5 +40,5 @@ jobs:
       shell: cmd
     
     - name: Run tests
-      run: python -m unittest engine.tests
+      run: python -m engine.tests
       shell: cmd
