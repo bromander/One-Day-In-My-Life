@@ -1179,7 +1179,6 @@ class Character:
         :raises FileNotFoundError: Если спрайт не был найден
         """
         textures = fm.get_character_textures(sprite)
-        print(textures)
 
         if sprite not in textures:
             raise FileNotFoundError(f"Character sprite \"{sprite}\" was not found in \"./game/images/characters/{self.char_id}/{sprite}\"")

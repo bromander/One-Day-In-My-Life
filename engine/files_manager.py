@@ -77,7 +77,6 @@ class FilesManager:
     def get_character_textures(self, char_id: str):
         textures = {}
         for i in self.textures:
-            print(i)
             if str(i).startswith(char_id):
                 textures[".".join(i.split(".")[:-1])] = self.textures[i]
         return textures

@@ -186,7 +186,6 @@ class AudioManager:
 
         if path in self.fm.audios:
             path = self.fm.audios[path]
-        print(path)
 
         self.sound.play(path, loop=loop, local_volume=volume)
 
