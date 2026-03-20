@@ -41,6 +41,5 @@ jobs:
     
     - name: Run tests
       run: |
-        cd engine
-        python tests.py
+        python -m unittest discover -s engine -p "tests.py"
       shell: cmd
