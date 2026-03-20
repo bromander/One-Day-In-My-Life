@@ -26,10 +26,17 @@ class Discord_act:
             pass
 
     def update(self, name: str, description: str):
+
         if self.connected:
-            self.RPC.update(
-                status_display_type=StatusDisplayType.NAME,
-                activity_type=ActivityType.PLAYING,
-                details=name,
-                state=description
-            )
+            if name:
+                self.RPC.update(
+                    status_display_type=StatusDisplayType.NAME,
+                    activity_type=ActivityType.PLAYING,
+                    details=name
+                )
+            if description:
+                self.RPC.update(
+                    status_display_type=StatusDisplayType.NAME,
+                    activity_type=ActivityType.PLAYING,
+                    state=description
+                )
