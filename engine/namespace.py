@@ -2,7 +2,7 @@ import sys
 from io import StringIO
 import re
 from typing import Optional, Literal, Tuple, Union
-
+import PIL
 from arcade import Sprite
 
 from .saves import Saves_manager
@@ -27,6 +27,7 @@ class Namespace:
         self.Wait_trigger = Wait_trigger
 
         self.NAMESPACE = {
+            "Data" : self.Data(GameView, ListCharacters, Wwl, AudioManager),
             "Persistent": self.Persistent(),
             "Define": self.Define(),
             "Scene": self.Scene(GameView, ListCharacters, Wwl, Wait_trigger),
@@ -111,6 +112,23 @@ class Namespace:
                         super().__delattr__(name)
                     except AttributeError:
                         pass
+
+    class Data:
+        '''
+        Предоставляет доступ к основным классам движка
+        '''
+
+        def __init__(self, Game_view, ListCharacters, Wwl, AudioManager):
+            self.session_id = Game_view.session_id
+            self.height = Game_view.height
+            self.width = Game_view.width
+            self.Window = Game_view.window
+            self.Game_view = Game_view
+            self.ListCharacters = ListCharacters
+            self.Wwl = Wwl
+            self.AudioManager = AudioManager
+            self.PIL = PIL
+
 
     class Scene:
         def __init__(self, Game_view, ListCharacters, Wwl, Wait_trigger) -> None:
