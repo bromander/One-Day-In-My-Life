@@ -15,12 +15,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
-    
     - name: Activate venv and run tests
       run: |
-        source .venv/Scripts/activate
-        python engine/tests.py
+        .venv/Scripts/python.exe engine/tests.py
