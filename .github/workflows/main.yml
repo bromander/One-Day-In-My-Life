@@ -29,7 +29,6 @@ jobs:
         pip install numpy==2.4.3
         pip install tqdm==4.67.3
         pip install arcade==3.3.3
-        pip install pyglet==3.0.dev2
       shell: cmd
 
     - name: Create test directories
