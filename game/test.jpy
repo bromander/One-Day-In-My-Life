@@ -5,6 +5,7 @@ label main("Глава 1", "Момент, когда он нас убивает"
     Scene.show_character(character="masorubka hey", at="left")
     Scene.fade("fadeout", duration=2.0)
     <masorubka> "Ребята! Новый JopaJam! Мы наконец можем приступить к следующей игре!"
+    Scene.add_sprite("tulenchek.jpg", at=(0.5, 0.5), size=0.5)
     Lore.jump("pon")
 
 label pon("Глава хз", "Не момент когда он нас убивает", show_splash = True):
@@ -15,6 +16,7 @@ label pon("Глава хз", "Не момент когда он нас убив�
     Scene.show_character(character="edwin smile", at="right", effect=SpriteEffects.Dissolve(1.0))
     <edwin> "Чудесно! Еще одна стрессовая неделя игроделанья..."
     Scene.show_character(character="masorubka ponder", effect=SpriteEffects.Dissolve(1.0), at="left")
+    Scene.hide_sprite("tulenchek.jpg", effect=SpriteEffects.Dissolve(0.5))
     <masorubka> "Погодь..."
     Audio.play("sound", "gaster-vanish.mp3")
     Scene.hide_character("edwin", effect=SpriteEffects.Dissolve(1.0))
@@ -25,7 +27,7 @@ label pon("Глава хз", "Не момент когда он нас убив�
     <edwin> "Так мы игру уже сделали!"
     <edwin> "Просто, видимо, чьей-то идеей было сделать пролог в виде того, как мы эту игру делали и вообще как пришли к такой идее."
     <edwin> "Эдакая \"Метаирония\", которая понапихана, где только можно, в любых подобных проектах вроде нашего. Как будто это дико оригинально и \"Типа\" оправдывает всю дичь на экране."
-    Scene.show_character(character="masorubka frustrated")
+    Scene.show_character(character="masorubka hey")
     Scene.show_character(character="edwin neutral")
     <edwin> "К сожалению, даже если б это была моя идея, я ни за что в этом не признался бы."
     Scene.show_character(character="masorubka neutral")
