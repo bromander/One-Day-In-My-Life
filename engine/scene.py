@@ -12,7 +12,7 @@ class Scene:
         """
         Отвечает за работу со спрайтами со всей сцены
         """
-        self.data: dict[str, Union[dict[str, Sprite], Sprite]] = {
+        self.data: dict[str : dict[Union[dict[str : Sprite], str : Sprite]]] = {
             "bg": {},
             "sprites": {},
             "gui": {},
@@ -54,6 +54,9 @@ class Scene:
         :param name: Название спрайта
         :param sprite: Спрайт, путь или уже готовая текстура
         """
+        if name in self.data[layer]:
+            del self.data[layer][name]
+
         if isinstance(sprite, str):
             sprite_new = self.get_sprite(sprite)
             if sprite_new is None:
