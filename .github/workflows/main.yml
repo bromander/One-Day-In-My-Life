@@ -29,6 +29,7 @@ jobs:
         pip install numpy==2.4.3
         pip install tqdm==4.67.3
         pip install arcade==3.3.3
+        pip install pypresence==4.6.1
       shell: cmd
 
     - name: Create test directories
