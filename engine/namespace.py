@@ -174,24 +174,113 @@ class Namespace:
 
             return x_norm, y_norm
 
+        def _get_size(self, size: Optional[Union[int, float, Tuple[int], Tuple[float]]], sprite_size: tuple) -> tuple:
+            size_return = [0, 0]
+            if size is None:
+                return sprite_size
+            else:
+                if isinstance(size, tuple):
+                    if isinstance(size[0], float):
+                        size_return[0] = sprite_size[0] * size[0]
+                    elif isinstance(size[0], int):
+                        size_return[0] = size[0]
+
+                    if isinstance(size[1], float):
+                        size_return[1] = sprite_size[1] * size[1]
+                    elif isinstance(size[1], int):
+                        size_return[1] = size[1]
+
+                elif isinstance(size, float):
+                    size_return = (sprite_size[0] * size, sprite_size[1] * size)
+
+                elif isinstance(size, int):
+                    size_return = (size, size)
+
+                return tuple(size_return)
+
+
         def add_sprite(self, filename: str,
                        at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
-                       effect: Optional[classmethod] = None,
+                       size: Optional[Union[tuple[int, int], int]] = None,
+                       angle: int = 0.0,
+                       effect = None,
                        stream: Literal["consistently", "together"] = "consistently") -> None:
             """
             Добавляет спрайт на сцену
             :param filename: Название спрайта
             :param at: Позиция
+            :param size: Размер спрайта
+            :param angle: поворот спрайта
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
             """
 
-            sprite = self.Game_view.scene.get_sprite(filename)
+            sprite: Sprite = self.Game_view.scene.get_sprite(filename)
+            if sprite is None:
+                raise FileNotFoundError(f"File {filename} not found!")
+
+            sprite.size = self._get_size(size, sprite.size)
+
+            if angle is not None:
+                sprite.angle = angle
+
+            screen_width = self.Game_view.width
+            screen_height = self.Game_view.height
+
+            if at is not None:
+
+                x_norm, y_norm = self._get_norm(at, filename)
+
+                sprite.center_x = screen_width * x_norm
+                sprite.center_y = screen_height * y_norm
+
+            else:
+                sprite.center_x = screen_width // 2
+                sprite.center_y = screen_height * 0.2
+
+            if effect is not None:
+                sprite.alpha = 0
+            else:
+                sprite.alpha = 255
+
+            def target():
+                self.Game_view.scene.add_sprite("sprites", filename, sprite)
+                yield
+
+            self.Game_view.actions.active_generators.add_generator(stream, target(), "show_sprite")
+            if effect is not None:
+                self.Game_view.actions.active_generators.add_generator(
+                    stream,
+                    effect.effect(filename, "sprites", self.Game_view),
+                    "show_sprite_effect"
+                )
+
+        def hide_sprite(self, filename: str,
+                        effect = None,
+                        stream: Literal["consistently", "together"] = "consistently") -> None:
+            """
+            Удаляет спрайт со сцены
+            :param filename: Название файла
+            :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            """
+
+            def target():
+                self.Game_view.scene.delete_sprite("sprites", filename)
+                yield
+
+            if effect is not None:
+                self.Game_view.actions.active_generators.add_generator(
+                    stream,
+                    effect.effect(filename, "sprites", self.Game_view, 0),
+                    "hide_sprite_effect"
+                )
+            self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
 
 
         def show_character(self, character: str,
                         at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
-                        effect: Optional[classmethod] = None,
+                        effect = None,
                         stream: Literal["consistently", "together"] = "consistently") -> None:
             """
             Добавляет спрайт персонажа на сцену
@@ -240,7 +329,7 @@ class Namespace:
                 )
 
         def hide_character(self, character: str,
-                        effect: Optional[classmethod] = None,
+                        effect = None,
                         stream: Literal["consistently", "together"] = "consistently") -> None:
             """
             Удаляет спрайт персонажа со сцены
@@ -263,14 +352,14 @@ class Namespace:
 
         def set_scene(self,
                       file_name: str,
-                      scale: float,
+                      size: Optional[Union[tuple[int, int], int]] = None,
                       layer: int = 0,
-                      effect: Optional[classmethod] = None,
+                      effect = None,
                       stream: Literal["consistently", "together"] = "consistently") -> None:
             """
             Изменяет бекграунд
             :param file_name: Название файла
-            :param scale: Размер
+            :param size: Размер
             :param layer: Слой
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
@@ -287,7 +376,7 @@ class Namespace:
             if sprite is None:
                 raise FileNotFoundError(f"File {file_name} not found!")
 
-            sprite.center_x, sprite.center_y, sprite.scale = self.Game_view.width * 0.5, self.Game_view.height * 0.5, scale
+            sprite.center_x, sprite.center_y, sprite.scale = self.Game_view.width * 0.5, self.Game_view.height * 0.5, self._get_size(size, sprite.size)
 
             bg_id = int(layer)
             if effect is not None:
