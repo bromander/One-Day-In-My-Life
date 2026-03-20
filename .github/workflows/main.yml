@@ -32,6 +32,12 @@ jobs:
         pip install pypresence==4.6.1
       shell: cmd
 
+    - name: Set UTF-8 encoding
+      run: |
+        echo "PYTHONIOENCODING=utf-8" >> $GITHUB_ENV
+        echo "LC_ALL=C.UTF-8" >> $GITHUB_ENV
+        echo "LANG=C.UTF-8" >> $GITHUB_ENV
+
     - name: Create test directories
       run: |
         mkdir test_datas\images
