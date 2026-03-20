@@ -12,11 +12,10 @@ from PIL import Image
 import numpy as np
 from tqdm import tqdm
 
-from .files_manager import FilesManager
-from .list_generator import ListActiveGenerators
-from .lore_viewer import Wwl
-from .waiter import Waiter
-from .scene import Scene
+from files_manager import FilesManager
+from list_generator import ListActiveGenerators
+from waiter import Waiter
+from scene import Scene
 
 person = Person(locale=Locale.RU)
 file_pr = File()

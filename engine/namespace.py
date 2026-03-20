@@ -8,7 +8,6 @@ from arcade import Sprite
 from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
-
 class Namespace:
     def __init__(self, GameView, ListCharacters, Wwl, AudioManager, Wait_trigger) -> None:
         """
@@ -128,7 +127,6 @@ class Namespace:
             self.Wwl = Wwl
             self.AudioManager = AudioManager
             self.PIL = PIL
-
 
     class Scene:
         def __init__(self, Game_view, ListCharacters, Wwl, Wait_trigger) -> None:
