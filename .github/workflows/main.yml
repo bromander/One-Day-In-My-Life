@@ -14,6 +14,18 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Install dependencies with arcade
+      run: |
+        python -m pip install --upgrade pip
+        pip install mimesis scipy pillow numpy tqdm
+        pip install arcade --no-deps
+        pip install pyglet
+      shell: cmd
+
+    - name: Create dirs
+      run: mkdir "test_datas/images", "test_datas/lores", "test_datas/music", "test_datas/sounds"
+      shell: cmd
     
     - name: Run tests
       run: .venv/Scripts/python.exe engine/tests.py
