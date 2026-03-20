@@ -40,5 +40,7 @@ jobs:
       shell: cmd
     
     - name: Run tests
-      run: python -m engine.tests
+      run: |
+        cd engine
+        python tests.py
       shell: cmd
