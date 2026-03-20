@@ -193,28 +193,38 @@ class Namespace:
             return x_norm, y_norm
 
         def _get_size(self, size: Optional[Union[int, float, Tuple[int], Tuple[float]]], sprite_size: tuple) -> tuple:
-            size_return = [0, 0]
             if size is None:
                 return sprite_size
-            else:
-                if isinstance(size, tuple):
+
+            if isinstance(size, (int, float)):
+                if isinstance(size, float):
+                    return (int(sprite_size[0] * size), int(sprite_size[1] * size))
+                else:
+                    return (size, size)
+
+            if isinstance(size, tuple):
+                width = None
+                height = None
+
+                if len(size) >= 1:
                     if isinstance(size[0], float):
-                        size_return[0] = sprite_size[0] * size[0]
-                    elif isinstance(size[0], int):
-                        size_return[0] = size[0]
+                        width = int(sprite_size[0] * size[0])
+                    else:
+                        width = size[0]
 
+                if len(size) >= 2:
                     if isinstance(size[1], float):
-                        size_return[1] = sprite_size[1] * size[1]
-                    elif isinstance(size[1], int):
-                        size_return[1] = size[1]
+                        height = int(sprite_size[1] * size[1])
+                    else:
+                        height = size[1]
 
-                elif isinstance(size, float):
-                    size_return = (sprite_size[0] * size, sprite_size[1] * size)
+                if height is None and width is not None:
+                    ratio = width / sprite_size[0]
+                    height = int(sprite_size[1] * ratio)
 
-                elif isinstance(size, int):
-                    size_return = (size, size)
+                return (width, height)
 
-                return tuple(size_return)
+            return sprite_size
 
 
         def add_sprite(self, filename: str,
@@ -298,18 +308,22 @@ class Namespace:
 
         def show_character(self, character: str,
                         at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
+                        size: Optional[Union[tuple[int, int], int]] = None,
                         effect = None,
                         stream: Literal["consistently", "together"] = "consistently") -> None:
             """
             Добавляет спрайт персонажа на сцену
             :param character: Айди персонажа
             :param at: Положение персонажа
+            :param size: Размер спрайта
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
             """
 
             char_id = character.split(" ")[0]
             sprite = self.ListCharacters[char_id].show(character)
+
+            sprite.size = self._get_size(size, sprite.size)
 
             screen_width = self.Game_view.width
             screen_height = self.Game_view.height
@@ -394,7 +408,7 @@ class Namespace:
             if sprite is None:
                 raise FileNotFoundError(f"File {file_name} not found!")
 
-            sprite.center_x, sprite.center_y, sprite.scale = self.Game_view.width * 0.5, self.Game_view.height * 0.5, self._get_size(size, sprite.size)
+            sprite.center_x, sprite.center_y, sprite.size = self.Game_view.width * 0.5, self.Game_view.height * 0.5, self._get_size(size, sprite.size)
 
             bg_id = int(layer)
             if effect is not None:
