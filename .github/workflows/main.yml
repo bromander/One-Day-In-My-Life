@@ -22,5 +22,5 @@ jobs:
     
     - name: Activate venv and run tests
       run: |
-        source venv/bin/activate
+        source .venv/Scripts/activate
         python engine/tests.py
