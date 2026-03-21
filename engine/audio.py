@@ -7,12 +7,12 @@ from arcade import load_sound, sound
 import random
 from threading import Thread
 import pyglet.media.player
-from .saves import Saves_manager as sm
+from .saves import Saves_manager
 from .files_manager import FilesManager
 
 
 class AudioChannel:
-    def __init__(self, default_volume: float=1.0, modifier: float = 1.0, volume_type: Optional[str] = None):
+    def __init__(self, sm: Saves_manager, default_volume: float=1.0, modifier: float = 1.0, volume_type: Optional[str] = None):
         '''
         Отвечает за отдельный канал аудио
         :param default_volume: Громкость по умолчанию
@@ -24,6 +24,8 @@ class AudioChannel:
         self.modifier = modifier # Модификатор громкости. Предназначен для управления громкости с ползунков из настроек
         self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкости во время плавных переходов (FADEIN/FADEOUT)
         self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкости текущего трека. Сбрасывается при запуске нового трека
+
+        self.sm = sm
 
 
     @property
@@ -96,11 +98,11 @@ class AudioChannel:
 
             # Сохраняем значения
             if self.volume_type == "music":
-                sm.volume.set_music(self.modifier)
+                self.sm.Volume.set_music(self.modifier)
             elif self.volume_type == "sound":
-                sm.volume.set_sound(self.modifier)
+                self.sm.Volume.set_sound(self.modifier)
             elif self.volume_type == "voice":
-                sm.volume.set_voice(self.modifier)
+                self.sm.Volume.set_voice(self.modifier)
         else:
             self._local_modifier = vol
             if self.player:
@@ -113,14 +115,14 @@ class AudioChannel:
             return False
 
 class AudioManager:
-    def __init__(self,  fm: FilesManager):
+    def __init__(self, sm: Saves_manager, fm: FilesManager):
         """
         Управляет 3 основными каналами: music, sound, voice
         """
         self.fm: FilesManager = fm
-        self.music = AudioChannel(modifier=sm.volume.get_music(), volume_type="music")
-        self.sound = AudioChannel(modifier=sm.volume.get_sound(), volume_type="sound")
-        self.voice = AudioChannel(modifier=sm.volume.get_voice(), volume_type="voice", default_volume=2.0)
+        self.music = AudioChannel(sm, modifier=sm.Volume.get_music(), volume_type="music")
+        self.sound = AudioChannel(sm, modifier=sm.Volume.get_sound(), volume_type="sound")
+        self.voice = AudioChannel(sm, modifier=sm.Volume.get_voice(), volume_type="voice", default_volume=2.0)
 
     def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
         """

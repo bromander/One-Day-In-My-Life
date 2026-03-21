@@ -25,118 +25,147 @@ class Saves_manager:
                 }
                 json.dump(data, file, indent=4, ensure_ascii=False)
 
-        self.defines = {}
+        self.Persistent = self.Persistent()
+        self.Volume = self.Volume()
+        self.Save = self.Save()
 
-    class persistent:
-
-        @staticmethod
-        def get_persistent(name: str):
+    class Persistent:
+        """
+        Отвечает за работу с Persistent-переменными.
+        Они отличаются тем, что сохраняются для всей игры и не  привязываются к определённой точке
+        """
+        def  __init__(self):
             with open("game/saves.JSON", "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
+            self.file = file
 
-            if name not in file["persistent"]:
+        def get_persistent(self, name: str) -> any:
+            """
+            Возвращает значение persistent
+            :param name: Название переменной
+            """
+            if name not in self.file["persistent"]:
                 raise PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
 
-            return file["persistent"].get(name, None)
+            return self.file["persistent"].get(name, None)
 
-        @staticmethod
-        def set_persistent(name: str, data: any):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["persistent"][name] = data
-            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
+        def set_persistent(self, name: str, data: any) -> None:
+            """
+            Устанавливает переменной значение
+            :param name: Название переменной
+            :param data: Данные переменной
+            """
+            self.file["persistent"][name] = data
 
-        @staticmethod
-        def del_persistent(name: str):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-
-            if name not in file_data["persistent"]:
+        def del_persistent(self, name: str) -> None:
+            """
+            Удаляет переменную
+            :param name: Название переменной
+            :raises PersistentDoesNotExistError: Если переменная не существует
+            """
+            if name not in self.file["persistent"]:
                 raise PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
 
-            del file_data["persistent"][name]
+            del self.file["persistent"][name]
 
-            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
-
-    class volume:
-        @staticmethod
-        def set_music(value: float):
+    class Volume:
+        """
+        Отвечает за работу с различными параметрами и ползунками из файлов сохранения
+        """
+        def  __init__(self):
             with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["options"]["volume"]["music"] = value
+                file = dict(json.load(file))
+            self.file = file
+
+        def _save_data(self) -> None:
             with open("game/saves.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
+                json.dump(self.file, file)
 
-        @staticmethod
-        def set_sound(value: float):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["options"]["volume"]["sound"] = value
-            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
+        def set_music(self, value: float) -> None:
+            """
+            Устанавливает значение параметру music
+            :param value: Значение
+            """
+            self.file["options"]["volume"]["music"] = value
 
-        @staticmethod
-        def set_voice(value: float):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["options"]["volume"]["voice"] = value
-            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
+        def set_sound(self, value: float) -> None:
+            """
+            Устанавливает значение параметру sound
+            :param value: Значение
+            """
+            self.file["options"]["volume"]["sound"] = value
 
-        @staticmethod
-        def set_other(name: str, value: float):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
+        def set_voice(self, value: float) -> None:
+            """
+            Устанавливает значение параметру voice
+            :param value: Значение
+            """
+            self.file["options"]["volume"]["voice"] = value
 
-            if name not in file_data["options"]:
+        def set_other(self, name: str, value: any) -> None:
+            """
+            Устанавливает значение
+            :param name: Название значения
+            :param value: Значение
+            :raises VolumeDoesNotExistError: Если параметр не существует
+            """
+            if name not in self.file["options"]:
+                raise VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
+            self.file["options"][name] = value
+
+
+        def get_music(self) -> float:
+            """
+            Возвращает значение параметра music
+            """
+            return self.file["options"]["volume"].get("music", None)
+
+        def get_sound(self) -> float:
+            """
+            Возвращает значение параметра music
+            """
+            return self.file["options"]["volume"].get("sound", None)
+
+        def get_voice(self) -> float:
+            """
+            Возвращает значение параметра music
+            """
+            return self.file["options"]["volume"].get("voice", None)
+
+        def get_other(self, name: str) -> any:
+            """
+            Возвращает значение параметра
+            :param name: название параметра
+            :raises VolumeDoesNotExistError: Если параметр не существует
+            """
+            if name not in self.file["options"]:
                 raise VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
 
-            file_data["options"][name] = value
+            return self.file["options"].get(name, None)
 
+    class Save:
+        """
+        Отвечает за работу с сохранениями игры
+        """
+        def  __init__(self):
+            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
+                file = dict(json.load(file))
+            self.file = file
+
+        def _save_data(self):
             with open("game/saves.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
+                json.dump(self.file, file)
 
 
-        @staticmethod
-        def get_music():
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-            return file["options"]["volume"].get("music", None)
-
-        @staticmethod
-        def get_sound():
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-            return file["options"]["volume"].get("sound", None)
-
-        @staticmethod
-        def get_voice():
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-            return file["options"]["volume"].get("voice", None)
-
-        @staticmethod
-        def get_other(name: str):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-
-            if name not in file["options"]:
-                raise VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
-
-            return file["options"].get(name, None)
-
-    class save:
-
-        @staticmethod
-        def create_save(session_id, am, scene, NAMESPACE, wwl):
+        def create_save(self, session_id, am, scene, NAMESPACE, wwl) -> None:
+            """
+            Создаёт текущее сохранение
+            :param session_id: Айди сессии
+            :param am: Класс AudioManager
+            :param scene: Класс Scene
+            :param NAMESPACE: Класс Namespace
+            :param wwl: Класс WorkWithLore
+            """
             try:
                 music_file = am.music.sound.file_name
             except FileNotFoundError:
@@ -170,37 +199,36 @@ class Saves_manager:
                 "music": music_file
 
             }
-            Saves_manager().save._add_save(session_id,
-                                           defines=NAMESPACE["Define"].defines,
-                                           position=wwl.pose - 1,
-                                           label=wwl.label, scene=scene)
+            self._add_save(session_id,
+                           defines=NAMESPACE["Define"].defines,
+                           position=wwl.pose - 1,
+                           label=wwl.label,
+                           scene=scene
+                           )
 
-        @staticmethod
-        def _add_save(session_id: str, defines: dict, position: int, label: str, scene: dict):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file_data_old = dict(json.load(file))
-            file_data = file_data_old.copy()
-            file_data["saves"][session_id] = {
+        def _add_save(self, session_id: str, defines: dict, position: int, label: str, scene: dict) -> None:
+            self.file["saves"][session_id] = {
                 "position" : position,
                 "label" : label,
                 "defines" : defines,
                 "scene" : scene
             }
-            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
-                json.dump(file_data, file, indent=4, ensure_ascii=False)
+            self._save_data()
 
-        @staticmethod
-        def get_save(session_id: str) -> dict:
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file_data = dict(json.load(file))
+        def get_save(self, session_id: str) -> dict:
+            """
+            Возвращает сохранение по его айди
+            :param session_id: Айди сохранения
+            :raises SaveDoesNotExistError: Если сохранение не  существует
+            """
 
-            if session_id not in file_data["saves"]:
+            if session_id not in self.file["saves"]:
                 raise SaveDoesNotExistError(f"Save \"{session_id}\" does not exist!")
 
-            return file_data["saves"][session_id]
+            return self.file["saves"][session_id]
 
-        @staticmethod
-        def get_all_saves() -> dict:
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
-                file_data = dict(json.load(file))
-            return [[i, o] for i, o in file_data["saves"].items()]
+        def get_all_saves(self) -> list:
+            """
+            Возвращает все игровые сохранения
+            """
+            return [[i, o] for i, o in self.file["saves"].items()]

@@ -2,11 +2,11 @@ from time import time
 from typing import Optional, Literal, Tuple, Union
 
 from .list_generator import ListActiveGenerators
-from .saves import Saves_manager as sm
+from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError
 
 class Actions:
-    def __init__(self, main) -> None:
+    def __init__(self, main, sm: Saves_manager) -> None:
         """
         Хранит в себе некоторые функции-генераторы.
         Отвечает за обновление всех генераторов
@@ -15,10 +15,11 @@ class Actions:
         self.main = main
         self.active_generators = ListActiveGenerators()
         self.dt_accumulator = 0.0
+        self.sm = sm
 
     def _fadein(self, now: dict):
 
-        duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
+        duration = max(now["time"] + self.sm.Volume.get_other("fade_speed"), 0.001)
         progress = 0.0
         last_alpha = self.main.scene["fade"]["fade"].alpha
         fade_sprite = self.main.scene["fade"]["fade"]
@@ -42,7 +43,7 @@ class Actions:
 
     def _fadeout(self, now: dict):
 
-        duration = max(now["time"] + sm.volume.get_other("fade_speed"), 0.001)
+        duration = max(now["time"] + self.sm.Volume.get_other("fade_speed"), 0.001)
         progress = 0.0
         last_alpha = self.main.scene["fade"]["fade"].alpha
         fade_sprite = self.main.scene["fade"]["fade"]
@@ -132,7 +133,7 @@ class Actions:
         self.main.splash_manager.children[0][0].text = now["name"]
         self.main.splash_manager.children[0][1].text = now["description"]
 
-        duration = max(now["duration"] + sm.volume.get_other("fade_speed"), 0.001)
+        duration = max(now["duration"] + self.sm.Volume.get_other("fade_speed"), 0.001)
         progress = 0.0
         last_alpha = self.main.scene["fade"]["splash"].alpha
         min_step = 1
@@ -164,7 +165,7 @@ class Actions:
                 continue
             remaining_time -= dt
 
-        duration = max(now["duration"] / 2 + sm.volume.get_other("fade_speed"), 0.001)
+        duration = max(now["duration"] / 2 + self.sm.Volume.get_other("fade_speed"), 0.001)
         progress = 0.0
         last_alpha = self.main.scene["fade"]["splash"].alpha
         min_step = 1
