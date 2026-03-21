@@ -12,6 +12,7 @@ on:
 
 jobs:
   test:
+    name: Run tests
     runs-on: windows-latest
     
     steps:
