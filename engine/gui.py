@@ -9,7 +9,7 @@ from arcade.gui.events import UIMousePressEvent, UIMouseReleaseEvent, UIMouseMov
 from arcade.gui import (
     Surface,
     UIEvent,
-    UIMouseDragEvent
+    UIMouseDragEvent, UIOnChangeEvent, UIOnClickEvent
 )
 from arcade.gui.style import UIStyledWidget
 from arcade.gui import UISlider
@@ -21,7 +21,6 @@ from .lore_viewer import Wwl
 from .scene import Scene
 from .namespace import Namespace
 from .waiter import Waiter
-from .saves import Saves_manager
 
 
 class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
@@ -436,7 +435,7 @@ class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
 
 class InGameSettings:
 
-    def __init__(self, session_id: str, Views, scene: Scene, window: arcade.Window, am: AudioManager, wwl: Wwl, NAMESPACE: Namespace, FONT_NAME: str, STYLE_DEFAULT_BUTTON: dict, actions):
+    def __init__(self, session_id: str, Views, scene: Scene, window: arcade.Window, am: AudioManager, wwl: Wwl, sm: Saves_manager, NAMESPACE: Namespace, FONT_NAME: str, STYLE_DEFAULT_BUTTON: dict, actions):
 
         self.window = window
 
@@ -444,7 +443,7 @@ class InGameSettings:
         self.wwl = wwl
         self.scene = scene
         self.NAMESPACE = NAMESPACE
-        self.sm = Saves_manager()
+        self.sm = sm
 
         self.STYLE_DEFAULT_BUTTON = STYLE_DEFAULT_BUTTON
         self.FONT_NAME = FONT_NAME
@@ -510,7 +509,7 @@ class InGameSettings:
                 width=200,
                 style=self.STYLE_DEFAULT_BUTTON
             )
-            save_button.on_click = lambda action=None, session_id=self.session_id, am=self.am, scene=self.scene, NAMESPACE = self.NAMESPACE, wwl=self.wwl: self.sm.save.create_save(
+            save_button.on_click = lambda action=None, session_id=self.session_id, am=self.am, scene=self.scene, NAMESPACE = self.NAMESPACE, wwl=self.wwl: self.sm.Save.create_save(
                 session_id,
                 am,
                 scene,
@@ -530,7 +529,10 @@ class InGameSettings:
             )
             self.settings_v_box.add(music_volume_label)
 
-            music_volume_slider = agui.UISlider(
+            music_volume_slider = UISliderSavesUpdater(
+                "music",
+                self.sm,
+                self.am,
                 value=volumes['volume']["music"] * 100,  # начальное значение
                 min_value=0,
                 max_value=200,
@@ -548,7 +550,10 @@ class InGameSettings:
             )
             self.settings_v_box.add(sound_volume_label)
 
-            sound_volume_slider = agui.UISlider(
+            sound_volume_slider = UISliderSavesUpdater(
+                "sound",
+                self.sm,
+                self.am,
                 value=volumes['volume']["sound"] * 100,  # начальное значение
                 min_value=0,
                 max_value=200,
@@ -566,7 +571,10 @@ class InGameSettings:
             )
             self.settings_v_box.add(voice_volume_label)
 
-            voice_volume_slider = agui.UISlider(
+            voice_volume_slider = UISliderSavesUpdater(
+                "voice",
+                self.sm,
+                self.am,
                 value=volumes['volume']["voice"] * 100,  # начальное значение
                 min_value=0,
                 max_value=200,
@@ -582,7 +590,10 @@ class InGameSettings:
                 font_name=self.FONT_NAME
             )
             self.settings_v_box_1.add(lps_label)
-            self.lps_slider = agui.UISlider(
+            self.lps_slider = UISliderSavesUpdater(
+                "lps",
+                self.sm,
+                self.am,
                 value=volumes["lps"],  # начальное значение
                 min_value=20,
                 max_value=110,
@@ -599,7 +610,10 @@ class InGameSettings:
                 font_name=self.FONT_NAME
             )
             self.settings_v_box_1.add(fade_speed_label)
-            self.fade_speed_slider = agui.UISlider(
+            self.fade_speed_slider = UISliderSavesUpdater(
+                "fade_speed",
+                self.sm,
+                self.am,
                 value=volumes["fade_speed"],  # начальное значение
                 min_value=-10,
                 max_value=10,
@@ -635,12 +649,7 @@ class InGameSettings:
         self.settings_manager.draw()
 
     def update(self):
-        if self.waiting_settings.state:
-            self.am.music.set_volume(round(self.settings_v_box.children[4].value / 100, 2))
-            self.am.sound.set_volume(round(self.settings_v_box.children[7].value / 100, 2))
-            self.am.voice.set_volume(round(self.settings_v_box.children[10].value / 100, 2))
-            self.sm.volume.set_other("lps", round(self.settings_v_box_1.children[1].value, 2))
-            self.sm.volume.set_other("fade_speed", round(self.settings_v_box_1.children[4].value, 2))
+        pass
 
     def turn_visibl(self, state: Optional[bool] = None):
         if state is not None:
@@ -658,3 +667,56 @@ class InGameSettings:
                 self.settings_manager.disable()
 
 
+class UISliderSavesUpdater(agui.UISlider):
+    def __init__(
+            self,
+            type: str,
+            sm: Saves_manager,
+            am: AudioManager,
+            value: float = 0,
+            min_value: float = 0,
+            max_value: float = 100,
+            x: float = 0,
+            y: float = 0,
+            width: float = 300,
+            height: float = 25,
+            size_hint=None,
+            size_hint_min=None,
+            size_hint_max=None,
+            style: dict[str, UISliderStyle] | None = None,
+            step: float | None = None
+    ):
+        super().__init__(
+             value = value,
+             min_value = min_value,
+             max_value = max_value,
+             x = x,
+             y = y,
+             width = width,
+             height = height,
+             size_hint = size_hint,
+             size_hint_min = size_hint_min,
+             size_hint_max = size_hint_max,
+             style = style,
+             step = step)
+
+        self.sm = sm
+        self.am = am
+        self.type = type
+    
+    def on_click(self, event: UIOnClickEvent):
+        super().on_click(event)
+        print(self.type)
+        match self.type:
+            case "music":
+                self.am.music.set_volume(round(self.value / 100, 2))
+            case "sound":
+                self.am.sound.set_volume(round(self.value / 100, 2))
+            case "voice":
+                self.am.voice.set_volume(round(self.value / 100, 2))
+            case "lps":
+                self.sm.Volume.set_other("lps", round(self.value, 2))
+            case "fade_speed":
+                self.sm.Volume.set_other("fade_speed", round(self.value, 2))
+        self.sm.Volume._save_data()
+        

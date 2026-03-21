@@ -11,7 +11,7 @@ import os
 import random
 import json
 import uuid
-from .gui import UISliderVertical, InGameSettings
+from .gui import UISliderVertical, InGameSettings, UISliderSavesUpdater
 from .scene import Scene
 from .lore_viewer import Wwl
 from .waiter import Waiter
@@ -101,9 +101,7 @@ class Views:
             self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
             self.window.set_mouse_visible(False)
 
-            sm = Saves_manager()
-
-            if sm.volume.get_other("show_fps"):
+            if Saves_manager().Volume.get_other("show_fps"):
                 current_fps = 1.0 / delta_time if delta_time > 0 else 0
 
                 self.fps['window'].append(current_fps)
@@ -123,9 +121,8 @@ class Views:
 
 
         def on_draw(self) -> None:
-            sm = Saves_manager()
             arcade.draw_sprite(self.cursor_texture)
-            if sm.volume.get_other("show_fps"):
+            if Saves_manager().Volume.get_other("show_fps"):
                 arcade.draw_lrbt_rectangle_filled(
                     left=5,
                     right=8*len(self.fps['label'].text),
@@ -235,7 +232,7 @@ class Views:
                     self.session_id = str(uuid.uuid4())
                 else:
                     self.session_id = session_id
-                    save = Saves_manager().save.get_save(self.session_id)
+                    save = sm.Save.get_save(self.session_id)
                     wwl.label = save["label"]
                     wwl.pose = save["position"]
                     for i, o in save["defines"].items():
@@ -260,11 +257,11 @@ class Views:
 
             load_saves(session_id)
 
-            self.actions = Actions(self)
+            self.actions = Actions(self, sm)
 
             print(self.session_id)
 
-            self.NAMESPACE = Namespace(self, lc, wwl, am, wait_trigger)
+            self.NAMESPACE = Namespace(self, lc, wwl, am, wait_trigger, sm)
 
             self.talk_manager(clicked=False)
 
@@ -273,7 +270,7 @@ class Views:
                 Views,
                 self.scene,
                 self.window,
-                am, wwl, self.NAMESPACE,
+                am, wwl, sm, self.NAMESPACE,
                 FONT_NAME, STYLE_DEFAULT_BUTTON,
                 self.actions
             )
@@ -702,7 +699,7 @@ class Views:
             """
             super().__init__()
 
-            saves = sm.save.get_all_saves()
+            saves = sm.Save.get_all_saves()
             self.saves = saves + [[None]]*(20 - len(saves))
             self.saves_len = 20
 
@@ -807,11 +804,11 @@ class Views:
 
             self.manager.add(self.main_h_box)
 
-            self.music_volume_slider: Optional[agui.UISlider] = None
-            self.sound_volume_slider: Optional[agui.UISlider] = None
-            self.voice_volume_slider: Optional[agui.UISlider] = None
-            self.lps_slider: Optional[agui.UISlider] = None
-            self.fade_speed_slider: Optional[agui.UISlider] = None
+            self.music_volume_slider: Optional[UISliderSavesUpdater] = None
+            self.sound_volume_slider: Optional[UISliderSavesUpdater] = None
+            self.voice_volume_slider: Optional[UISliderSavesUpdater] = None
+            self.lps_slider: Optional[UISliderSavesUpdater] = None
+            self.fade_speed_slider: Optional[UISliderSavesUpdater] = None
 
             self.show_main_windows()
 
@@ -821,12 +818,6 @@ class Views:
             super().on_draw()
 
         def on_update(self, delta_time: float) -> bool | None:
-            if self.window.visible:
-                am.music.set_volume(round(self.music_volume_slider.value / 100, 2))
-                am.sound.set_volume(round(self.sound_volume_slider.value / 100, 2))
-                am.voice.set_volume(round(self.voice_volume_slider.value / 100, 2))
-                sm.volume.set_other("lps", round(self.lps_slider.value, 2))
-                sm.volume.set_other("fade_speed", round(self.fade_speed_slider.value, 2))
             super().on_update(delta_time)
 
         def show_main_windows(self) -> None:
@@ -860,7 +851,7 @@ class Views:
                     height=50,
                     style=STYLE_DEFAULT_BUTTON
                 )
-                FPS_check_box.on_click = lambda event=None: sm.volume.set_other("show_fps", not sm.volume.get_other("show_fps"))
+                FPS_check_box.on_click = lambda event=None: sm.Volume.set_other("show_fps", not sm.Volume.get_other("show_fps"))
                 FPS_check_box.center_x = self.window.center_x
                 FPS_check_box.center_y = self.window.height * 0.7
                 self.manager.add(FPS_check_box)
@@ -872,7 +863,10 @@ class Views:
                 )
                 self.v_box.add(music_volume_label)
 
-                self.music_volume_slider = agui.UISlider(
+                self.music_volume_slider = UISliderSavesUpdater(
+                    "music",
+                    sm,
+                    am,
                     value=volumes['volume']["music"]*100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -889,7 +883,10 @@ class Views:
                 )
                 self.v_box.add(sound_volume_label)
 
-                self.sound_volume_slider = agui.UISlider(
+                self.sound_volume_slider = UISliderSavesUpdater(
+                    "sound",
+                    sm,
+                    am,
                     value=volumes['volume']["sound"]*100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -906,7 +903,10 @@ class Views:
                 )
                 self.v_box.add(voice_volume_label)
 
-                self.voice_volume_slider = agui.UISlider(
+                self.voice_volume_slider = UISliderSavesUpdater(
+                    "voice",
+                    sm,
+                    am,
                     value=volumes['volume']["voice"]*100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -918,7 +918,10 @@ class Views:
 
 
 
-                self.lps_slider = agui.UISlider(
+                self.lps_slider = UISliderSavesUpdater(
+                    "lps",
+                    sm,
+                    am,
                     value=volumes["lps"],  # начальное значение
                     min_value=20,
                     max_value=110,
@@ -934,7 +937,10 @@ class Views:
                 self.v_box_1.add(lps_label)
                 self.v_box_1.add(arcade.gui.UISpace(height=20))
 
-                self.fade_speed_slider = agui.UISlider(
+                self.fade_speed_slider = UISliderSavesUpdater(
+                    "fade_speed",
+                    sm,
+                    am,
                     value=volumes["fade_speed"],  # начальное значение
                     min_value=-10,
                     max_value=10,
@@ -1037,7 +1043,7 @@ class Character:
                 return text
             return text[:index] + new_char + text[index + 1:]
 
-        now_lps = self.lps * (self.lps / sm.volume.get_other("lps"))
+        now_lps = self.lps * (self.lps / sm.Volume.get_other("lps"))
 
         dialog_text_text_alt = [" "]
         string_index_alt = 0
@@ -1217,16 +1223,16 @@ def init_file() -> None:
     timee = time.time()
     print("files_manager...")
     fm = FilesManager()
+    print("Saves...")
+    sm = Saves_manager()
     print("Audio manager...")
-    am = AudioManager(fm)
+    am = AudioManager(sm, fm)
     print("Lore...")
     wwl = Wwl(fm)
     print("Scene...")
     scene = Scene(fm)
     print("characters...")
     lc = ListCharacters()
-    print("Saves...")
-    sm = Saves_manager()
     print("Discord...")
     da = Discord_act()
     print(f"Init done for {round(time.time() - timee, 2)}s")

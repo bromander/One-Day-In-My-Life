@@ -9,7 +9,7 @@ from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
 class Namespace:
-    def __init__(self, GameView, ListCharacters, Wwl, AudioManager, Wait_trigger) -> None:
+    def __init__(self, GameView, ListCharacters, Wwl, AudioManager, Wait_trigger, SavesManager) -> None:
         """
         Отвечает за работу со всеми функциями, используемыми в сценариях.
         :param GameView: Объект класса GameView
@@ -24,12 +24,13 @@ class Namespace:
         self.Wwl = Wwl
         self.AudioManager = AudioManager
         self.Wait_trigger = Wait_trigger
+        self.SavesManager = SavesManager
 
         self.NAMESPACE = {
             "Data" : self.Data(GameView, ListCharacters, Wwl, AudioManager),
-            "Persistent": self.Persistent(),
+            "Persistent": self.Persistent(SavesManager),
             "Define": self.Define(),
-            "Scene": self.Scene(GameView, ListCharacters, Wwl, Wait_trigger),
+            "Scene": self.Scene(GameView, ListCharacters, Wwl, Wait_trigger, SavesManager),
             "Audio": self.Audio(GameView, AudioManager),
             "Lore": self.Lore(GameView, Wwl),
             "SpriteEffects": self.SpriteEffects(),
@@ -56,23 +57,28 @@ class Namespace:
         return self.NAMESPACE.get(key, default)
 
     class Persistent:
-        def __init__(self):
+        def __init__(self, sm: Saves_manager):
             """
-            Отвечает за работу с переменными, которые сохраняются межуд сессиями
+            Отвечает за работу с переменными, которые сохраняются между сессиями
             """
-            pass
+            object.__setattr__(self, 'sm', sm)
 
         def __setattr__(self, name, value):
-            Saves_manager().persistent.set_persistent(name, value)
-            super().__setattr__(name, value)
+            self.sm.Persistent.set_persistent(name, value)
+            object.__setattr__(self, name, value)
 
         def __getattribute__(self, item):
-            super().__setattr__(item, Saves_manager().persistent.get_persistent(item))
-            return Saves_manager().persistent.get_persistent(item)
+            if item == 'sm':
+                return object.__getattribute__(self, item)
+
+            try:
+                return self.sm.Persistent.get_persistent(item)
+            except KeyError:
+                raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
 
         def __delattr__(self, item):
-            super().__delattr__(item)
-            return Saves_manager().persistent.del_persistent(item)
+            self.sm.Persistent.del_persistent(item)
+            object.__delattr__(self, item)
 
     class Define:
         def __init__(self):
@@ -129,7 +135,7 @@ class Namespace:
             self.PIL = PIL
 
     class Scene:
-        def __init__(self, Game_view, ListCharacters, Wwl, Wait_trigger) -> None:
+        def __init__(self, Game_view, ListCharacters, Wwl, Wait_trigger, sm: Saves_manager) -> None:
             """
             Отвечает за работу с игровой сценой
             :param Game_view: Объект класса Game_view
@@ -140,6 +146,7 @@ class Namespace:
             self.ListCharacters = ListCharacters
             self.Wwl = Wwl
             self.Wait_trigger = Wait_trigger
+            self.sm = sm
 
         def _get_norm(self,
                       at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]],
@@ -277,7 +284,7 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(filename, "sprites", self.Game_view),
+                    effect.effect(filename, "sprites", self.Game_view, self.sm),
                     "show_sprite_effect"
                 )
 
@@ -298,7 +305,7 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(filename, "sprites", self.Game_view, 0),
+                    effect.effect(filename, "sprites", self.Game_view, self.sm, 0),
                     "hide_sprite_effect"
                 )
             self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
@@ -354,7 +361,7 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(character.split(" ")[0], "sprites", self.Game_view),
+                    effect.effect(character.split(" ")[0], "sprites", self.Game_view, self.sm),
                     "show_sprite_effect"
                 )
 
@@ -375,7 +382,7 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(character, "sprites", self.Game_view, 0),
+                    effect.effect(character, "sprites", self.Game_view, self.sm, 0),
                     "hide_sprite_effect"
                 )
             self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
@@ -427,7 +434,7 @@ class Namespace:
 
             self.Game_view.actions.active_generators.add_generator(stream, target(bg_id), "set_scene")
             if effect is not None:
-                self.Game_view.actions.active_generators.add_generator(stream, effect.effect(bg_id, "bg", self.Game_view), "set_scene_effect")
+                self.Game_view.actions.active_generators.add_generator(stream, effect.effect(bg_id, "bg", self.Game_view, self.sm), "set_scene_effect")
                 self.Game_view.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")
 
         def move(self, sprite: str,
@@ -561,14 +568,14 @@ class Namespace:
                 self.name = "DISSOLVE"
                 self.duration = duration
 
-            def effect(self, sprite_name: str, layer: str, Game_view: classmethod, target_alpha: int = 255):
+            def effect(self, sprite_name: str, layer: str, Game_view, sm: Saves_manager, target_alpha: int = 255):
 
                 if sprite_name not in Game_view.scene[layer]:
                     yield
                     return
 
                 sprite = Game_view.scene[layer][sprite_name]
-                duration = max(self.duration + Saves_manager().volume.get_other("fade_speed"), 0.001)
+                duration = max(self.duration + sm.Volume.get_other("fade_speed"), 0.001)
 
                 start_alpha = sprite.alpha
                 progress = 0.0
