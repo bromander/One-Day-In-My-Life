@@ -69,6 +69,15 @@ dialog_text_colour = arcade.color.BLACK
 
 class Views:
 
+    class MainWindow(arcade.Window):
+        def __init__(self, width, height, title, resizable):
+            super().__init__(width=width, height=height, title=title, resizable=resizable)
+
+        def on_close(self) -> None:
+            print("closing...")
+            da.stop_thread_flag = True
+            arcade.close_window()
+
     class Main_template(arcade.View):
         def __init__(self) -> None:
             """
@@ -682,7 +691,7 @@ class Views:
                     width=200,
                     style=STYLE_DEFAULT_BUTTON
                 )
-                exit_button.on_click = lambda event: arcade.exit()
+                exit_button.on_click = lambda event: self.window.on_close()
                 self.v_box.add(exit_button)
 
                 ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
@@ -1028,7 +1037,7 @@ class Character:
 
         self.text_anch = text_anch
 
-    def talk(self, text: str) -> None:
+    def talk(self, text: str):
         """
         Форматирует текст и создаёт генератор, который проигрывает речь персонажа.
         :param text: Речь персонажа

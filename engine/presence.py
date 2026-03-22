@@ -1,7 +1,8 @@
 from pypresence import Presence
-from pypresence.exceptions import DiscordNotFound, PipeClosed
+from pypresence.exceptions import DiscordNotFound, PipeClosed, InvalidPipe
 from pypresence.types import ActivityType, StatusDisplayType
 from threading import Thread
+from typing import Optional, Literal, Tuple, Union
 import json
 import time
 
@@ -13,16 +14,20 @@ class Discord_act:
         self.RPC = Presence(self.discord_application_ID)
         self.connected = False
 
-        self.thread = None
+        self.stop_thread_flag = False
+
+        self.thread: Optional[Thread] = None
 
         self._connect_loop()
 
     def _connect_loop(self, details: str = "В главном меню", state: str = ""):
         def idk():
             while True:
+                if self.stop_thread_flag:
+                    return None
+
                 try:
                     self.RPC.connect()
-                    self.connected = True
 
                     if state:
                         self.RPC.update(
@@ -43,11 +48,20 @@ class Discord_act:
                 except DiscordNotFound:
                     self.connected = False
 
+                except InvalidPipe:
+                    self.connected = False
+
+                except ValueError:
+                    self.connected = False
+
                 else:
-                    return None
+                    self.connected = True
 
                 finally:
-                    time.sleep(15)
+                    for i in range(10):
+                        if self.stop_thread_flag:
+                            return None
+                        time.sleep(1)
 
         self.thread = Thread(target=idk)
         self.thread.start()
