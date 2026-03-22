@@ -82,6 +82,8 @@ class Discord_act:
                         activity_type=ActivityType.PLAYING,
                         state=description
                     )
+            else:
+                raise PipeClosed
         except PipeClosed:
             self.connected = False
         else:
