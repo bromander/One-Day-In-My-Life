@@ -21,6 +21,8 @@ class AudioChannel:
         self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью во время плавных переходов (FADEIN/FADEOUT)
         self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью текущего трека. Сбрасывается при запуске нового трека
 
+        self.paused = False
+
         self.sm = sm
 
 
@@ -60,6 +62,7 @@ class AudioChannel:
         volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
 
         self.player = file_sound.play(volume=volume, loop=loop, speed=speed)
+        self.paused = False
 
     def stop(self) -> None:
         """
@@ -67,6 +70,7 @@ class AudioChannel:
         """
         if self.player:
             self.player.delete()
+        self.paused = False
 
     def pause(self) -> None:
         """
@@ -74,6 +78,7 @@ class AudioChannel:
         """
         if self.player:
             self.player.pause()
+            self.paused = True
 
     def resume(self) -> None:
         """
@@ -81,6 +86,7 @@ class AudioChannel:
         """
         if self.player:
             self.player.play()
+        self.paused = False
 
     def set_volume(self, vol, is_global: bool = True) -> None:
         """

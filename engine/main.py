@@ -74,9 +74,32 @@ class Views:
             super().__init__(width=width, height=height, title=title, resizable=resizable)
 
         def on_close(self) -> None:
-            print("closing...")
-            da.stop_thread_flag = True
+            try:
+                da.stop_thread_flag = True
+            except NameError:
+                pass
+
             arcade.close_window()
+
+        def on_activate(self) -> EVENT_HANDLE_STATE:
+            try:
+                if am.music.paused:
+                    am.music.resume()
+                if am.sound.paused:
+                    am.sound.resume()
+                am.voice.fade_modifier = 1.0
+            except NameError:
+                pass
+
+        def on_deactivate(self) -> EVENT_HANDLE_STATE:
+            try:
+                if not am.music.paused:
+                    am.music.pause()
+                if not am.sound.paused:
+                    am.sound.pause()
+                am.voice.fade_modifier = 0.0
+            except NameError:
+                pass
 
     class Main_template(arcade.View):
         def __init__(self) -> None:
