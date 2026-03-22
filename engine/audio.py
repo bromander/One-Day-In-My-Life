@@ -37,13 +37,16 @@ class AudioChannel:
             self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
             # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
 
-    def play(self, file: Union[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None) -> None:
+    def play(self, file: Union[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None, streaming: bool = False) -> None:
         """
         Начинает проигрывать звук
         :param file: Путь к файлу/уже готовый саунд
         :param loop: Если True, звук будет зацикливаться
         :param speed: Скорость проигрывания
-        :param local_volume:
+        :param local_volume: Громкость звука только в этот раз
+        :param streaming: Boolean for determining if we stream the sound or
+            load it all into memory. Set to ``True`` for long sounds to
+            save memory, ``False`` for short sounds to speed playback.
         """
         self.stop()
 
@@ -53,7 +56,7 @@ class AudioChannel:
             self._local_modifier = 1
 
         if type(file) is str or type(file) is type(Path()):
-            file_sound = load_sound(str(file))
+            file_sound = load_sound(str(file), streaming=streaming)
         elif type(file) is sound.Sound:
             file_sound = file
         else:
@@ -128,7 +131,7 @@ class AudioManager:
         self.sound = AudioChannel(sm, modifier=sm.Volume.get_sound(), volume_type="sound")
         self.voice = AudioChannel(sm, modifier=sm.Volume.get_voice(), volume_type="voice", default_volume=2.0)
 
-    def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
+    def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None, streaming: bool = True):
         """
         Отличается от play_music тем, что поддерживает эффекты
         :return: генератор
@@ -146,20 +149,20 @@ class AudioManager:
                     self.music.fade_modifier = 1.0
 
                 self.music.fade_modifier = 0.0
-                self.music.play(path, loop=loop, local_volume=volume)
+                self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
                 return fadeout_music()
 
             case _:
                 def music():
-                    self.music.play(path, loop=loop, local_volume=volume)
+                    self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
                     yield
                 return music()
 
-    def play_music(self, path: str, loop: bool = False, volume: float = 1.0) -> None:
+    def play_music(self, path: str, loop: bool = False, volume: float = 1.0, streaming: bool = True) -> None:
 
         if path in self.fm.audios:
             path: sound.Sound = self.fm.audios[path]
-        self.music.play(path, loop=loop, local_volume=volume)
+        self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
 
     def play_sound_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[Literal["fade"]] = None):
         """
@@ -199,7 +202,7 @@ class AudioManager:
         if path in self.fm.audios:
             path = self.fm.audios[path]
 
-        self.voice.play(path, loop=loop, speed=random.randint(99, 101) / 100)
+        self.voice.play(path, loop=loop, speed=random.randint(99, 101) / 100, streaming=False)
 
     def stop_music_gen(self, effect: Optional[Literal["fade"]] = None):
         """
@@ -213,16 +216,19 @@ class AudioManager:
                         self.music.fade_modifier -= 0.005
                         yield
                     self.music.fade_modifier = 0.0
+                    self.music.pause()
                     self.music.stop()
                     self.music.fade_modifier = 1.0
                 return fadeout_music()
             case _:
                 def music():
+                    self.music.pause()
                     self.music.stop()
                     yield
                 return music()
 
     def stop_music(self) -> None:
+        self.music.pause()
         self.music.stop()
 
     def stop_sound_gen(self, effect: Optional[str] = None):
@@ -237,6 +243,7 @@ class AudioManager:
                         self.sound.fade_modifier -= 0.005
                         yield
                     self.sound.fade_modifier = 0.0
+                    self.sound.pause()
                     self.sound.stop()
                     self.sound.fade_modifier = 1.0
 
@@ -244,11 +251,13 @@ class AudioManager:
 
             case _:
                 def sound():
+                    self.sound.pause()
                     self.sound.stop()
                     yield
                 return sound()
 
     def stop_sound(self):
+        self.sound.pause()
         self.sound.stop()
 
     def stop_voice(self):

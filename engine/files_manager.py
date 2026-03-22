@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import mutagen
 from typing import Union, Optional, Dict, Literal
 from threading import Thread
 from arcade import load_sound, load_texture, Texture, Sound
@@ -50,7 +51,6 @@ class FilesManager:
         self.textures_paths: dict[str : Path] = find_files(self.image_extensions, self.images_path) # Пути к текстурам всех спрайтов {Название файла : полный путь}
         self.audio_paths: dict[str : Path] = (find_files(self.audio_extensions, self.music_path, ["voice"]) |
                                               find_files(self.audio_extensions, self.sounds_path, ["voice"])) # Пути ко всем звуковым файлам {Название файла : полный путь}
-
         self.loaded_labels: list[str] = [] # Лейблы которые уже были загружены
 
         self.textures: dict[str : Texture] = {} # Уже загруженные текстуры {Название файла : текстура}
@@ -79,7 +79,13 @@ class FilesManager:
                 elif i in self.audio_paths: # Аудио
                     if i in self.audios:
                         continue
-                    self.audios[i] = load_sound(str(self.audio_paths[i]))
+
+                    streaming = False
+                    file = mutagen.File(str(self.audio_paths[i]))
+                    if file.info.length > 10:
+                        streaming = True
+
+                    self.audios[i] = load_sound(str(self.audio_paths[i]), streaming=streaming)
 
         target = Thread(target=load, args=(filenames,))
         target.start()
