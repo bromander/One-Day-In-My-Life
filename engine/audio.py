@@ -1,11 +1,7 @@
-import types
-from pathlib import Path
 from typing import Optional, Literal, Tuple, Union
-import sys, os
 from pathlib import Path
 from arcade import load_sound, sound
 import random
-from threading import Thread
 import pyglet.media.player
 from .saves import Saves_manager
 from .files_manager import FilesManager
@@ -21,9 +17,9 @@ class AudioChannel:
         self.player: Optional[pyglet.media.player.Player] = None
         self.default_volume: float = default_volume # Громкость по умолчанию
         self.volume_type: Optional[str] = volume_type # Тип канала
-        self.modifier = modifier # Модификатор громкости. Предназначен для управления громкости с ползунков из настроек
-        self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкости во время плавных переходов (FADEIN/FADEOUT)
-        self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкости текущего трека. Сбрасывается при запуске нового трека
+        self.modifier = modifier # Модификатор громкости. Предназначен для управления громкостью ползунками из настроек
+        self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью во время плавных переходов (FADEIN/FADEOUT)
+        self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью текущего трека. Сбрасывается при запуске нового трека
 
         self.sm = sm
 
@@ -45,14 +41,17 @@ class AudioChannel:
         :param file: Путь к файлу/уже готовый саунд
         :param loop: Если True, звук будет зацикливаться
         :param speed: Скорость проигрывания
+        :param local_volume:
         """
         self.stop()
 
         if local_volume:
             self._local_modifier = local_volume
+        else:
+            self._local_modifier = 1
 
         if type(file) is str or type(file) is type(Path()):
-            file_sound = load_sound(file)
+            file_sound = load_sound(str(file))
         elif type(file) is sound.Sound:
             file_sound = file
         else:
@@ -68,7 +67,6 @@ class AudioChannel:
         """
         if self.player:
             self.player.delete()
-        self._local_modifier = 1.0
 
     def pause(self) -> None:
         """
@@ -154,8 +152,7 @@ class AudioManager:
     def play_music(self, path: str, loop: bool = False, volume: float = 1.0) -> None:
 
         if path in self.fm.audios:
-            path = self.fm.audios[path]
-
+            path: sound.Sound = self.fm.audios[path]
         self.music.play(path, loop=loop, local_volume=volume)
 
     def play_sound_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[Literal["fade"]] = None):
