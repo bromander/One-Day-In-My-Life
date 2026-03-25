@@ -603,7 +603,6 @@ class Namespace:
         Wwl.pose = 0
         Game_view.chanel()
 
-
     def talk(self, character: str, text: str):
         def format_text(text: str) -> str:
             pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'

@@ -11,7 +11,7 @@ import os
 import random
 import json
 import uuid
-from .gui import UISliderVertical, InGameSettings, UISliderSavesUpdater
+from .gui import UISliderVertical, Managers, UISliderSavesUpdater
 from .scene import Scene
 from .lore_viewer import Wwl
 from .waiter import Waiter
@@ -297,15 +297,7 @@ class Views:
 
             self.talk_manager(clicked=False)
 
-            self.settings_ui = InGameSettings(
-                self.session_id,
-                Views,
-                self.scene,
-                self.window,
-                am, wwl, sm, self.NAMESPACE,
-                FONT_NAME, STYLE_DEFAULT_BUTTON,
-                self.actions
-            )
+            self.settings_manager = Managers.Settings_manager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
 
 
         def chanel(self):
@@ -390,7 +382,7 @@ class Views:
                 self.update_main_windows()
                 self.dialog_text_batch.draw()
                 self.menu_manager.draw()
-                self.settings_ui.draw()
+                self.settings_manager.draw()
             super().on_draw()
 
         def show_menu(self, data) -> None:
@@ -431,16 +423,14 @@ class Views:
             self.scene.update()
 
             self.actions.update(delta_time)
-
-            self.settings_ui.update()
             
             super().on_update(delta_time)
 
         def on_key_press(self, key, modifiers) -> None:
-            if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.settings_ui.waiting_settings:
+            if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.settings_manager.waiting_settings:
                 self.talk_manager()
             if key == arcade.key.S:
-                self.settings_ui.turn_visibl()
+                self.settings_manager.turn_visibl()
             if key == arcade.key.B:
                 text = f"""
                 \n
@@ -463,7 +453,7 @@ class Views:
                 print("\n".join([i.lstrip(" ") for i in text.split("\n")]))
 
         def on_mouse_release(self, x, y, button, modifiers) -> None:
-            if (int(button) == 1) and not self.settings_ui.waiting_settings:
+            if (int(button) == 1) and not self.settings_manager.waiting_settings:
                 self.talk_manager()
 
         def update_main_windows(self) -> None:
