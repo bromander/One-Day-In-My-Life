@@ -5,6 +5,7 @@ from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider
 from typing import Optional, List, Tuple, Union
 from arcade import (
+    Window,
     uicolor,
     Scene,
     load_texture,
@@ -19,12 +20,15 @@ from arcade.gui.events import UIMousePressEvent, UIMouseReleaseEvent, UIMouseMov
 from arcade.gui import (
     Surface,
     UIEvent,
-    UIMouseDragEvent, UIOnChangeEvent, UIOnClickEvent
+    UIMouseDragEvent, UIOnChangeEvent, UIOnClickEvent,
+    UIWidget
 )
+from pyglet.graphics import Batch
 
 from .saves import Saves_manager
 from .audio import AudioManager
 from .waiter import Waiter
+from .character import Attributes
 
 
 class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
@@ -491,7 +495,7 @@ class UISliderSavesUpdater(agui.UISlider):
 
 class Managers:
 
-    class Settings_manager(agui.UIManager):
+    class SettingsManager(agui.UIManager):
         def __init__(self, MainView_self, Am: AudioManager, Sm: Saves_manager, Wwl, session_id: str, FONT_NAME: str, STYLE_DEFAULT_BUTTON: dict, Views):
             super().__init__()
             self.MainView_self = MainView_self
@@ -715,3 +719,114 @@ class Managers:
                     self.enable()
                 else:
                     self.disable()
+
+    class CharactersTextManager(agui.UIManager):
+        def __init__(self, attributes: Attributes, window: Window, FONT_NAME: str):
+            super().__init__()
+            self.attributes = attributes
+            self.window = window
+            self.FONT_NAME = FONT_NAME
+
+            self.cname_text = agui.UILabel()
+
+            self.texts_widget = UIWidget()
+            self.add(self.texts_widget)
+
+            self.last_character_text = self.attributes.character_text.copy()
+
+            self._create_texts()
+
+        def _create_texts(self):
+
+            def create_cname_text():
+                self.cname_text = agui.UILabel(
+                    self.attributes.character_name,
+                    x=self.window.width * 0.19,
+                    y=self.window.height * 0.255,
+                    font_size=40,
+                    multiline=True,
+                    width=1150,
+                    text_color=self.attributes.character_name_colour,
+                    font_name=self.FONT_NAME
+                )
+                self.add(self.cname_text)
+
+            create_cname_text()
+
+        def update(self, time_delta):
+            super().on_update(time_delta)
+
+            def split_by_length(text, max_length):
+                if len(text) <= max_length:
+                    return [text]
+
+                parts = []
+                words = text.split(" ")
+                current_line = []
+
+                for word in words:
+                    if len(word) > max_length:
+                        if current_line:
+                            parts.append(" ".join(current_line))
+                            current_line = []
+
+                        for i in range(0, len(word), max_length):
+                            parts.append(word[i:i + max_length])
+                    else:
+                        test_line = " ".join(current_line + [word])
+                        if len(test_line) <= max_length:
+                            current_line.append(word)
+                        else:
+                            if current_line:
+                                parts.append(" ".join(current_line))
+                            current_line = [word]
+
+                if current_line:
+                    parts.append(" ".join(current_line))
+
+                return parts
+
+            if self.attributes.character_text != self.last_character_text:
+
+                self.remove(self.texts_widget)
+
+                self.texts_widget = UIWidget()
+
+                self.last_character_text = self.attributes.character_text.copy()
+
+                line_counter = 0
+
+                x_pos = 0
+                match self.attributes.text_anchor:
+                    case "left":
+                        x_pos = self.window.width * 0.18
+                    case "center":
+                        x_pos = self.window.width // 2
+                    case "right":
+                        x_pos = self.window.width * 0.82
+                    case _:
+                        if type(self.attributes.text_anchor) is float:
+                            x_pos = self.window.width * self.attributes.text_anchor
+                        elif type(self.attributes.text_anchor) is int:
+                            x_pos = int
+
+                for i, line in enumerate(self.attributes.character_text):
+                    split_lines = split_by_length(line, 60)
+
+                    for sline in split_lines:
+                        y_pos = (self.window.height * 0.2) - line_counter * 40
+
+                        t = agui.UILabel(
+                            text=sline,
+                            x=x_pos,
+                            y=y_pos,
+                            font_size=30,
+                            text_color=self.attributes.character_text_colour,
+                            font_name=self.FONT_NAME,
+                            anchor_x=self.attributes.text_anchor
+                        )
+                        line_counter += 1
+
+                        self.texts_widget.add(t)
+
+                self.add(self.texts_widget)

@@ -291,7 +291,8 @@ class Views:
 
             self.talk_manager(clicked=False)
 
-            self.settings_manager = Managers.Settings_manager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
 
 
         def chanel(self):
@@ -375,7 +376,7 @@ class Views:
                 self.scene.draw()
                 self.splash_manager.draw()
                 arcade.draw_sprite(self.dialog_window)
-                self.update_main_windows()
+                self.characters_texts_manager.draw()
                 self.dialog_text_batch.draw()
                 self.menu_manager.draw()
                 self.settings_manager.draw()
@@ -419,6 +420,8 @@ class Views:
             self.scene.update()
 
             self.actions.update(delta_time)
+
+            self.characters_texts_manager.update(delta_time)
             
             super().on_update(delta_time)
 
@@ -451,98 +454,6 @@ class Views:
         def on_mouse_release(self, x, y, button, modifiers) -> None:
             if (int(button) == 1) and not self.settings_manager.waiting_settings:
                 self.talk_manager()
-
-        def update_main_windows(self) -> None:
-
-            def create_dialog_text():
-
-                def split_by_length(text, max_length):
-                    if len(text) <= max_length:
-                        return [text]
-
-                    parts = []
-                    words = text.split(" ")
-                    current_line = []
-
-                    for word in words:
-                        if len(word) > max_length:
-                            if current_line:
-                                parts.append(" ".join(current_line))
-                                current_line = []
-
-                            for i in range(0, len(word), max_length):
-                                parts.append(word[i:i + max_length])
-                        else:
-                            test_line = " ".join(current_line + [word])
-                            if len(test_line) <= max_length:
-                                current_line.append(word)
-                            else:
-                                if current_line:
-                                    parts.append(" ".join(current_line))
-                                current_line = [word]
-
-                    if current_line:
-                        parts.append(" ".join(current_line))
-
-                    return parts
-
-                line_counter = 0
-
-                self.dialog_text_batch = Batch()
-
-                text_objects = []
-
-                for i, line in enumerate(self.attributes.character_text):
-                    split_lines = split_by_length(line, 60)
-
-                    for sline in split_lines:
-                        y_pos = (self.height * 0.2) - line_counter * 40
-
-                        x_pos = 0
-                        match self.attributes.text_anchor:
-                            case "left":
-                                x_pos = self.width * 0.18
-                            case "center":
-                                x_pos = self.width // 2
-                            case "right":
-                                x_pos = self.width * 0.82
-                            case _:
-                                if type(self.attributes.text_anchor) is float:
-                                    x_pos = self.width * self.attributes.text_anchor
-                                elif type(self.attributes.text_anchor) is int:
-                                    x_pos = int
-
-                        t = arcade.Text(
-                            text=sline,
-                            x=x_pos,
-                            y=y_pos,
-                            font_size=30,
-                            color=self.attributes.character_text_colour,
-                            font_name=FONT_NAME,
-                            anchor_x=self.attributes.text_anchor
-                        )
-
-                        text_objects.append(t)
-                        line_counter += 1
-
-                for text_obj in text_objects:
-                    text_obj.draw()
-
-            def create_cname_text():
-                self.cname_text = arcade.Text(
-                    self.attributes.character_name,
-                    x=self.width * 0.19,
-                    y=self.height * 0.255,
-                    font_size=40,
-                    multiline=True,
-                    width=1150,
-                    color=self.attributes.character_name_colour,
-                    font_name=FONT_NAME
-                )
-                self.cname_text.draw()
-
-            create_dialog_text()
-            create_cname_text()
 
     class GameMenu(Main_template):
         def __init__(self, show_lc: bool = True) -> None:
