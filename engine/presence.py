@@ -18,65 +18,58 @@ class Discord_act:
 
         self.thread: Optional[Thread] = None
 
-        self._connect_loop()
+        self._connect()
 
-    def _connect_loop(self, details: str = "В главном меню", state: str = ""):
-        def idk():
-            while True:
-                if self.stop_thread_flag:
-                    return None
+    def _connect(self, details: str = "", state: str = "В главном меню"):
 
-                try:
-                    self.RPC.connect()
+        try:
+            self.RPC.connect()
+            if details:
+                self.RPC.update(
+                    status_display_type=StatusDisplayType.NAME,
+                    activity_type=ActivityType.PLAYING,
+                    details=details,
+                    state=state,
+                    start=time.time()
+                )
+            else:
+                self.RPC.update(
+                    status_display_type=StatusDisplayType.NAME,
+                    activity_type=ActivityType.PLAYING,
+                    state=state,
+                    start=time.time()
+                )
 
-                    if state:
-                        self.RPC.update(
-                            status_display_type=StatusDisplayType.NAME,
-                            activity_type=ActivityType.PLAYING,
-                            details=details,
-                            state=state,
-                            start=time.time()
-                        )
-                    else:
-                        self.RPC.update(
-                            status_display_type=StatusDisplayType.NAME,
-                            activity_type=ActivityType.PLAYING,
-                            details=details,
-                            start=time.time()
-                        )
+        except DiscordNotFound:
+            self.connected = False
 
-                except DiscordNotFound:
-                    self.connected = False
+        except InvalidPipe:
+            self.connected = False
 
-                except InvalidPipe:
-                    self.connected = False
+        except ValueError:
+            self.connected = False
 
-                except ValueError:
-                    self.connected = False
-
-                else:
-                    self.connected = True
-
-                finally:
-                    for i in range(10):
-                        if self.stop_thread_flag:
-                            return None
-                        time.sleep(1)
-
-        self.thread = Thread(target=idk)
-        self.thread.start()
+        else:
+            self.connected = True
 
     def update(self, name: str, description: str):
 
         try:
             if self.connected:
-                if name:
+                if name and description:
+                    self.RPC.update(
+                        status_display_type=StatusDisplayType.NAME,
+                        activity_type=ActivityType.PLAYING,
+                        details=name,
+                        state=description
+                    )
+                elif not description:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
                         activity_type=ActivityType.PLAYING,
                         details=name
                     )
-                if description:
+                if not name:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
                         activity_type=ActivityType.PLAYING,
