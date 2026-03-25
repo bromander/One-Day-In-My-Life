@@ -33,9 +33,10 @@ class AudioChannel:
     @fade_modifier.setter
     def fade_modifier(self, value) -> None:
         self._fade_modifier = value
-        if self.player:
-            self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
-            # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
+        if hasattr(self, "player"):
+            if self.player:
+                self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+                # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
 
     def play(self, file: Union[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None, streaming: bool = False) -> None:
         """
@@ -71,24 +72,28 @@ class AudioChannel:
         """
         Выключает проигрывание музыки
         """
-        if self.player:
-            self.player.delete()
+        if hasattr(self, "player"):
+            if self.player:
+                self.player.delete()
+                del self.player
         self.paused = False
 
     def pause(self) -> None:
         """
         Останавливает проигрывание музыки
         """
-        if self.player:
-            self.player.pause()
-            self.paused = True
+        if hasattr(self, "player"):
+            if self.player:
+                self.player.pause()
+                self.paused = True
 
     def resume(self) -> None:
         """
         Продолжает проигрывание музыки, если та была остановлена
         """
-        if self.player:
-            self.player.play()
+        if hasattr(self, "player"):
+            if self.player:
+                self.player.play()
         self.paused = False
 
     def set_volume(self, vol, is_global: bool = True) -> None:
@@ -97,29 +102,29 @@ class AudioChannel:
         :param vol: Громкость
         :param is_global: Если True, применяет глобально, к этом и последующим звукам, а также, сохраняет значение. Если False, применяет громкость только к текущему звуку
         """
+        if hasattr(self, "player"):
+            if is_global:
+                self.modifier = vol
+                if self.player:
+                    self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
 
-        if is_global:
-            self.modifier = vol
-            if self.player:
-                self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
-
-            # Сохраняем значения
-            if self.volume_type == "music":
-                self.sm.Volume.set_music(self.modifier)
-            elif self.volume_type == "sound":
-                self.sm.Volume.set_sound(self.modifier)
-            elif self.volume_type == "voice":
-                self.sm.Volume.set_voice(self.modifier)
-        else:
-            self._local_modifier = vol
-            if self.player:
-                self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+                # Сохраняем значения
+                if self.volume_type == "music":
+                    self.sm.Volume.set_music(self.modifier)
+                elif self.volume_type == "sound":
+                    self.sm.Volume.set_sound(self.modifier)
+                elif self.volume_type == "voice":
+                    self.sm.Volume.set_voice(self.modifier)
+            else:
+                self._local_modifier = vol
+                if self.player:
+                    self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
 
     def is_playing(self) -> bool:
-        if self.player:
-            return self.player.playing
-        else:
-            return False
+        if hasattr(self, "player"):
+            if self.player:
+                return self.player.playing
+        return False
 
 class AudioManager:
     def __init__(self, sm: Saves_manager, fm: FilesManager):
