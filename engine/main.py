@@ -25,7 +25,6 @@ from .files_manager import FilesManager
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
 
-
 text_anchor = "left"
 
 FONT_NAME = "Kurale"
@@ -301,12 +300,18 @@ class Views:
 
 
         def chanel(self):
-            am.stop_voice()
+            da.stop_thread_flag = True
+            time.sleep(0.05)
+
+            self.actions.active_generators.clear()
+
             am.stop_sound()
             am.stop_music()
+            am.stop_voice()
+
             self.window.set_fullscreen(False)
             self.window.size = (1024, 786)
-            game = Views.GameMenu(False)
+            game = Views.GameMenu(show_lc=True)
             self.window.show_view(game)
 
         def talk_manager(self, pos_offset: Optional[int] = None, clicked: bool = True) -> None:
