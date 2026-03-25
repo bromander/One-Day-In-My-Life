@@ -22,35 +22,38 @@ class Discord_act:
 
     def _connect(self, details: str = "", state: str = "В главном меню"):
 
-        try:
-            self.RPC.connect()
-            if details:
-                self.RPC.update(
-                    status_display_type=StatusDisplayType.NAME,
-                    activity_type=ActivityType.PLAYING,
-                    details=details,
-                    state=state,
-                    start=time.time()
-                )
+        def con():
+            try:
+                self.RPC.connect()
+                if details:
+                    self.RPC.update(
+                        status_display_type=StatusDisplayType.NAME,
+                        activity_type=ActivityType.PLAYING,
+                        details=details,
+                        state=state,
+                        start=time.time()
+                    )
+                else:
+                    self.RPC.update(
+                        status_display_type=StatusDisplayType.NAME,
+                        activity_type=ActivityType.PLAYING,
+                        state=state,
+                        start=time.time()
+                    )
+
+            except DiscordNotFound:
+                self.connected = False
+
+            except InvalidPipe:
+                self.connected = False
+
+            except ValueError:
+                self.connected = False
+
             else:
-                self.RPC.update(
-                    status_display_type=StatusDisplayType.NAME,
-                    activity_type=ActivityType.PLAYING,
-                    state=state,
-                    start=time.time()
-                )
+                self.connected = True
 
-        except DiscordNotFound:
-            self.connected = False
-
-        except InvalidPipe:
-            self.connected = False
-
-        except ValueError:
-            self.connected = False
-
-        else:
-            self.connected = True
+        Thread(target=con).start()
 
     def update(self, name: str, description: str):
 
