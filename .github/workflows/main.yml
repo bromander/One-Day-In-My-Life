@@ -2,13 +2,17 @@ name: Run Tests
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - Development
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
+      - Development
 
 jobs:
   test:
+    name: Run tests
     runs-on: windows-latest
     
     steps:
