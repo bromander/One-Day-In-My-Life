@@ -34,6 +34,7 @@ jobs:
         pip install tqdm==4.67.3
         pip install arcade==3.3.3
         pip install pypresence==4.6.1
+        pip install mutagen==1.47.0
       shell: cmd
 
     - name: Create test directories
