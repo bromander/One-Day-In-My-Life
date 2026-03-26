@@ -1,10 +1,11 @@
 
 label main("Глава 1", "Момент, когда он нас убивает", show_splash = True):
     Scene.set_scene("bch_city.png", 1.0)
+    pon = 1488
     Audio.play("music", "Hello_Charlotte_Swedish_Fish_Elo.mp3", volume=0.6, effect="fade")
     Scene.show_character(character="masorubka hey", at="left")
     Scene.fade("fadeout", duration=2.0)
-    <masorubka> "Ребята! Новый JopaJam! Мы наконец можем приступить к следующей игре!"
+    <> "Терпеть не могу первое апреля. Пожалуй, это самый бессмысленный повод что-то праздновать и валять дурака, что приходит на ум… или, по крайней мере, один из них."
     Scene.add_sprite("tulenchek.jpg", at=(0.5, 0.5), size=0.5)
     Lore.jump("pon")
 
@@ -15,6 +16,7 @@ label pon("Глава хз", "Не момент когда он нас убив�
 
     Audio.play("music", "Youhaveaids.ogg", effect="fade")
     Scene.show_character(character="edwin smile", at="right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character(character="masorubka neutral")
     <edwin> "Чудесно! Еще одна стрессовая неделя игроделанья..."
     Scene.show_character(character="masorubka ponder", effect=SpriteEffects.Dissolve(1.0), at="left")
     Scene.hide_sprite("tulenchek.jpg", effect=SpriteEffects.Dissolve(0.5))

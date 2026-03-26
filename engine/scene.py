@@ -45,6 +45,14 @@ class Scene:
     def __getitem__(self, item):
         return self.data[item]
 
+    def clear_scene(self):
+        self.data = {
+            "bg": {},
+            "sprites": {},
+            "gui": {},
+            "fade": {"fade" : Sprite(), "splash": Sprite()}
+        }
+
     def add_sprite(self, layer: Literal["bg", "sprites", "gui", "fade"],
                    name: str,
                    sprite: Union[Sprite, Texture, str]) -> None:

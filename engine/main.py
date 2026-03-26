@@ -13,7 +13,7 @@ import json
 import uuid
 from .gui import UISliderVertical, Managers, UISliderSavesUpdater
 from .scene import Scene
-from .lore_viewer import Wwl
+from .lore_viewer import Wwl, LoreLogger
 from .waiter import Waiter
 from .saves import Saves_manager
 from .namespace import Namespace
@@ -287,7 +287,7 @@ class Views:
 
             print(self.session_id)
 
-            self.NAMESPACE = Namespace(self, self.lc, wwl, am, wait_trigger, sm)
+            self.NAMESPACE = Namespace(self, Views, self.lc, wwl, am, wait_trigger, sm)
 
             self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
             self.settings_manager.enable()
@@ -295,9 +295,11 @@ class Views:
             self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
             self.characters_texts_manager.enable()
 
+            self.LoreLogger = LoreLogger(self, wwl)
+
             self.in_game_manager = Managers.InGameManager(FONT_NAME, self.window)
             self.in_game_manager.settings_button.on_click = self.settings_manager.turn_visibl
-            self.in_game_manager.return_button.on_click = lambda event=None: self.back()
+            self.in_game_manager.return_button.on_click = self.LoreLogger.return_back
             self.in_game_manager.enable()
 
             self.talk_manager(clicked=False)
@@ -354,6 +356,7 @@ class Views:
                 case "END":
                     return None
                 case "END_text":
+                    self.LoreLogger.create_log()
                     return None
 
         def talk(self, now) -> str:
