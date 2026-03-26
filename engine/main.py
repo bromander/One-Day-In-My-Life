@@ -1,5 +1,6 @@
 import threading
 import arcade
+from arcade import draw_lrbt_rectangle_filled
 from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 import arcade.gui as agui
@@ -11,7 +12,10 @@ import os
 import random
 import json
 import uuid
-from .gui import UISliderVertical, Managers, UISliderSavesUpdater
+
+from pyglet.resource import scene
+
+from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock
 from .scene import Scene
 from .lore_viewer import Wwl
 from .waiter import Waiter
@@ -287,7 +291,7 @@ class Views:
 
             print(self.session_id)
 
-            self.NAMESPACE = Namespace(self, self.lc, wwl, am, wait_trigger, sm)
+            self.NAMESPACE = Namespace(self, self.lc, wwl, am, wait_trigger, sm, Views)
 
             self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
             self.settings_manager.enable()
@@ -297,7 +301,7 @@ class Views:
 
             self.in_game_manager = Managers.InGameManager(FONT_NAME, self.window)
             self.in_game_manager.settings_button.on_click = self.settings_manager.turn_visibl
-            self.in_game_manager.return_button.on_click = lambda event=None: self.back()
+            self.in_game_manager.return_button.on_click = lambda event=None: self.window.show_view(Views.MovingBlocksView())
             self.in_game_manager.enable()
 
             self.talk_manager(clicked=False)
@@ -579,7 +583,7 @@ class Views:
                     self.window.size = (1920, 1080)
                     self.window.set_fullscreen(True)
                     self.manager.disable()
-                    game = Views.GameView()
+                    game = Views.MovingBlocksView()
                     self.window.show_view(game)
 
                 def open_saves(event=None):
@@ -914,6 +918,35 @@ class Views:
 
 
 
+    class MovingBlocksView(Main_template):
+        def __init__(self):
+            super().__init__()
+            self.blocks_manager = agui.UIManager(self.window)
+            self.blocks_manager.enable()
+            for i in range(10):
+                self.blocks_manager.add(MovableBlock(scene.get_sprite(f"block{i}.png"), size=70, center_x=self.width * 0.8, center_y=self.center_y))
+
+        def on_draw(self) -> None:
+            self.clear()
+
+            draw_lrbt_rectangle_filled(
+                self.width * 0.1, self.width * 0.2,
+                self.height * 0.35, self.height * 0.65,
+                (120, 120, 120, 255)
+            )
+
+            self.blocks_manager.draw()
+
+            super().on_draw()
+
+        def on_update(self, delta_time: float) -> None:
+            self.blocks_manager.on_update(delta_time)
+            super().on_update(delta_time)
+
+
+
+
+
 def init_file() -> None:
     """
     Инициализирует основные классы
@@ -923,6 +956,7 @@ def init_file() -> None:
     timee = time.time()
     print("files_manager...")
     fm = FilesManager()
+    fm.load_assets([f"block{i}.png" for i in range(0, 10)], "minigame_blocks")
     print("Saves...")
     sm = Saves_manager()
     print("Audio manager...")

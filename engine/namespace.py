@@ -9,7 +9,7 @@ from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
 class Namespace:
-    def __init__(self, GameView, ListCharacters, Wwl, AudioManager, Wait_trigger, SavesManager) -> None:
+    def __init__(self, GameView, ListCharacters, Wwl, AudioManager, Wait_trigger, SavesManager, Views) -> None:
         """
         Отвечает за работу со всеми функциями, используемыми в сценариях.
         :param GameView: Объект класса GameView
@@ -25,12 +25,14 @@ class Namespace:
         self.AudioManager = AudioManager
         self.Wait_trigger = Wait_trigger
         self.SavesManager = SavesManager
+        self.Views = Views
 
         self.NAMESPACE = {
             "Data" : self.Data(GameView, ListCharacters, Wwl, AudioManager),
             "Persistent": self.Persistent(SavesManager),
             "Define": self.Define(),
             "Scene": self.Scene(GameView, ListCharacters, Wwl, Wait_trigger, SavesManager),
+            "Screen" : self.Screen(GameView, Views),
             "Audio": self.Audio(GameView, AudioManager),
             "Lore": self.Lore(GameView, Wwl),
             "SpriteEffects": self.SpriteEffects(),
@@ -500,6 +502,15 @@ class Namespace:
             """
             self.Wwl.pose = position
             self.Wwl.label = label
+
+    class Screen:
+        def __init__(self, Game_view, Views) -> None:
+            self.Game_view = Game_view
+            self.Views = Views
+
+        def call_view(self, view_name: str):
+            view = getattr(self.Views, view_name)()
+            self.Game_view.window.show_view(view)
 
     class Audio:
         def __init__(self, Game_view, AudioManager) -> None:

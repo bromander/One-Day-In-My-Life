@@ -1,6 +1,7 @@
 import arcade.gui as agui
 import warnings
 import json
+import random
 from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider
 from typing import Optional, List, Tuple, Union
@@ -14,14 +15,18 @@ from arcade import (
     View,
     draw_lrbt_rectangle_filled,
     draw_circle_filled,
-    draw_circle_outline
+    draw_circle_outline,
+    draw_polygon_filled, Texture,
+    check_for_collision_with_list,
+    sprite_list, get_sprites_at_point, get_sprites_in_rect,
+    SpriteList
 )
 from arcade.gui.events import UIMousePressEvent, UIMouseReleaseEvent, UIMouseMovementEvent, UIMouseDragEvent, UIOnUpdateEvent
 from arcade.gui import (
     Surface,
     UIEvent,
     UIMouseDragEvent, UIOnChangeEvent, UIOnClickEvent,
-    UIWidget
+    UIWidget, UIInteractiveWidget, UISpriteWidget
 )
 from pyglet.graphics import Batch
 
@@ -877,12 +882,12 @@ class Managers:
 
             button_width = 60
 
-            self.return_button = agui.UIFlatButton(
-                text="←",
-                style=self.BUTTONS_STYLE,
-                width=button_width
-            )
-            hbox.add(self.return_button)
+            #self.return_button = agui.UIFlatButton(
+            #    text="←",
+            #    style=self.BUTTONS_STYLE,
+            #    width=button_width
+            #)
+            #hbox.add(self.return_button)
 
             self.skip_button = agui.UIFlatButton(
                 text=">>",
@@ -902,3 +907,42 @@ class Managers:
             ui_anchor_layout.add(child=hbox, anchor_x="center_x", anchor_y="bottom")
 
             self.add(ui_anchor_layout)
+
+
+class MovableBlock(UISpriteWidget):
+    def __init__(self, sprite, center_x = 0, center_y = 0, size=50):
+        super().__init__(sprite=sprite)
+        print(sprite)
+        self.center_x = center_x
+        self.center_y = center_y
+        self.size = (size, size)
+        self.size_default = size
+        self.clicked = False
+        self.disabled = False
+
+
+    def on_event(self, event: UIEvent) -> bool | None:
+        if type(event) is UIMousePressEvent:
+            if self.rect.left <= event.x <= self.rect.right and self.rect.bottom <= event.y <= self.rect.top:
+                if list(self.get_ui_manager().get_widgets_at((event.x, event.y), MovableBlock))[-1] is self:
+                    self.clicked = True
+                    #self.scale(1.5)
+
+        if type(event) is UIMouseReleaseEvent:
+            #if self.clicked:
+                #self.scale(0.667)
+            self.clicked = False
+        if type(event) is UIOnUpdateEvent:
+            if (self.get_ui_manager().window.width * 0.1 <= self.center_x <= self.get_ui_manager().window.width * 0.2
+                    and self.get_ui_manager().window.height * 0.35 <= self.center_y <= self.get_ui_manager().window.height * 0.65):
+                if not self.disabled and not self.clicked:
+                    self.center_x = self.get_ui_manager().window.width * 0.15 + random.randint(-50, 50)
+                    self.center_y = self.get_ui_manager().window.height * 0.5 + random.randint(-110, 110)
+                    self.disabled  = True
+            else:
+                self.disabled = False
+
+            if self.clicked:
+                self.center_x = self.get_ui_manager().window._mouse_x
+                self.center_y = self.get_ui_manager().window._mouse_y
+
