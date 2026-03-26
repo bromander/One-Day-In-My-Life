@@ -615,4 +615,4 @@ class Namespace:
         gen = self.ListCharacters[character].talk(format_text(text))
 
         self.Game_view.actions.active_generators.add_generator("consistently", gen, "talk")
-        self.returning = "End_text"
+        self.returning = "END_text"

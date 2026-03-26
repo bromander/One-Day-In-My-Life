@@ -169,9 +169,6 @@ class Views:
             self.delta_time = 0.0
 
             self.dialog_window: Optional[arcade.Sprite] = None
-            self.dialog_text_batch = Batch()
-            self.dialog_texts: list = []
-            self.cname_text: Optional[arcade.Text] = None
 
             self.scene = scene
 
@@ -280,6 +277,9 @@ class Views:
 
                     if scene["music"] is not None:
                         am.play_music(scene["music"])
+                    else:
+                        am.stop_sound()
+                        am.stop_music()
 
             load_saves(session_id)
 
@@ -289,11 +289,18 @@ class Views:
 
             self.NAMESPACE = Namespace(self, self.lc, wwl, am, wait_trigger, sm)
 
-            self.talk_manager(clicked=False)
-
             self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
-            self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
+            self.settings_manager.enable()
 
+            self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
+            self.characters_texts_manager.enable()
+
+            self.in_game_manager = Managers.InGameManager(FONT_NAME, self.window)
+            self.in_game_manager.settings_button.on_click = self.settings_manager.turn_visibl
+            self.in_game_manager.return_button.on_click = lambda event=None: self.back()
+            self.in_game_manager.enable()
+
+            self.talk_manager(clicked=False)
 
         def chanel(self):
             da.stop_thread_flag = True
@@ -377,7 +384,7 @@ class Views:
                 self.splash_manager.draw()
                 arcade.draw_sprite(self.dialog_window)
                 self.characters_texts_manager.draw()
-                self.dialog_text_batch.draw()
+                self.in_game_manager.draw()
                 self.menu_manager.draw()
                 self.settings_manager.draw()
             super().on_draw()
@@ -426,7 +433,7 @@ class Views:
             super().on_update(delta_time)
 
         def on_key_press(self, key, modifiers) -> None:
-            if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.settings_manager.waiting_settings:
+            if (key == arcade.key.SPACE or key == arcade.key.ENTER) and not self.settings_manager.waiting_settings:
                 self.talk_manager()
             if key == arcade.key.S or key == arcade.key.ESCAPE:
                 self.settings_manager.turn_visibl()
@@ -453,7 +460,8 @@ class Views:
 
         def on_mouse_release(self, x, y, button, modifiers) -> None:
             if (int(button) == 1) and not self.settings_manager.waiting_settings:
-                self.talk_manager()
+                if len(list(self.in_game_manager.get_widgets_at((x, y)))) == 1: # Проверяем, нажали ли мы на какую-нибудь кнопку.
+                    self.talk_manager()
 
     class GameMenu(Main_template):
         def __init__(self, show_lc: bool = True) -> None:
@@ -911,10 +919,10 @@ def init_file() -> None:
     sm = Saves_manager()
     print("Audio manager...")
     am = AudioManager(sm, fm)
-    print("Lore...")
-    wwl = Wwl(fm)
     print("Scene...")
     scene = Scene(fm)
+    print("Lore...")
+    wwl = Wwl(fm, scene)
     print("Discord...")
     da = Discord_act()
     print(f"Init done for {round(time.time() - timee, 2)}s")
