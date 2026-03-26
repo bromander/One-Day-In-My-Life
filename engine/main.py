@@ -321,6 +321,14 @@ class Views:
             """
             Получает инструкции сценария и запускает функцию talk(), обрабатывая её результаты
             """
+            gens = self.actions.active_generators
+            if gens.active_generators_consistently:
+                if gens.active_generators_consistently[0][0] == 'talk':
+                    while gens.active_generators_consistently[0][0] == "talk":
+                        gens.update(1 / 1000)
+                        if not gens.active_generators_consistently:
+                            break
+                    return
 
             gen = self.actions.active_generators.active_generators_consistently
             if gen:
