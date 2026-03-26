@@ -722,7 +722,7 @@ class Managers:
 
     class CharactersTextManager(agui.UIManager):
         def __init__(self, attributes: Attributes, window: Window, FONT_NAME: str):
-            super().__init__()
+            super().__init__(window)
             self.attributes = attributes
             self.window = window
             self.FONT_NAME = FONT_NAME
@@ -796,19 +796,20 @@ class Managers:
 
                 line_counter = 0
 
-                x_pos = 0
-                match self.attributes.text_anchor:
-                    case "left":
-                        x_pos = self.window.width * 0.18
-                    case "center":
-                        x_pos = self.window.width // 2
-                    case "right":
-                        x_pos = self.window.width * 0.82
-                    case _:
-                        if type(self.attributes.text_anchor) is float:
-                            x_pos = self.window.width * self.attributes.text_anchor
-                        elif type(self.attributes.text_anchor) is int:
-                            x_pos = int
+                if isinstance(self.attributes.text_anchor, str):
+                    match self.attributes.text_anchor:
+                        case "left":
+                            x_pos = self.window.width * 0.18
+                        case "center":
+                            x_pos = self.window.width * 0
+                        case "right":
+                            x_pos = self.window.width * 0.82
+                        case _:
+                            x_pos = self.window.width * 0.18
+                elif isinstance(self.attributes.text_anchor, (int, float)):
+                    x_pos = self.window.width * self.attributes.text_anchor
+                else:
+                    x_pos = self.window.width * 0.18
 
                 for i, line in enumerate(self.attributes.character_text):
                     split_lines = split_by_length(line, 60)
@@ -823,7 +824,8 @@ class Managers:
                             font_size=30,
                             text_color=self.attributes.character_text_colour,
                             font_name=self.FONT_NAME,
-                            anchor_x=self.attributes.text_anchor
+                            width=self.window.width,
+                            align=self.attributes.text_anchor
                         )
                         line_counter += 1
 
