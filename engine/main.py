@@ -930,7 +930,7 @@ def init_file() -> None:
     print("Scene...")
     scene = Scene(fm)
     print("Lore...")
-    wwl = Wwl(fm, scene)
+    wwl = Wwl(fm)
     print("Discord...")
     da = Discord_act()
     print(f"Init done for {round(time.time() - timee, 2)}s")
