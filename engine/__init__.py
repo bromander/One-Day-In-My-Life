@@ -1,4 +1,3 @@
-from .gui import UISliderVertical
 from .scene import Scene
 from .lore_viewer import Wwl
 from .waiter import Waiter

@@ -18,7 +18,7 @@ def main():
     if splash.startswith(">"):
         splash = splash.format(username=str(os.getenv("USERNAME") or os.getenv("USER")))[1:]
 
-    window = arcade.Window(width=1024, height=786, title=f"{WINDOW_TITLE}: {splash}", resizable=False)
+    window = Views.MainWindow(width=1024, height=786, title=f"{WINDOW_TITLE}: {splash}", resizable=False)
     game = Views.GameMenu()
     window.show_view(game)
     arcade.run()

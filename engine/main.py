@@ -11,7 +11,7 @@ import os
 import random
 import json
 import uuid
-from .gui import UISliderVertical, InGameSettings, UISliderSavesUpdater
+from .gui import UISliderVertical, Managers, UISliderSavesUpdater
 from .scene import Scene
 from .lore_viewer import Wwl
 from .waiter import Waiter
@@ -21,12 +21,9 @@ from .actions import Actions
 from .audio import AudioManager
 from .presence import Discord_act
 from .files_manager import FilesManager
+from .character import ListCharacters
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
-
-
-
-text_anchor = "left"
 
 FONT_NAME = "Kurale"
 STYLE_DEFAULT_BUTTON = {
@@ -61,13 +58,39 @@ wait_trigger = Waiter()
 
 GAME_NAME = ""
 
-dialog_text_text: list[str] = []
-cname_text_text = ""
-
-cname_text_colour = arcade.color.BLACK
-dialog_text_colour = arcade.color.BLACK
-
 class Views:
+
+    class MainWindow(arcade.Window):
+        def __init__(self, width, height, title, resizable):
+            super().__init__(width=width, height=height, title=title, resizable=resizable)
+
+        def on_close(self) -> None:
+            try:
+                da.stop_thread_flag = True
+            except NameError:
+                pass
+
+            arcade.close_window()
+
+        def on_activate(self) -> EVENT_HANDLE_STATE:
+            try:
+                if am.music.paused:
+                    am.music.resume()
+                if am.sound.paused:
+                    am.sound.resume()
+                am.voice.fade_modifier = 1.0
+            except NameError:
+                pass
+
+        def on_deactivate(self) -> EVENT_HANDLE_STATE:
+            try:
+                if not am.music.paused:
+                    am.music.pause()
+                if not am.sound.paused:
+                    am.sound.pause()
+                am.voice.fade_modifier = 0.0
+            except NameError:
+                pass
 
     class Main_template(arcade.View):
         def __init__(self) -> None:
@@ -146,9 +169,6 @@ class Views:
             self.delta_time = 0.0
 
             self.dialog_window: Optional[arcade.Sprite] = None
-            self.dialog_text_batch = Batch()
-            self.dialog_texts: list = []
-            self.cname_text: Optional[arcade.Text] = None
 
             self.scene = scene
 
@@ -162,6 +182,9 @@ class Views:
             self.last_text_skip = time.time()
 
             self.last_text = " "
+
+            self.lc = ListCharacters(sm, am, fm, wait_trigger)
+            self.attributes = self.lc.attributes
 
             def create_widgets():
                 # dialog window
@@ -254,6 +277,9 @@ class Views:
 
                     if scene["music"] is not None:
                         am.play_music(scene["music"])
+                    else:
+                        am.stop_sound()
+                        am.stop_music()
 
             load_saves(session_id)
 
@@ -261,34 +287,48 @@ class Views:
 
             print(self.session_id)
 
-            self.NAMESPACE = Namespace(self, lc, wwl, am, wait_trigger, sm)
+            self.NAMESPACE = Namespace(self, self.lc, wwl, am, wait_trigger, sm)
+
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager.enable()
+
+            self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
+            self.characters_texts_manager.enable()
+
+            self.in_game_manager = Managers.InGameManager(FONT_NAME, self.window)
+            self.in_game_manager.settings_button.on_click = self.settings_manager.turn_visibl
+            self.in_game_manager.return_button.on_click = lambda event=None: self.back()
+            self.in_game_manager.enable()
 
             self.talk_manager(clicked=False)
 
-            self.settings_ui = InGameSettings(
-                self.session_id,
-                Views,
-                self.scene,
-                self.window,
-                am, wwl, sm, self.NAMESPACE,
-                FONT_NAME, STYLE_DEFAULT_BUTTON,
-                self.actions
-            )
-
-
         def chanel(self):
-            am.stop_voice()
+            da.stop_thread_flag = True
+            time.sleep(0.05)
+
+            self.actions.active_generators.clear()
+
             am.stop_sound()
             am.stop_music()
+            am.stop_voice()
+
             self.window.set_fullscreen(False)
             self.window.size = (1024, 786)
-            game = Views.GameMenu(False)
+            game = Views.GameMenu(show_lc=True)
             self.window.show_view(game)
 
         def talk_manager(self, pos_offset: Optional[int] = None, clicked: bool = True) -> None:
             """
             Получает инструкции сценария и запускает функцию talk(), обрабатывая её результаты
             """
+            gens = self.actions.active_generators
+            if gens.active_generators_consistently:
+                if gens.active_generators_consistently[0][0] == 'talk':
+                    while gens.active_generators_consistently[0][0] == "talk":
+                        gens.update(1 / 1000)
+                        if not gens.active_generators_consistently:
+                            break
+                    return
 
             gen = self.actions.active_generators.active_generators_consistently
             if gen:
@@ -322,10 +362,6 @@ class Views:
             :param now:
             :return:
             """
-            global dialog_text_text, cname_text_text
-            global cname_text_colour, dialog_text_colour
-            global text_anchor
-            global wait_trigger
 
             while True:
 
@@ -355,10 +391,10 @@ class Views:
                 self.scene.draw()
                 self.splash_manager.draw()
                 arcade.draw_sprite(self.dialog_window)
-                self.update_main_windows()
-                self.dialog_text_batch.draw()
+                self.characters_texts_manager.draw()
+                self.in_game_manager.draw()
                 self.menu_manager.draw()
-                self.settings_ui.draw()
+                self.settings_manager.draw()
             super().on_draw()
 
         def show_menu(self, data) -> None:
@@ -400,15 +436,15 @@ class Views:
 
             self.actions.update(delta_time)
 
-            self.settings_ui.update()
+            self.characters_texts_manager.update(delta_time)
             
             super().on_update(delta_time)
 
         def on_key_press(self, key, modifiers) -> None:
-            if (key == arcade.key.SPACE or key == arcade.key.ENTER or key == arcade.key.ENTER) and not self.settings_ui.waiting_settings:
+            if (key == arcade.key.SPACE or key == arcade.key.ENTER) and not self.settings_manager.waiting_settings:
                 self.talk_manager()
-            if key == arcade.key.S:
-                self.settings_ui.turn_visibl()
+            if key == arcade.key.S or key == arcade.key.ESCAPE:
+                self.settings_manager.turn_visibl()
             if key == arcade.key.B:
                 text = f"""
                 \n
@@ -431,97 +467,9 @@ class Views:
                 print("\n".join([i.lstrip(" ") for i in text.split("\n")]))
 
         def on_mouse_release(self, x, y, button, modifiers) -> None:
-            if (int(button) == 1) and not self.settings_ui.waiting_settings:
-                self.talk_manager()
-
-        def update_main_windows(self) -> None:
-
-            def create_dialog_text():
-
-                def split_by_length(text, max_length):
-                    if len(text) <= max_length:
-                        return [text]
-
-                    parts = []
-                    words = text.split(" ")
-                    current_line = []
-
-                    for word in words:
-                        if len(word) > max_length:
-                            if current_line:
-                                parts.append(" ".join(current_line))
-                                current_line = []
-
-                            for i in range(0, len(word), max_length):
-                                parts.append(word[i:i + max_length])
-                        else:
-                            test_line = " ".join(current_line + [word])
-                            if len(test_line) <= max_length:
-                                current_line.append(word)
-                            else:
-                                if current_line:
-                                    parts.append(" ".join(current_line))
-                                current_line = [word]
-
-                    if current_line:
-                        parts.append(" ".join(current_line))
-
-                    return parts
-
-                line_counter = 0
-
-                self.dialog_text_batch = Batch()
-
-                text_objects = []
-
-                for i, line in enumerate(dialog_text_text):
-                    split_lines = split_by_length(line, 60)
-
-                    for sline in split_lines:
-                        y_pos = (self.height * 0.2) - line_counter * 40
-
-                        if text_anchor == "left":
-                            x_pos = self.width * 0.18
-                        elif text_anchor == "center":
-                            x_pos = self.width // 2
-                        elif text_anchor == "right":
-                            x_pos = self.width * 0.82
-                        elif type(text_anchor) is float:
-                            x_pos = self.width * text_anchor
-                        elif type(text_anchor) is int:
-                            x_pos = int
-
-                        t = arcade.Text(
-                            text=sline,
-                            x=x_pos,
-                            y=y_pos,
-                            font_size=30,
-                            color=dialog_text_colour,
-                            font_name=FONT_NAME,
-                            anchor_x=text_anchor
-                        )
-
-                        text_objects.append(t)
-                        line_counter += 1
-
-                for text_obj in text_objects:
-                    text_obj.draw()
-
-            def create_cname_text():
-                self.cname_text = arcade.Text(
-                    cname_text_text,
-                    x=self.width * 0.19,
-                    y=self.height * 0.255,
-                    font_size=40,
-                    multiline=True,
-                    width=1150,
-                    color=cname_text_colour,
-                    font_name=FONT_NAME
-                )
-                self.cname_text.draw()
-
-            create_dialog_text()
-            create_cname_text()
+            if (int(button) == 1) and not self.settings_manager.waiting_settings:
+                if len(list(self.in_game_manager.get_widgets_at((x, y)))) == 1: # Проверяем, нажали ли мы на какую-нибудь кнопку.
+                    self.talk_manager()
 
     class GameMenu(Main_template):
         def __init__(self, show_lc: bool = True) -> None:
@@ -682,7 +630,7 @@ class Views:
                     width=200,
                     style=STYLE_DEFAULT_BUTTON
                 )
-                exit_button.on_click = lambda event: arcade.exit()
+                exit_button.on_click = lambda event: self.window.on_close()
                 self.v_box.add(exit_button)
 
                 ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
@@ -966,259 +914,11 @@ class Views:
 
 
 
-class Character:
-
-    def __init__(self, name: str,
-                 char_id: Optional[str] = None,
-                 colour: str = "",
-                 name_colour: str = "",
-                 c_scale: float = 1.0,
-                 text_anch: Tuple[int, float, Literal["left", "right", "center"]] = "left",
-                 lps: int = 60) -> None:
-
-        """
-        Создаёт персонажа.
-        :param name: Имя персонажа
-        :param char_id: Айди персонажа (должно совпадать с его папкой, и названиями спрайтов)
-        :param colour: Цвет текста речи (в HEX формате)
-        :param name_colour: Цвет текста имени (в HEX формате)
-        :param c_scale: Размер спрайта
-        :param text_anch: Положение текста на экране (left, right, center)/ int - координата X / float - координата (width * text_anch)
-        :param lps: Letters per frame: Скорость появления букв в секунду.
-        """
-
-        def hex_to_rgb(hex_color: str):
-            if hex_color:
-                hex_color = hex_color.lstrip("#")
-                if len(hex_color) not in (6, 8):
-                    raise ValueError("Hex должен быть в формате RRGGBB")
-
-                r = int(hex_color[0:2], 16)
-                g = int(hex_color[2:4], 16)
-                b = int(hex_color[4:6], 16)
-                if len(hex_color) == 8:
-                    a = int(hex_color[6:8], 16)
-                    return (r, g, b, a)
-                return (r, g, b)
-            else:
-                return arcade.color.WHITE
-
-        def find_sounds():
-            sounds = []
-            if self.char_id is not None:
-                for f in os.listdir(f"./game/sounds/voice/{self.char_id}"):
-                    if os.path.isfile(os.path.join(f"./game/sounds/voice/{self.char_id}", f)):
-                        sounds.append(arcade.load_sound(f"./game/sounds/voice/{self.char_id}/{f}"))
-            self.talk_sounds = sounds
-            return sounds
-
-        self.c_name = name
-        self.colour = hex_to_rgb(colour)
-        self.name_colour = hex_to_rgb(name_colour)
-        self.c_scale = c_scale
-        self.lps = lps
-        self.action = None
-        self.last_text = " "
-
-        self.char_id = char_id
-
-        self.talk_sounds = []
-
-        threading.Thread(target=find_sounds).start()
-
-        self.text_anch = text_anch
-
-    def talk(self, text: str) -> None:
-        """
-        Форматирует текст и создаёт генератор, который проигрывает речь персонажа.
-        :param text: Речь персонажа
-        :return: Генератор
-        """
-        global dialog_text_colour, cname_text_colour
-        global dialog_text_text, cname_text_text
-        global text_anchor
-
-        def replace_char_by_index(text, index, new_char):
-            if index < 0 or index >= len(text):
-                return text
-            return text[:index] + new_char + text[index + 1:]
-
-        now_lps = self.lps * (self.lps / sm.Volume.get_other("lps"))
-
-        dialog_text_text_alt = [" "]
-        string_index_alt = 0
-        _text_alt = []
-        for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', repr(text).strip(r"'")):
-
-            char = str(char)
-
-            if char == r"\n ":
-                string_index_alt += 1
-                _text_alt = []
-                continue
-
-            if not char.startswith("{") and not str(char).endswith("}"):
-                if char != r"\n ":
-                    if char != " ":
-                        _text_alt.append(" ")
-                    else:
-                        _text_alt.append(" ")
-                    if len(dialog_text_text_alt)-1 != string_index_alt:
-                        dialog_text_text_alt.insert(string_index_alt, "".join(_text_alt))
-                    else:
-                        dialog_text_text_alt[string_index_alt] = "".join(_text_alt)
-
-
-        text_anchor = self.text_anch
-
-        am.stop_voice()
-
-        dialog_text_colour = self.colour
-        cname_text_colour = self.name_colour
-
-        self.action = None
-
-        dialog_text_text = dialog_text_text_alt.copy()
-        cname_text_text = ""
-
-        def _talk(now_lps):
-            global dialog_text_text, cname_text_text
-            string_index = 0
-            fast = False
-
-            self.action = "talk"
-
-            while True:
-                i = -1
-                if not wait_trigger:
-                    self.last_text = text
-
-                    _text = []
-                    index = 0
-                    for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', repr(text).strip(r"'")):
-                        i += 1
-                        char = str(char)
-
-                        if char == r"\n ":
-                            string_index += 1
-                            i = -1
-                            _text = []
-                            continue
-
-                        cname_text_text = self.c_name
-
-                        if not char.startswith("{") and not str(char).endswith("}"):
-                            if char != r"\n ":
-                                _text.append(char)
-                                dialog_text_text[string_index] = replace_char_by_index(dialog_text_text[string_index], i, char)
-
-                        index += 1
-
-                        if ((index % 4 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
-                            if os.path.isdir(f"./game/sounds/voice/{self.char_id}"):
-                                am.play_voice(random.choice(self.talk_sounds))
-
-                        if char == ".":
-                            if not fast:
-                                remaining_time = 0.1
-                                while remaining_time > 0:
-                                    dt = yield
-
-                                    if dt is None or dt <= 0:
-                                        continue
-
-                                    remaining_time -= dt
-
-                        elif char == ",":
-                            if not fast:
-                                remaining_time = 0.05
-                                while remaining_time > 0:
-                                    dt = yield
-                                    if dt is None or dt <= 0:
-                                        continue
-                                    remaining_time -= dt
-
-                        elif char.startswith("{") and str(char).endswith("}"):
-                            char = char[1:][:-1]
-
-                            if char.startswith("w"):
-                                i -= 1
-
-                                remaining_time = float(char.split("=")[-1])
-                                while remaining_time > 0:
-                                    dt = yield
-                                    if dt is None or dt <= 0:
-                                        continue
-                                    remaining_time -= dt
-
-                            dt = yield
-                            if char.startswith("f"):
-                                i -= 1
-                                fast = True
-
-                        if not fast:
-                            remaining_time = 1 / now_lps
-                            while remaining_time > 0:
-                                dt = yield
-                                if dt is None or dt <= 0:
-                                    continue
-                                remaining_time -= dt
-
-                    self.action = None
-                    return None
-                else:
-                    if not fast:
-                        remaining_time = 1 / now_lps
-                        while remaining_time > 0:
-                            dt = yield
-                            if dt is None or dt <= 0:
-                                continue
-                            remaining_time -= dt
-                    dt = yield
-
-        return _talk(now_lps)
-
-    def show(self, sprite: str) -> arcade.Sprite:
-        """
-        Возвращает спрайт персонажа
-        :param sprite: Название спрайта
-        :raises FileNotFoundError: Если спрайт не был найден
-        """
-        textures = fm.get_character_textures(sprite)
-
-        if sprite not in textures:
-            raise FileNotFoundError(f"Character sprite \"{sprite}\" was not found in \"./game/images/characters/{self.char_id}/{sprite}\"")
-
-        now_sprite = arcade.Sprite(textures[sprite])
-        return now_sprite
-
-class ListCharacters:
-    def __init__(self) -> None:
-        """
-        Хранит в себе список всех персонажей
-        """
-        self.characters = {
-            "j" : Character("Джопа", "j", name_colour="#D2691E", colour="#CD853F"),
-            "aj": Character("АнтиДжек", "aj", name_colour="#3f87cd", c_scale=0.5, colour="#2167C4"),
-            "sj": Character("ГлупоДжек", "sj", name_colour="#D1D0CF", c_scale=0.5, colour="#D4D4D4"),
-            "narr" : Character(" ", None, text_anch="center"),
-
-            "masorubka" : Character("Мясорубка/", char_id="masorubka", name_colour="#FFB6C1", colour="#FFB6C1", c_scale=0.8),
-            "edwin" : Character("Эдвин/", char_id="edwin", name_colour="#FFDEAD", colour="#FFDEAD", c_scale=0.8),
-            "rony" : Character("Рони/", char_id="rony", name_colour="#c9976c", colour="#c9976c", c_scale=0.8),
-            "bromand" : Character("Броманд/", char_id="bromand", name_colour="#7FFF00", colour="#7FFF00", c_scale=0.8),
-            "uni" : Character("Юни/", char_id="uni", name_colour="#00FF7F", colour="#00FF7F", c_scale=0.8)
-        }
-
-    def __getitem__(self, item) -> dict[str : Character]:
-        return self.characters[item]
-
-
 def init_file() -> None:
     """
     Инициализирует основные классы
     """
-    global sm, am, da, lc, wwl, scene, fm
+    global sm, am, da, wwl, scene, fm
 
     timee = time.time()
     print("files_manager...")
@@ -1227,12 +927,10 @@ def init_file() -> None:
     sm = Saves_manager()
     print("Audio manager...")
     am = AudioManager(sm, fm)
-    print("Lore...")
-    wwl = Wwl(fm)
     print("Scene...")
     scene = Scene(fm)
-    print("characters...")
-    lc = ListCharacters()
+    print("Lore...")
+    wwl = Wwl(fm, scene)
     print("Discord...")
     da = Discord_act()
     print(f"Init done for {round(time.time() - timee, 2)}s")

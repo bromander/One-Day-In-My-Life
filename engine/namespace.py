@@ -603,7 +603,6 @@ class Namespace:
         Wwl.pose = 0
         Game_view.chanel()
 
-
     def talk(self, character: str, text: str):
         def format_text(text: str) -> str:
             pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
@@ -616,4 +615,4 @@ class Namespace:
         gen = self.ListCharacters[character].talk(format_text(text))
 
         self.Game_view.actions.active_generators.add_generator("consistently", gen, "talk")
-        self.returning = "End_text"
+        self.returning = "END_text"
