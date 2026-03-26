@@ -3,6 +3,7 @@ import re
 import ast
 from typing import Optional
 from .files_manager import FilesManager
+from .Exceptions import MainLabelNotFoundError
 
 
 class Wwl:
@@ -44,6 +45,9 @@ class Wwl:
         self.files = find_files(".jpy", find_files_path)
 
         for file_key, file_data in self.files.items():
+            """
+            Проходимся по всем файлам и делим их на блоки по лейблам
+            """
             with open(file_data["path"], "r", encoding="UTF-8") as f:
                 content = f.read()
                 lines = content.split("\n")
@@ -64,14 +68,17 @@ class Wwl:
 
                     file_data["content"][label_name] = block_text
 
-        self.pose = 0
-        self.label = "main"
-        self.graf: dict[str: list[str]] = build_graf()
+        self.pose = 0 # Позиция в сценарии
+        self.label = "main" # Текущий лейбл
+        self.graf: dict[str: list[str]] = build_graf() # Граф сея сюжета
 
         self.now_file = ""
         for e, i in self.files.items():
             if self.label in i['content']:
                 self.now_file = e
+
+        if not self.now_file:
+            raise MainLabelNotFoundError("Лейбл 'main' не был найден в сценарии!")
 
         self.lore = self._get_lore()
 
@@ -83,10 +90,10 @@ class Wwl:
                 leading_spaces = re.match(r'^(\s*)', line).group(1)
 
                 if line.lstrip().startswith('<'):
-                    line = line.replace("<>", "<narr>")
+                    line = line.replace("<>", "<narr>") # Заменяем пустые значения айди персонажа на narrator-а
                     dial = re.split(r"[<>]", str(line.lstrip()))
                     dial = [x for x in dial if x]
-                    new_line = leading_spaces + f"talk(\"{dial[0]}\", {dial[1]})"
+                    new_line = leading_spaces + f"talk(\"{dial[0]}\", {dial[1]})" # Заменяем все диалоги на функции talk()
                     result_lines.append(new_line)
                 elif line.lstrip().startswith('#'):
                     continue
@@ -185,7 +192,6 @@ class Wwl:
 
     def _preload_assets(self, label):
 
-
         def get_assets(string: str):
             sprites = []
             for i in string.split("\n"):
@@ -197,7 +203,7 @@ class Wwl:
                         if i in self.fm.textures_paths or i in self.fm.audio_paths:
                             sprites.append(i)
                     else:
-                        for o in [".png", ".jpg", ".jpeg"]:
+                        for o in [".png", ".jpg", ".jpeg", ".PNG", ".JPEG"]:
                             i = i + o
                             if i in self.fm.textures_paths or i in self.fm.audio_paths:
                                 sprites.append(i)

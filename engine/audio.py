@@ -1,11 +1,7 @@
-import types
-from pathlib import Path
 from typing import Optional, Literal, Tuple, Union
-import sys, os
 from pathlib import Path
 from arcade import load_sound, sound
 import random
-from threading import Thread
 import pyglet.media.player
 from .saves import Saves_manager
 from .files_manager import FilesManager
@@ -21,9 +17,11 @@ class AudioChannel:
         self.player: Optional[pyglet.media.player.Player] = None
         self.default_volume: float = default_volume # Громкость по умолчанию
         self.volume_type: Optional[str] = volume_type # Тип канала
-        self.modifier = modifier # Модификатор громкости. Предназначен для управления громкости с ползунков из настроек
-        self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкости во время плавных переходов (FADEIN/FADEOUT)
-        self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкости текущего трека. Сбрасывается при запуске нового трека
+        self.modifier = modifier # Модификатор громкости. Предназначен для управления громкостью ползунками из настроек
+        self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью во время плавных переходов (FADEIN/FADEOUT)
+        self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью текущего трека. Сбрасывается при запуске нового трека
+
+        self.paused = False
 
         self.sm = sm
 
@@ -35,24 +33,31 @@ class AudioChannel:
     @fade_modifier.setter
     def fade_modifier(self, value) -> None:
         self._fade_modifier = value
-        if self.player:
-            self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
-            # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
+        if hasattr(self, "player"):
+            if self.player:
+                self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+                # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
 
-    def play(self, file: Union[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None) -> None:
+    def play(self, file: Union[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None, streaming: bool = False) -> None:
         """
         Начинает проигрывать звук
         :param file: Путь к файлу/уже готовый саунд
         :param loop: Если True, звук будет зацикливаться
         :param speed: Скорость проигрывания
+        :param local_volume: Громкость звука только в этот раз
+        :param streaming: Boolean for determining if we stream the sound or
+            load it all into memory. Set to ``True`` for long sounds to
+            save memory, ``False`` for short sounds to speed playback.
         """
         self.stop()
 
         if local_volume:
             self._local_modifier = local_volume
+        else:
+            self._local_modifier = 1
 
         if type(file) is str or type(file) is type(Path()):
-            file_sound = load_sound(file)
+            file_sound = load_sound(str(file), streaming=streaming)
         elif type(file) is sound.Sound:
             file_sound = file
         else:
@@ -61,28 +66,35 @@ class AudioChannel:
         volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
 
         self.player = file_sound.play(volume=volume, loop=loop, speed=speed)
+        self.paused = False
 
     def stop(self) -> None:
         """
         Выключает проигрывание музыки
         """
-        if self.player:
-            self.player.delete()
-        self._local_modifier = 1.0
+        if hasattr(self, "player"):
+            if self.player:
+                self.player.delete()
+                del self.player
+        self.paused = False
 
     def pause(self) -> None:
         """
         Останавливает проигрывание музыки
         """
-        if self.player:
-            self.player.pause()
+        if hasattr(self, "player"):
+            if self.player:
+                self.player.pause()
+                self.paused = True
 
     def resume(self) -> None:
         """
         Продолжает проигрывание музыки, если та была остановлена
         """
-        if self.player:
-            self.player.play()
+        if hasattr(self, "player"):
+            if self.player:
+                self.player.play()
+        self.paused = False
 
     def set_volume(self, vol, is_global: bool = True) -> None:
         """
@@ -90,29 +102,29 @@ class AudioChannel:
         :param vol: Громкость
         :param is_global: Если True, применяет глобально, к этом и последующим звукам, а также, сохраняет значение. Если False, применяет громкость только к текущему звуку
         """
+        if hasattr(self, "player"):
+            if is_global:
+                self.modifier = vol
+                if self.player:
+                    self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
 
-        if is_global:
-            self.modifier = vol
-            if self.player:
-                self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
-
-            # Сохраняем значения
-            if self.volume_type == "music":
-                self.sm.Volume.set_music(self.modifier)
-            elif self.volume_type == "sound":
-                self.sm.Volume.set_sound(self.modifier)
-            elif self.volume_type == "voice":
-                self.sm.Volume.set_voice(self.modifier)
-        else:
-            self._local_modifier = vol
-            if self.player:
-                self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+                # Сохраняем значения
+                if self.volume_type == "music":
+                    self.sm.Volume.set_music(self.modifier)
+                elif self.volume_type == "sound":
+                    self.sm.Volume.set_sound(self.modifier)
+                elif self.volume_type == "voice":
+                    self.sm.Volume.set_voice(self.modifier)
+            else:
+                self._local_modifier = vol
+                if self.player:
+                    self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
 
     def is_playing(self) -> bool:
-        if self.player:
-            return self.player.playing
-        else:
-            return False
+        if hasattr(self, "player"):
+            if self.player:
+                return self.player.playing
+        return False
 
 class AudioManager:
     def __init__(self, sm: Saves_manager, fm: FilesManager):
@@ -124,7 +136,7 @@ class AudioManager:
         self.sound = AudioChannel(sm, modifier=sm.Volume.get_sound(), volume_type="sound")
         self.voice = AudioChannel(sm, modifier=sm.Volume.get_voice(), volume_type="voice", default_volume=2.0)
 
-    def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None):
+    def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None, streaming: bool = True):
         """
         Отличается от play_music тем, что поддерживает эффекты
         :return: генератор
@@ -142,21 +154,20 @@ class AudioManager:
                     self.music.fade_modifier = 1.0
 
                 self.music.fade_modifier = 0.0
-                self.music.play(path, loop=loop, local_volume=volume)
+                self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
                 return fadeout_music()
 
             case _:
                 def music():
-                    self.music.play(path, loop=loop, local_volume=volume)
+                    self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
                     yield
                 return music()
 
-    def play_music(self, path: str, loop: bool = False, volume: float = 1.0) -> None:
+    def play_music(self, path: str, loop: bool = False, volume: float = 1.0, streaming: bool = True) -> None:
 
         if path in self.fm.audios:
-            path = self.fm.audios[path]
-
-        self.music.play(path, loop=loop, local_volume=volume)
+            path: sound.Sound = self.fm.audios[path]
+        self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
 
     def play_sound_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[Literal["fade"]] = None):
         """
@@ -196,7 +207,7 @@ class AudioManager:
         if path in self.fm.audios:
             path = self.fm.audios[path]
 
-        self.voice.play(path, loop=loop, speed=random.randint(99, 101) / 100)
+        self.voice.play(path, loop=loop, speed=random.randint(99, 101) / 100, streaming=False)
 
     def stop_music_gen(self, effect: Optional[Literal["fade"]] = None):
         """
@@ -210,16 +221,19 @@ class AudioManager:
                         self.music.fade_modifier -= 0.005
                         yield
                     self.music.fade_modifier = 0.0
+                    self.music.pause()
                     self.music.stop()
                     self.music.fade_modifier = 1.0
                 return fadeout_music()
             case _:
                 def music():
+                    self.music.pause()
                     self.music.stop()
                     yield
                 return music()
 
     def stop_music(self) -> None:
+        self.music.pause()
         self.music.stop()
 
     def stop_sound_gen(self, effect: Optional[str] = None):
@@ -234,6 +248,7 @@ class AudioManager:
                         self.sound.fade_modifier -= 0.005
                         yield
                     self.sound.fade_modifier = 0.0
+                    self.sound.pause()
                     self.sound.stop()
                     self.sound.fade_modifier = 1.0
 
@@ -241,11 +256,13 @@ class AudioManager:
 
             case _:
                 def sound():
+                    self.sound.pause()
                     self.sound.stop()
                     yield
                 return sound()
 
     def stop_sound(self):
+        self.sound.pause()
         self.sound.stop()
 
     def stop_voice(self):

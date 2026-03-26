@@ -1,6 +1,8 @@
 from pypresence import Presence
-from pypresence.exceptions import DiscordNotFound
+from pypresence.exceptions import DiscordNotFound, PipeClosed, InvalidPipe
 from pypresence.types import ActivityType, StatusDisplayType
+from threading import Thread
+from typing import Optional, Literal, Tuple, Union
 import json
 import time
 
@@ -12,31 +14,73 @@ class Discord_act:
         self.RPC = Presence(self.discord_application_ID)
         self.connected = False
 
-        try:
-            self.RPC.connect()
-            self.connected = True
-            self.RPC.update(
-                status_display_type=StatusDisplayType.NAME,
-                activity_type=ActivityType.PLAYING,
-                details="В главном меню",
-                start=time.time()
-            )
+        self.stop_thread_flag = False
 
-        except DiscordNotFound:
-            pass
+        self.thread: Optional[Thread] = None
+
+        self._connect()
+
+    def _connect(self, details: str = "", state: str = "В главном меню"):
+
+        def con():
+            try:
+                self.RPC.connect()
+                if details:
+                    self.RPC.update(
+                        status_display_type=StatusDisplayType.NAME,
+                        activity_type=ActivityType.PLAYING,
+                        details=details,
+                        state=state,
+                        start=time.time()
+                    )
+                else:
+                    self.RPC.update(
+                        status_display_type=StatusDisplayType.NAME,
+                        activity_type=ActivityType.PLAYING,
+                        state=state,
+                        start=time.time()
+                    )
+
+            except DiscordNotFound:
+                self.connected = False
+
+            except InvalidPipe:
+                self.connected = False
+
+            except ValueError:
+                self.connected = False
+
+            else:
+                self.connected = True
+
+        Thread(target=con).start()
 
     def update(self, name: str, description: str):
 
-        if self.connected:
-            if name:
-                self.RPC.update(
-                    status_display_type=StatusDisplayType.NAME,
-                    activity_type=ActivityType.PLAYING,
-                    details=name
-                )
-            if description:
-                self.RPC.update(
-                    status_display_type=StatusDisplayType.NAME,
-                    activity_type=ActivityType.PLAYING,
-                    state=description
-                )
+        try:
+            if self.connected:
+                if name and description:
+                    self.RPC.update(
+                        status_display_type=StatusDisplayType.NAME,
+                        activity_type=ActivityType.PLAYING,
+                        details=name,
+                        state=description
+                    )
+                elif not description:
+                    self.RPC.update(
+                        status_display_type=StatusDisplayType.NAME,
+                        activity_type=ActivityType.PLAYING,
+                        details=name
+                    )
+                if not name:
+                    self.RPC.update(
+                        status_display_type=StatusDisplayType.NAME,
+                        activity_type=ActivityType.PLAYING,
+                        state=description
+                    )
+            else:
+                raise PipeClosed
+        except PipeClosed:
+            self.connected = False
+        else:
+            self.connected = True

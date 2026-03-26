@@ -326,3 +326,4 @@ class TestScene(unittest.TestCase):
 
         for i in os.listdir(paths["images"]):
             os.remove(paths["images"] + "/" + str(i))
+

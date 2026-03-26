@@ -143,12 +143,9 @@ class Scene:
 
     def create_savepoint(self) -> None:
         """
-        Созадёт копию сцены на данный момент
-        Максимальное кол-во записываемых сцен - 5. Если становится больше, старые сохранения начинают удалятся
+        Созадёт копию сцены
         """
         self.save_points.append(self.data)
-        if len(self.save_points) >= 5:
-            self.save_points.pop(-1)
 
     def load_savepoint(self, sp_id: int = 0) -> None:
         """

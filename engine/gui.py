@@ -4,26 +4,34 @@ import json
 from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider
 from typing import Optional, List, Tuple, Union
-from arcade import uicolor, Scene, load_texture, Sprite, color, View
+from arcade import (
+    Window,
+    uicolor,
+    Scene,
+    load_texture,
+    Sprite,
+    color,
+    View,
+    draw_lrbt_rectangle_filled,
+    draw_circle_filled,
+    draw_circle_outline
+)
 from arcade.gui.events import UIMousePressEvent, UIMouseReleaseEvent, UIMouseMovementEvent, UIMouseDragEvent, UIOnUpdateEvent
 from arcade.gui import (
     Surface,
     UIEvent,
-    UIMouseDragEvent, UIOnChangeEvent, UIOnClickEvent
+    UIMouseDragEvent, UIOnChangeEvent, UIOnClickEvent,
+    UIWidget
 )
-from arcade.gui.style import UIStyledWidget
-from arcade.gui import UISlider
-import arcade
+from pyglet.graphics import Batch
 
 from .saves import Saves_manager
 from .audio import AudioManager
-from .lore_viewer import Wwl
-from .scene import Scene
-from .namespace import Namespace
 from .waiter import Waiter
+from .character import Attributes
 
 
-class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
+class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
     """A simple vertical slider.
 
     A slider consists of a vertical track and a thumb.
@@ -220,7 +228,7 @@ class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
 
         # Рисуем заполненную часть трека
         if thumb_y > slider_bottom:
-            arcade.draw_lrbt_rectangle_filled(
+            draw_lrbt_rectangle_filled(
                 left=slider_left,
                 right=slider_right,
                 bottom=slider_bottom - self.content_rect.bottom,
@@ -230,7 +238,7 @@ class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
 
         # Рисуем незаполненную часть трека
         if slider_top > thumb_y:
-            arcade.draw_lrbt_rectangle_filled(
+            draw_lrbt_rectangle_filled(
                 left=slider_left,
                 right=slider_right,
                 bottom=thumb_y + padding,  # Используем padding вместо cursor_radius
@@ -269,7 +277,7 @@ class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
                 if v in (steps[0], steps[-1]):
                     circle_size = self._cursor_height // 3
 
-                arcade.draw_circle_filled(
+                draw_circle_filled(
                     self.content_width // 2,
                     step_y,
                     circle_size,
@@ -303,7 +311,7 @@ class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
         cursor_center_y = max(min_y, min(max_y, cursor_center_y))
 
         # Рисуем ползунок
-        arcade.draw_circle_filled(
+        draw_circle_filled(
             slider_center_x,
             cursor_center_y,
             cursor_radius,
@@ -311,7 +319,7 @@ class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
         )
 
         # Рисуем внутренний круг
-        arcade.draw_circle_filled(
+        draw_circle_filled(
             slider_center_x,
             cursor_center_y,
             cursor_radius // 2,
@@ -319,7 +327,7 @@ class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
         )
 
         # Рисуем обводку
-        arcade.draw_circle_outline(
+        draw_circle_outline(
             slider_center_x,
             cursor_center_y,
             cursor_radius,
@@ -432,241 +440,6 @@ class UISliderVertical(UIStyledWidget[UISliderStyle], UIBaseSlider):
 
         return super().on_event(event)
 
-
-class InGameSettings:
-
-    def __init__(self, session_id: str, Views, scene: Scene, window: arcade.Window, am: AudioManager, wwl: Wwl, sm: Saves_manager, NAMESPACE: Namespace, FONT_NAME: str, STYLE_DEFAULT_BUTTON: dict, actions):
-
-        self.window = window
-
-        self.am = am
-        self.wwl = wwl
-        self.scene = scene
-        self.NAMESPACE = NAMESPACE
-        self.sm = sm
-
-        self.STYLE_DEFAULT_BUTTON = STYLE_DEFAULT_BUTTON
-        self.FONT_NAME = FONT_NAME
-
-        self.actions = actions
-        self.session_id = session_id
-
-        self.Views = Views
-
-        self.settings_scene = arcade.Scene()
-
-        self.settings_manager = agui.UIManager()
-        self.settings_v_box = agui.widgets.layout.UIBoxLayout(space_between=10)
-        self.settings_v_box_1 = agui.widgets.layout.UIBoxLayout(space_between=10)
-        self.settings_v_box_1 = agui.widgets.layout.UIBoxLayout(space_between=10)
-        self.settings_h_box = agui.widgets.layout.UIBoxLayout(vertical=False, space_between=20)
-        self.settings_h_box.visible = False
-
-        self.create_settings()
-
-        self.waiting_settings = Waiter()
-
-
-    def create_settings(self):
-        texture = load_texture("game/images/gui/in_game_settings.png")
-
-        sprite = Sprite(
-            texture,
-            center_x=self.window.width * 0.5,
-            center_y=self.window.height * 0.5,
-            scale=1.0
-        )
-        self.settings_scene.add_sprite("in_game_settings", sprite)
-        self.settings_scene["in_game_settings"].alpha = 0
-
-        def create_settings_buttons():
-            with open("game/saves.JSON", "r", encoding="UTF-8") as data:
-                data = json.load(data)
-            volumes = data['options']
-
-            def return_to_main_menu(event=None):
-                self.actions.active_generators.clear()
-
-                self.am.stop_sound()
-                self.am.stop_music()
-                self.am.stop_voice()
-                self.window.set_fullscreen(False)
-                self.window.size = (1024, 786)
-                game = self.Views.GameMenu(show_lc=True)
-                self.window.show_view(game)
-
-            return_button = agui.UIFlatButton(
-                text="Главное меню",
-                width=300,
-                height=50,
-                style=self.STYLE_DEFAULT_BUTTON
-            )
-            return_button.on_click = return_to_main_menu
-            self.settings_v_box.add(return_button)
-
-            save_button = agui.UIFlatButton(
-                text="Сохранить",
-                width=200,
-                style=self.STYLE_DEFAULT_BUTTON
-            )
-            save_button.on_click = lambda action=None, session_id=self.session_id, am=self.am, scene=self.scene, NAMESPACE = self.NAMESPACE, wwl=self.wwl: self.sm.Save.create_save(
-                session_id,
-                am,
-                scene,
-                NAMESPACE,
-                wwl
-            )
-
-            self.settings_v_box.add(save_button)
-
-            self.settings_v_box.add(agui.UISpace(height=20))
-
-            music_volume_label = agui.UILabel(
-                "Музыка",
-                text_color=color.WHITE,
-                font_size=20,
-                font_name=self.FONT_NAME
-            )
-            self.settings_v_box.add(music_volume_label)
-
-            music_volume_slider = UISliderSavesUpdater(
-                "music",
-                self.sm,
-                self.am,
-                value=volumes['volume']["music"] * 100,  # начальное значение
-                min_value=0,
-                max_value=200,
-                width=300,
-                height=20
-            )
-            self.settings_v_box.add(music_volume_slider)
-            self.settings_v_box.add(agui.UISpace(height=10))
-
-            sound_volume_label = agui.UILabel(
-                "Звуки",
-                text_color=color.WHITE,
-                font_size=20,
-                font_name=self.FONT_NAME
-            )
-            self.settings_v_box.add(sound_volume_label)
-
-            sound_volume_slider = UISliderSavesUpdater(
-                "sound",
-                self.sm,
-                self.am,
-                value=volumes['volume']["sound"] * 100,  # начальное значение
-                min_value=0,
-                max_value=200,
-                width=300,
-                height=20
-            )
-            self.settings_v_box.add(sound_volume_slider)
-            self.settings_v_box.add(agui.UISpace(height=10))
-
-            voice_volume_label = agui.UILabel(
-                "Голос",
-                text_color=color.WHITE,
-                font_size=20,
-                font_name=self.FONT_NAME
-            )
-            self.settings_v_box.add(voice_volume_label)
-
-            voice_volume_slider = UISliderSavesUpdater(
-                "voice",
-                self.sm,
-                self.am,
-                value=volumes['volume']["voice"] * 100,  # начальное значение
-                min_value=0,
-                max_value=200,
-                width=300,
-                height=20
-            )
-            self.settings_v_box.add(voice_volume_slider)
-
-            lps_label = agui.UILabel(
-                "Скорость появления букв",
-                text_color=color.WHITE,
-                font_size=20,
-                font_name=self.FONT_NAME
-            )
-            self.settings_v_box_1.add(lps_label)
-            self.lps_slider = UISliderSavesUpdater(
-                "lps",
-                self.sm,
-                self.am,
-                value=volumes["lps"],  # начальное значение
-                min_value=20,
-                max_value=110,
-                width=300,
-                height=20
-            )
-            self.settings_v_box_1.add(self.lps_slider)
-            self.settings_v_box_1.add(agui.UISpace(height=20))
-
-            fade_speed_label = agui.UILabel(
-                "Скорость переходов",
-                text_color=color.WHITE,
-                font_size=20,
-                font_name=self.FONT_NAME
-            )
-            self.settings_v_box_1.add(fade_speed_label)
-            self.fade_speed_slider = UISliderSavesUpdater(
-                "fade_speed",
-                self.sm,
-                self.am,
-                value=volumes["fade_speed"],  # начальное значение
-                min_value=-10,
-                max_value=10,
-                width=300,
-                height=20
-            )
-            self.settings_v_box_1.add(self.fade_speed_slider)
-
-            self.settings_h_box.add(self.settings_v_box_1)
-            self.settings_h_box.add(self.settings_v_box)
-
-            ui_anchor_layout = agui.widgets.layout.UIAnchorLayout()
-            ui_anchor_layout.add(child=self.settings_h_box, anchor_x="left", align_x=80)
-
-            self.settings_manager.add(ui_anchor_layout)
-
-        create_settings_buttons()
-
-    def show_settings(self, state: Optional[bool] = None) -> None:
-        settings = self.settings_scene["in_game_settings"]
-
-        if state is not None:
-            turn_on = state
-        else:
-            turn_on = settings.alpha <= 0
-
-        (self.waiting_settings.on if turn_on else self.waiting_settings.off)()
-        self.settings_h_box.visible = turn_on
-        settings.alpha = 255 if turn_on else 0
-
-    def draw(self):
-        self.settings_scene.draw()
-        self.settings_manager.draw()
-
-    def update(self):
-        pass
-
-    def turn_visibl(self, state: Optional[bool] = None):
-        if state is not None:
-            self.waiting_settings.state = state
-            self.show_settings(state)
-            if state:
-                self.settings_manager.enable()
-            else:
-                self.settings_manager.disable()
-        else:
-            self.show_settings(not self.waiting_settings.state)
-            if self.waiting_settings.state:
-                self.settings_manager.enable()
-            else:
-                self.settings_manager.disable()
-
-
 class UISliderSavesUpdater(agui.UISlider):
     def __init__(
             self,
@@ -719,4 +492,413 @@ class UISliderSavesUpdater(agui.UISlider):
             case "fade_speed":
                 self.sm.Volume.set_other("fade_speed", round(self.value, 2))
         self.sm.Volume._save_data()
-        
+
+class Managers:
+
+    class SettingsManager(agui.UIManager):
+        def __init__(self, MainView_self, Am: AudioManager, Sm: Saves_manager, Wwl, session_id: str, FONT_NAME: str, STYLE_DEFAULT_BUTTON: dict, Views):
+            super().__init__()
+            self.MainView_self = MainView_self
+            self.Views = Views
+
+            self.am = Am
+            self.sm = Sm
+            self.wwl = Wwl
+
+            self.session_id  = session_id
+
+            self.FONT_NAME = FONT_NAME
+            self.STYLE_DEFAULT_BUTTON = STYLE_DEFAULT_BUTTON
+
+            self.settings_scene = Scene()
+
+            self.waiting_settings = Waiter()
+
+            self.settings_v_box = agui.widgets.layout.UIBoxLayout(space_between=10)
+            self.settings_v_box_1 = agui.widgets.layout.UIBoxLayout(space_between=10)
+            self.settings_v_box_1 = agui.widgets.layout.UIBoxLayout(space_between=10)
+            self.settings_h_box = agui.widgets.layout.UIBoxLayout(vertical=False, space_between=20)
+            self.settings_h_box.visible = False
+
+            self._create_settings()
+
+        def _create_settings(self):
+            texture = load_texture("game/images/gui/in_game_settings.png")
+
+            sprite = Sprite(
+                texture,
+                center_x=self.window.width * 0.5,
+                center_y=self.window.height * 0.5,
+                scale=1.0
+            )
+            self.settings_scene.add_sprite("in_game_settings", sprite)
+            self.settings_scene["in_game_settings"].alpha = 0
+
+            def create_settings_buttons():
+                with open("game/saves.JSON", "r", encoding="UTF-8") as data:
+                    data = json.load(data)
+                volumes = data['options']
+
+                def return_to_main_menu(event=None):
+                    self.MainView_self.actions.active_generators.clear()
+
+                    self.am.stop_sound()
+                    self.am.stop_music()
+                    self.am.stop_voice()
+
+                    self.window.set_fullscreen(False)
+                    self.window.size = (1024, 786)
+                    game = self.Views.GameMenu(show_lc=True)
+                    self.window.show_view(game)
+
+                return_button = agui.UIFlatButton(
+                    text="Главное меню",
+                    width=300,
+                    height=50,
+                    style=self.STYLE_DEFAULT_BUTTON
+                )
+                return_button.on_click = return_to_main_menu
+                self.settings_v_box.add(return_button)
+
+                save_button = agui.UIFlatButton(
+                    text="Сохранить",
+                    width=200,
+                    style=self.STYLE_DEFAULT_BUTTON
+                )
+                save_button.on_click = lambda action=None, session_id=self.session_id, am=self.am, scene=self.MainView_self.scene, NAMESPACE=self.MainView_self.NAMESPACE, wwl=self.wwl: self.sm.Save.create_save(
+                    session_id,
+                    am,
+                    scene,
+                    NAMESPACE,
+                    wwl
+                )
+
+                self.settings_v_box.add(save_button)
+
+                self.settings_v_box.add(agui.UISpace(height=20))
+
+                music_volume_label = agui.UILabel(
+                    "Музыка",
+                    text_color=color.WHITE,
+                    font_size=20,
+                    font_name=self.FONT_NAME
+                )
+                self.settings_v_box.add(music_volume_label)
+
+                music_volume_slider = UISliderSavesUpdater(
+                    "music",
+                    self.sm,
+                    self.am,
+                    value=volumes['volume']["music"] * 100,  # начальное значение
+                    min_value=0,
+                    max_value=200,
+                    width=300,
+                    height=20
+                )
+                self.settings_v_box.add(music_volume_slider)
+                self.settings_v_box.add(agui.UISpace(height=10))
+
+                sound_volume_label = agui.UILabel(
+                    "Звуки",
+                    text_color=color.WHITE,
+                    font_size=20,
+                    font_name=self.FONT_NAME
+                )
+                self.settings_v_box.add(sound_volume_label)
+
+                sound_volume_slider = UISliderSavesUpdater(
+                    "sound",
+                    self.sm,
+                    self.am,
+                    value=volumes['volume']["sound"] * 100,  # начальное значение
+                    min_value=0,
+                    max_value=200,
+                    width=300,
+                    height=20
+                )
+                self.settings_v_box.add(sound_volume_slider)
+                self.settings_v_box.add(agui.UISpace(height=10))
+
+                voice_volume_label = agui.UILabel(
+                    "Голос",
+                    text_color=color.WHITE,
+                    font_size=20,
+                    font_name=self.FONT_NAME
+                )
+                self.settings_v_box.add(voice_volume_label)
+
+                voice_volume_slider = UISliderSavesUpdater(
+                    "voice",
+                    self.sm,
+                    self.am,
+                    value=volumes['volume']["voice"] * 100,  # начальное значение
+                    min_value=0,
+                    max_value=200,
+                    width=300,
+                    height=20
+                )
+                self.settings_v_box.add(voice_volume_slider)
+
+                lps_label = agui.UILabel(
+                    "Скорость появления букв",
+                    text_color=color.WHITE,
+                    font_size=20,
+                    font_name=self.FONT_NAME
+                )
+                self.settings_v_box_1.add(lps_label)
+                self.lps_slider = UISliderSavesUpdater(
+                    "lps",
+                    self.sm,
+                    self.am,
+                    value=volumes["lps"],  # начальное значение
+                    min_value=20,
+                    max_value=110,
+                    width=300,
+                    height=20
+                )
+                self.settings_v_box_1.add(self.lps_slider)
+                self.settings_v_box_1.add(agui.UISpace(height=20))
+
+                fade_speed_label = agui.UILabel(
+                    "Скорость переходов",
+                    text_color=color.WHITE,
+                    font_size=20,
+                    font_name=self.FONT_NAME
+                )
+                self.settings_v_box_1.add(fade_speed_label)
+                self.fade_speed_slider = UISliderSavesUpdater(
+                    "fade_speed",
+                    self.sm,
+                    self.am,
+                    value=volumes["fade_speed"],  # начальное значение
+                    min_value=-10,
+                    max_value=10,
+                    width=300,
+                    height=20
+                )
+                self.settings_v_box_1.add(self.fade_speed_slider)
+
+                self.settings_h_box.add(self.settings_v_box_1)
+                self.settings_h_box.add(self.settings_v_box)
+
+                ui_anchor_layout = agui.widgets.layout.UIAnchorLayout()
+                ui_anchor_layout.add(child=self.settings_h_box, anchor_x="left", align_x=80)
+
+                self.add(ui_anchor_layout)
+
+            create_settings_buttons()
+
+        def _show_settings(self, state: Optional[bool] = None):
+
+            settings = self.settings_scene["in_game_settings"]
+
+            if state is not None:
+                turn_on = state
+            else:
+                turn_on = settings.alpha <= 0
+
+            (self.waiting_settings.on if turn_on else self.waiting_settings.off)()
+            self.settings_h_box.visible = turn_on
+            settings.alpha = 255 if turn_on else 0
+
+        def draw(self, **kwargs) -> None:
+            self.settings_scene.draw()
+            super().draw(**kwargs)
+
+        def turn_visibl(self, event=None, state: Optional[bool] = None):
+            if state is not None:
+                self.waiting_settings.state = state
+                self._show_settings(state)
+                if state:
+                    self.enable()
+                else:
+                    self.disable()
+            else:
+                self._show_settings(not self.waiting_settings.state)
+                if self.waiting_settings.state:
+                    self.enable()
+                else:
+                    self.disable()
+
+    class CharactersTextManager(agui.UIManager):
+        def __init__(self, attributes: Attributes, window: Window, FONT_NAME: str):
+            super().__init__()
+            self.attributes = attributes
+            self.window = window
+            self.FONT_NAME = FONT_NAME
+
+            self.cname_text = agui.UILabel()
+
+            self.texts_widget = UIWidget()
+            self.add(self.texts_widget)
+
+            self.last_character_text = self.attributes.character_text.copy()
+
+            self._create_texts()
+
+        def _create_texts(self):
+
+            def create_cname_text():
+                self.cname_text = agui.UILabel(
+                    self.attributes.character_name,
+                    x=self.window.width * 0.19,
+                    y=self.window.height * 0.255,
+                    font_size=40,
+                    multiline=True,
+                    width=1150,
+                    text_color=self.attributes.character_name_colour,
+                    font_name=self.FONT_NAME
+                )
+                self.add(self.cname_text)
+
+            create_cname_text()
+
+        def update(self, time_delta):
+            super().on_update(time_delta)
+
+            def split_by_length(text, max_length):
+                if len(text) <= max_length:
+                    return [text]
+
+                parts = []
+                words = text.split(" ")
+                current_line = []
+
+                for word in words:
+                    if len(word) > max_length:
+                        if current_line:
+                            parts.append(" ".join(current_line))
+                            current_line = []
+
+                        for i in range(0, len(word), max_length):
+                            parts.append(word[i:i + max_length])
+                    else:
+                        test_line = " ".join(current_line + [word])
+                        if len(test_line) <= max_length:
+                            current_line.append(word)
+                        else:
+                            if current_line:
+                                parts.append(" ".join(current_line))
+                            current_line = [word]
+
+                if current_line:
+                    parts.append(" ".join(current_line))
+
+                return parts
+
+            if self.attributes.character_text != self.last_character_text:
+
+                self.remove(self.texts_widget)
+
+                self.texts_widget = UIWidget()
+
+                self.last_character_text = self.attributes.character_text.copy()
+
+                line_counter = 0
+
+                x_pos = 0
+                match self.attributes.text_anchor:
+                    case "left":
+                        x_pos = self.window.width * 0.18
+                    case "center":
+                        x_pos = self.window.width // 2
+                    case "right":
+                        x_pos = self.window.width * 0.82
+                    case _:
+                        if type(self.attributes.text_anchor) is float:
+                            x_pos = self.window.width * self.attributes.text_anchor
+                        elif type(self.attributes.text_anchor) is int:
+                            x_pos = int
+
+                for i, line in enumerate(self.attributes.character_text):
+                    split_lines = split_by_length(line, 60)
+
+                    for sline in split_lines:
+                        y_pos = (self.window.height * 0.2) - line_counter * 40
+
+                        t = agui.UILabel(
+                            text=sline,
+                            x=x_pos,
+                            y=y_pos,
+                            font_size=30,
+                            text_color=self.attributes.character_text_colour,
+                            font_name=self.FONT_NAME,
+                            anchor_x=self.attributes.text_anchor
+                        )
+                        line_counter += 1
+
+                        self.texts_widget.add(t)
+
+                self.add(self.texts_widget)
+
+    class InGameManager(agui.UIManager):
+        def __init__(self, FONT_NAME, window: Window):
+            super().__init__(window)
+            self.window = window
+            self.BUTTONS_STYLE = {
+                "normal": agui.UIFlatButton.UIStyle(
+                    bg=(0, 0, 0, 0),
+                    font_color=(255, 255, 255, 255),
+                    font_name=FONT_NAME,
+                    border=(0, 0, 0, 0),
+                    border_width=0,
+                    font_size=20
+                ),
+                "hover": agui.UIFlatButton.UIStyle(
+                    bg=(0, 0, 0, 0),
+                    font_color=(128, 128, 128, 255),
+                    border=(0, 0, 0, 0),
+                    border_width=0,
+                    font_name = FONT_NAME,
+                    font_size=20
+                ),
+                "press": agui.UIFlatButton.UIStyle(
+                    bg=(0, 0, 0, 0),
+                    font_color=(210, 210, 210, 255),
+                    border=(0, 0, 0, 0),
+                    border_width=0,
+                    font_name = FONT_NAME,
+                    font_size=20
+                ),
+                "disabled": agui.UIFlatButton.UIStyle(font_color=(90, 90, 90, 180)),
+            }
+            self._create_buttons()
+
+        def _create_buttons(self):
+            hbox = agui.UIBoxLayout(
+                align="center",
+                justify="center",
+                y=self.window.height * 0.02,
+                width=self.window.width,
+                vertical=False,
+                spacing=50
+            )
+            hbox.width = self.window.width
+
+            button_width = 60
+
+            self.return_button = agui.UIFlatButton(
+                text="←",
+                style=self.BUTTONS_STYLE,
+                width=button_width
+            )
+            hbox.add(self.return_button)
+
+            self.skip_button = agui.UIFlatButton(
+                text=">>",
+                style=self.BUTTONS_STYLE,
+                width=button_width
+            )
+            hbox.add(self.skip_button)
+
+            self.settings_button = agui.UIFlatButton(
+                text="☰",
+                style=self.BUTTONS_STYLE,
+                width=button_width
+            )
+            hbox.add(self.settings_button)
+
+            ui_anchor_layout = agui.UIAnchorLayout()
+            ui_anchor_layout.add(child=hbox, anchor_x="center_x", anchor_y="bottom")
+
+            self.add(ui_anchor_layout)
