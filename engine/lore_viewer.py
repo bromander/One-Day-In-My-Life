@@ -1,6 +1,8 @@
 import os
 import re
 import ast
+import copy
+from arcade import Sprite
 from typing import Optional
 from .files_manager import FilesManager
 from .Exceptions import MainLabelNotFoundError
@@ -308,3 +310,110 @@ class Wwl:
         else:
             lore = self._get_lore()[self.pose if pos_offset is None else self.pose + pos_offset]
             return lore
+
+class LoreLogger:
+    def __init__(self, main_self, wwl: Wwl):
+        self.main_self =  main_self
+        self.wwl = wwl
+        self.logs = []
+
+    def _snapshot_scene(self):
+        snapshot = []
+        for layer, layer_data in self.main_self.scene.data.items():
+            if layer == "fade" or layer == "gui":
+                continue
+
+            for name, sprite in self.main_self.scene[layer].items():
+                sprite: Sprite = sprite
+
+                data = {
+                    "name" : name,
+                    "layer" : layer,
+                    "pos" : sprite.position,
+                    "size" : sprite.size,
+                    "angle" : sprite.angle,
+                    "alpha" : sprite.alpha,
+                    "texture_name" : sprite.texture.file_path.name,
+                    "visible" : sprite.visible,
+                }
+
+                snapshot.append(data)
+        return snapshot
+
+    def _load_snapshot_scene(self, snapshot: list[dict]):
+        for i in snapshot:
+            sprite = self.main_self.scene.get_sprite(i["texture_name"])
+            print(i["texture_name"], sprite)
+            sprite.size, sprite.angle, sprite.visible, sprite.position, sprite.alpha = i["size"], i["angle"], i["visible"], i["pos"], i["alpha"]
+            self.main_self.scene.add_sprite(i["layer"], i["name"], sprite)
+
+    def _snapshot_namespace(self):
+        for name, value in self.main_self.NAMESPACE.NAMESPACE.items():
+            variables = {}
+            functions = {}
+            classes = {}
+
+            if name.startswith('__') and name.endswith('__'):
+                continue
+
+            if isinstance(value, type):
+                classes[name] = copy.copy(value)
+            elif callable(value):
+                functions[name] = copy.copy(value)
+            else:
+                variables[name] = copy.copy(value)
+
+            return variables, functions, classes
+
+
+
+
+    def create_log(self):
+
+        scene_snapshot = list(self._snapshot_scene())
+        namespace = copy.copy(self.main_self.NAMESPACE.NAMESPACE)
+
+        active_generators = copy.copy(self.main_self.actions.active_generators)
+        attributes = copy.copy(self.main_self.attributes)
+        lore_pos = copy.deepcopy(self.wwl.pose)
+        lore_label = copy.deepcopy(self.wwl.label)
+        lore_file = copy.deepcopy(self.wwl.now_file)
+
+        self.logs.append({
+            "scene_snapshot" : scene_snapshot,
+            "namespace": namespace,
+            "active_generators" : active_generators,
+            "attributes" : {
+                "character_name" : copy.copy(attributes.character_name),
+                "character_text" : copy.copy(attributes.character_text),
+                "character_name_colour" : copy.copy(attributes.character_name_colour),
+                "character_text_colour" : copy.copy(attributes.character_text_colour),
+                "text_anchor" : copy.copy(attributes.text_anchor)
+            },
+            "lore_pos" : lore_pos, "lore_label" : lore_label, "lore_file" : lore_file
+        })
+
+    def return_back(self,  event=None):
+        data = dict(self.logs[-2])
+        self.main_self.actions.active_generators.clear()
+        del self.logs[-1]
+        self.wwl._get_lore()
+        self._load_snapshot_scene(data["scene_snapshot"])
+        self.main_self.NAMESPACE.NAMESPACE = data["namespace"]
+
+        self.main_self.actions.active_generators = copy.copy(data["active_generators"])
+
+        gens = self.main_self.actions.active_generators
+        while gens.active_generators_consistently and gens.active_generators_together:
+            gens.update(1 / 1000)
+
+        self.wwl.pose, self.wwl.label, self.wwl.now_file = data["lore_pos"], data["lore_label"], data["lore_file"]
+
+        self.main_self.attributes.text_anchor = data["attributes"]["text_anchor"]
+        self.main_self.attributes.character_name = data["attributes"]["character_name"]
+        self.main_self.attributes.character_text = data["attributes"]["character_text"]
+        self.main_self.attributes.character_name_colour = data["attributes"]["character_name_colour"]
+        self.main_self.attributes.character_text_colour = data["attributes"]["character_text_colour"]
+
+
+

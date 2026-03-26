@@ -9,7 +9,7 @@ from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
 class Namespace:
-    def __init__(self, GameView, ListCharacters, Wwl, AudioManager, Wait_trigger, SavesManager, Views) -> None:
+    def __init__(self, GameView, Views, ListCharacters, Wwl, AudioManager, Wait_trigger, SavesManager) -> None:
         """
         Отвечает за работу со всеми функциями, используемыми в сценариях.
         :param GameView: Объект класса GameView
@@ -25,7 +25,6 @@ class Namespace:
         self.AudioManager = AudioManager
         self.Wait_trigger = Wait_trigger
         self.SavesManager = SavesManager
-        self.Views = Views
 
         self.NAMESPACE = {
             "Data" : self.Data(GameView, ListCharacters, Wwl, AudioManager),
