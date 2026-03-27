@@ -51,9 +51,10 @@ class Character:
         def find_sounds():
             sounds = []
             if char_id is not None:
-                for f in os.listdir(f"./game/sounds/voice/{char_id}"):
-                    if os.path.isfile(os.path.join(f"./game/sounds/voice/{char_id}", f)):
-                        sounds.append(load_sound(f"./game/sounds/voice/{char_id}/{f}"))
+                if os.path.isfile((f"./game/sounds/voice/{char_id}")):
+                    for f in os.listdir(f"./game/sounds/voice/{char_id}"):
+                        if os.path.isfile(os.path.join(f"./game/sounds/voice/{char_id}", f)):
+                            sounds.append(load_sound(f"./game/sounds/voice/{char_id}/{f}"))
             self.talk_sounds = sounds
             return sounds
 
@@ -278,16 +279,10 @@ class ListCharacters:
         )
 
         self.characters = {
-            "j" : _Character("Джопа", "j", name_colour="#D2691E", colour="#CD853F"),
-            "aj": _Character("АнтиДжек", "aj", name_colour="#3f87cd", c_scale=0.5, colour="#2167C4"),
-            "sj": _Character("ГлупоДжек", "sj", name_colour="#D1D0CF", c_scale=0.5, colour="#D4D4D4"),
             "narr" : _Character(" ", None, text_anch="center"),
-
-            "masorubka" : _Character("Мясорубка/", char_id="masorubka", name_colour="#FFB6C1", colour="#FFB6C1", c_scale=0.8),
-            "edwin" : _Character("Эдвин/", char_id="edwin", name_colour="#FFDEAD", colour="#FFDEAD", c_scale=0.8),
-            "rony" : _Character("Рони/", char_id="rony", name_colour="#c9976c", colour="#c9976c", c_scale=0.8),
-            "bromand" : _Character("Броманд/", char_id="bromand", name_colour="#7FFF00", colour="#7FFF00", c_scale=0.8),
-            "uni" : _Character("Юни/", char_id="uni", name_colour="#00FF7F", colour="#00FF7F", c_scale=0.8)
+            "unk1" : _Character("???", None, text_anch="center", colour="#f0c4c0"),
+            "unk2" : _Character("???", None, text_anch="center", colour="#d5dbf0"),
+            "shak" : _Character("Жаклин", "shak", "#f5a889", "#f0855b")
         }
 
     def __getitem__(self, item) -> dict[str : Character]:

@@ -299,8 +299,8 @@ class Views:
 
             self.in_game_manager = Managers.InGameManager(FONT_NAME, self.window)
             self.in_game_manager.settings_button.on_click = self.settings_manager.turn_visibl
-            self.in_game_manager.return_button.on_click = self.LoreLogger.return_back
-            self.in_game_manager.disable()
+            #self.in_game_manager.return_button.on_click = self.LoreLogger.return_back
+            self.in_game_manager.enable()
 
             self.talk_manager(clicked=False)
 

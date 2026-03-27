@@ -1,4 +1,5 @@
 import sys
+import time, datetime
 from io import StringIO
 import re
 from typing import Optional, Literal, Tuple, Union
@@ -134,6 +135,42 @@ class Namespace:
             self.Wwl = Wwl
             self.AudioManager = AudioManager
             self.PIL = PIL
+
+        def format_time_seconds(self):
+            seconds = time.time()
+
+            dt = datetime.datetime.fromtimestamp(seconds)
+
+            days = {
+                0: "понедельник",
+                1: "вторник",
+                2: "среда",
+                3: "четверг",
+                4: "пятница",
+                5: "суббота",
+                6: "воскресенье"
+            }
+
+            months = {
+                1: "января",
+                2: "февраля",
+                3: "марта",
+                4: "апреля",
+                5: "мая",
+                6: "июня",
+                7: "июля",
+                8: "августа",
+                9: "сентября",
+                10: "октября",
+                11: "ноября",
+                12: "декабря"
+            }
+
+            weekday = days[dt.weekday()]
+            day = dt.day
+            month = months[dt.month]
+
+            return weekday, day, month
 
     class Scene:
         def __init__(self, Game_view, ListCharacters, Wwl, Wait_trigger, sm: Saves_manager) -> None:
@@ -619,7 +656,7 @@ class Namespace:
             text = re.split(pattern, str(text))
             for e, i in enumerate(text):
                 if i.startswith("[") and i.endswith("]"):
-                    text[e] = self.get(i.strip("[]"), "NONE")
+                    text[e] = str(self.get(i.strip("[]"), "NONE"))
             text = "".join(text).replace("\\\\", "\\")
             return text
         gen = self.ListCharacters[character].talk(format_text(text))
