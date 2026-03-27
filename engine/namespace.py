@@ -50,7 +50,11 @@ class Namespace:
         Выполняет код в своём окружении
         :param command: Строка с кодом
         """
-        exec(command, self.NAMESPACE)
+        try:
+            exec(command, self.NAMESPACE)
+        except SyntaxError as e:
+            raise SyntaxError(
+                f"{e}:\n{"\n    ".join([str(num) + " " + str(i) for num, i in enumerate(str(command).split("\n"))])}")
         old_ret = self.returning
         self.returning = None
         return old_ret
