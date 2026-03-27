@@ -178,6 +178,7 @@ class Views:
             self.splash_manager = agui.UIManager()
 
             self.waiting_dialogue = Waiter(True)
+            self.waiting_autoskip = Waiter(False)
 
             self.last_text_skip = time.time()
 
@@ -297,10 +298,12 @@ class Views:
 
             self.LoreLogger = LoreLogger(self, wwl)
 
-            self.in_game_manager = Managers.InGameManager(FONT_NAME, self.window)
+            self.in_game_manager = Managers.InGameManager(FONT_NAME, self.window, autoskip_waiter = self.waiting_autoskip)
             self.in_game_manager.settings_button.on_click = self.settings_manager.turn_visibl
-            #self.in_game_manager.return_button.on_click = self.LoreLogger.return_back
+            self.in_game_manager.return_button.on_click = self.LoreLogger.return_back
+            self.in_game_manager.skip_button.on_click = lambda event=None: self.waiting_autoskip.switch()
             self.in_game_manager.enable()
+            #self.in_game_manager.return_button.on_click = self.LoreLogger.return_back
 
             self.talk_manager(clicked=False)
 

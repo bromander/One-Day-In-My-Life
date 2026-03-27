@@ -839,13 +839,14 @@ class Managers:
                 self.add(self.texts_widget)
 
     class InGameManager(agui.UIManager):
-        def __init__(self, FONT_NAME, window: Window):
+        def __init__(self, FONT_NAME, window: Window, autoskip_waiter):
             super().__init__(window)
             self.window = window
+            self.autoskip_waiter = autoskip_waiter
             self.BUTTONS_STYLE = {
                 "normal": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
-                    font_color=(255, 255, 255, 255),
+                    font_color=(255, 255, 255, 200),
                     font_name=FONT_NAME,
                     border=(0, 0, 0, 0),
                     border_width=0,
@@ -853,7 +854,7 @@ class Managers:
                 ),
                 "hover": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
-                    font_color=(128, 128, 128, 255),
+                    font_color=(128, 128, 128, 200),
                     border=(0, 0, 0, 0),
                     border_width=0,
                     font_name = FONT_NAME,
@@ -861,7 +862,7 @@ class Managers:
                 ),
                 "press": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
-                    font_color=(210, 210, 210, 255),
+                    font_color=(210, 210, 210, 200),
                     border=(0, 0, 0, 0),
                     border_width=0,
                     font_name = FONT_NAME,
@@ -869,6 +870,35 @@ class Managers:
                 ),
                 "disabled": agui.UIFlatButton.UIStyle(font_color=(90, 90, 90, 180)),
             }
+            self.BUTTONS_STYLE_ON_STATE = {
+                "normal": agui.UIFlatButton.UIStyle(
+                    bg=(0, 0, 0, 0),
+                    font_color=(87, 191, 255, 255),
+                    font_name=FONT_NAME,
+                    border=(255, 255, 255, 0),
+                    border_width=0,
+                    font_size=20
+                ),
+                "hover": agui.UIFlatButton.UIStyle(
+                    bg=(0, 0, 0, 0),
+                    font_color=(128, 128, 128, 255),
+                    border=(255, 255, 255, 0),
+                    border_width=0,
+                    font_name=FONT_NAME,
+                    font_size=20
+                ),
+                "press": agui.UIFlatButton.UIStyle(
+                    bg=(0, 0, 0, 0),
+                    font_color=(210, 210, 210, 255),
+                    border=(255, 255, 255, 0),
+                    border_width=0,
+                    font_name=FONT_NAME,
+                    font_size=20
+                ),
+                "disabled": agui.UIFlatButton.UIStyle(font_color=(90, 90, 90, 180)),
+            }
+
+
             self._create_buttons()
 
         def _create_buttons(self):
@@ -884,12 +914,12 @@ class Managers:
 
             button_width = 60
 
-            #self.return_button = agui.UIFlatButton(
-            #    text="←",
-            #    style=self.BUTTONS_STYLE,
-            #    width=button_width
-            #)
-            #hbox.add(self.return_button)
+            self.return_button = agui.UIFlatButton(
+                text="←",
+                style=self.BUTTONS_STYLE,
+                width=button_width
+            )
+            hbox.add(self.return_button)
 
             self.skip_button = agui.UIFlatButton(
                 text=">>",
@@ -909,6 +939,15 @@ class Managers:
             ui_anchor_layout.add(child=hbox, anchor_x="center_x", anchor_y="bottom")
 
             self.add(ui_anchor_layout)
+
+        def on_update(self, time_delta):
+            super().on_update(time_delta)
+
+            if hasattr(self, 'skip_button'):
+                if self.autoskip_waiter:
+                    self.skip_button.style = self.BUTTONS_STYLE_ON_STATE
+                else:
+                    self.skip_button.style = self.BUTTONS_STYLE
 
 
 class MovableBlock(UISpriteWidget):
