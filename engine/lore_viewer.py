@@ -373,6 +373,11 @@ class LoreLogger:
         scene_snapshot = list(self._snapshot_scene())
         namespace = copy.copy(self.main_self.NAMESPACE.NAMESPACE)
 
+        gens = copy.copy(self.main_self.actions.active_generators.active_generators_consistently)
+        for i in self.main_self.actions.active_generators.active_generators_consistently:
+            if i[0] == 'talk':
+                gens.remove(i)
+
         active_generators = copy.copy(self.main_self.actions.active_generators)
         attributes = copy.copy(self.main_self.attributes)
         lore_pos = copy.deepcopy(self.wwl.pose)
@@ -393,27 +398,32 @@ class LoreLogger:
             "lore_pos" : lore_pos, "lore_label" : lore_label, "lore_file" : lore_file
         })
 
-    def return_back(self,  event=None):
-        data = dict(self.logs[-2])
-        self.main_self.actions.active_generators.clear()
-        del self.logs[-1]
-        self.wwl._get_lore()
-        self._load_snapshot_scene(data["scene_snapshot"])
-        self.main_self.NAMESPACE.NAMESPACE = data["namespace"]
+    def return_back(self, event=None):
+        try:
+            data = dict(self.logs[-2])
+            self.main_self.actions.active_generators.clear()
+            del self.logs[-1]
+            self.wwl._get_lore()
+            self._load_snapshot_scene(data["scene_snapshot"])
+            self.main_self.NAMESPACE.NAMESPACE = data["namespace"]
 
-        self.main_self.actions.active_generators = copy.copy(data["active_generators"])
+            self.main_self.actions.active_generators = copy.copy(data["active_generators"])
 
-        gens = self.main_self.actions.active_generators
-        while gens.active_generators_consistently and gens.active_generators_together:
-            gens.update(1 / 1000)
+            gens = self.main_self.actions.active_generators
+            while gens.active_generators_consistently or gens.active_generators_together:
+                gens.update(1 / 1000)
 
-        self.wwl.pose, self.wwl.label, self.wwl.now_file = data["lore_pos"], data["lore_label"], data["lore_file"]
+            self.wwl.pose, self.wwl.label, self.wwl.now_file = data["lore_pos"], data["lore_label"], data["lore_file"]
 
-        self.main_self.attributes.text_anchor = data["attributes"]["text_anchor"]
-        self.main_self.attributes.character_name = data["attributes"]["character_name"]
-        self.main_self.attributes.character_text = data["attributes"]["character_text"]
-        self.main_self.attributes.character_name_colour = data["attributes"]["character_name_colour"]
-        self.main_self.attributes.character_text_colour = data["attributes"]["character_text_colour"]
+            self.main_self.attributes.text_anchor = data["attributes"]["text_anchor"]
+            self.main_self.attributes.character_name = data["attributes"]["character_name"]
+            self.main_self.attributes.character_text = data["attributes"]["character_text"]
+            self.main_self.attributes.character_name_colour = data["attributes"]["character_name_colour"]
+            self.main_self.attributes.character_text_colour = data["attributes"]["character_text_colour"]
+
+            self.main_self.talk_manager(-1, clicked=True)
+        except IndexError:
+            pass
 
 
 

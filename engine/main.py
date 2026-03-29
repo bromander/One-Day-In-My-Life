@@ -1,17 +1,21 @@
 import threading
 import arcade
+from arcade import SpriteList
 from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
 from typing import Optional, Literal, Tuple, Union
 import time
+import pyglet
+import ctypes
+from ctypes import wintypes
 import re
 import os
 import random
 import json
 import uuid
-from .gui import UISliderVertical, Managers, UISliderSavesUpdater
+from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText
 from .scene import Scene
 from .lore_viewer import Wwl, LoreLogger
 from .waiter import Waiter
@@ -63,6 +67,7 @@ class Views:
     class MainWindow(arcade.Window):
         def __init__(self, width, height, title, resizable):
             super().__init__(width=width, height=height, title=title, resizable=resizable)
+            self.GameView: Optional[Views.GameView] = None
 
         def on_close(self) -> None:
             try:
@@ -341,7 +346,7 @@ class Views:
                     if gen[0][0] != 'talk':
                         return
                     else:
-                        if time.time() - self.last_text_skip < 0.01:
+                        if time.time() - self.last_text_skip < 0.05:
                             return
                         else:
                             self.last_text_skip = time.time()
@@ -443,11 +448,15 @@ class Views:
             self.actions.update(delta_time)
 
             self.characters_texts_manager.update(delta_time)
+
+            if self.waiting_autoskip:
+                self.talk_manager(clicked=True)
             
             super().on_update(delta_time)
 
         def on_key_press(self, key, modifiers) -> None:
             if (key == arcade.key.SPACE or key == arcade.key.ENTER) and not self.settings_manager.waiting_settings:
+                self.waiting_autoskip.off()
                 self.talk_manager()
             if key == arcade.key.S or key == arcade.key.ESCAPE:
                 self.settings_manager.turn_visibl()
@@ -475,6 +484,7 @@ class Views:
         def on_mouse_release(self, x, y, button, modifiers) -> None:
             if (int(button) == 1) and not self.settings_manager.waiting_settings:
                 if len(list(self.in_game_manager.get_widgets_at((x, y)))) == 1: # Проверяем, нажали ли мы на какую-нибудь кнопку.
+                    self.waiting_autoskip.off()
                     self.talk_manager()
 
     class GameMenu(Main_template):
@@ -506,6 +516,8 @@ class Views:
             self.show_main_windows()
             self.is_loading = False
             self.is_mouse_pressed = False
+
+            self.vokhanalia = False
 
             if show_lc:
                 self.show_ls()
@@ -552,6 +564,117 @@ class Views:
             arcade.draw_sprite(self.why)
             super().on_draw()
 
+        def _start_vokhanalia(self):
+
+            class Vokhanalia_view(arcade.View):
+
+                def __init__(self, text):
+                    super().__init__()
+
+                    self.text = text
+
+                    file = "./game/images/gui/767e4a851516f55e2471809744295141.jpg"
+                    self.file = arcade.Sprite(file)
+                    self.background_color = arcade.color.BLACK
+                    self.lst = arcade.SpriteList()
+                    self.window.center_window()
+
+                    self.width_const, self.height_const =  self.width, self.height
+
+                    self.talker = arcade.Text(
+                        text.text,
+                        self.window.width / 2, self.window.height / 2,
+                        color=arcade.color.WHITE,
+                        multiline=True,
+                        width=self.window.width-100,
+                        font_size=30,
+                        anchor_x="center",
+                        anchor_y="center",
+                        align="center"
+                    )
+                    self.window.center_window()
+                    self.last_update = time.time()
+                    self.last_update_eye = time.time()
+
+                def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
+                    if button == 1:
+                        self.text.next()
+
+
+                def on_update(self, delta_time: float) -> bool | None:
+                    if time.time() - self.last_update < 0.1:
+                        return None
+
+                    screen_width, screen_height = arcade.get_display_size()
+                    window_width, window_height = self.window.get_framebuffer_size()
+                    self.window.set_location(int((screen_width - window_width) * random.random()), int((screen_height - window_height) * random.random()))
+
+                    self.window.width = self.width_const + random.randint(-50, 50)
+                    self.window.height = self.height_const + random.randint(-50, 50)
+
+                    self.last_update = time.time()
+
+                    self.window.center_window()
+
+                def on_draw(self) -> bool | None:
+                    self.clear()
+                    self.lst.clear()
+
+                    self.talker.position = (
+                    self.center_x + random.randint(-2, 2), self.center_y + random.randint(-2, 2))
+                    self.talker.text = self.text.text
+
+                    if time.time() - self.last_update_eye > 0.1:
+                        for i in range(10):
+                            self.last_update_eye = time.time()
+                            file = arcade.Sprite(self.file.texture)
+
+                            file.center_x = random.randint(0, self.window.width)
+                            file.center_y = random.randint(0, self.window.height)
+                            if random.random() >= 0.5:
+                                file.scale_x = random.random() * random.randint(1, 30)/10
+                            else:
+                                file.scale_y = random.random() * random.randint(1, 30)/10
+                            self.lst.append(file)
+
+
+
+                    self.lst.draw()
+                    self.talker.draw()
+
+            def vokhanalia():
+                self.window.set_visible(False)
+                am.play_music("game/music/Lucid Blocks OST： Corner.mp3", streaming=True)
+
+                class VokhanaliaText():
+                    def __init__(self):
+                        def gen():
+                            with open("./game/other/thinking.json", "r", encoding="UTF-8") as f:
+                                f = json.load(f)
+                            for i in f:
+                                self.text = i
+                                yield
+                            arcade.exit()
+
+                        self.text = "..."
+                        self.gen = gen()
+
+                    def next(self):
+                        next(self.gen)
+
+                text = VokhanaliaText()
+                self.VokhanaliaText = text
+                self.vokhanalia = True
+
+                for  i in range(2):
+                    window = arcade.open_window(1000, 600, window_title="Почему?", resizable=False, style="borderless")
+                    window.center_window()
+                    view = Vokhanalia_view(text)
+                    window.show_view(view)
+
+            self.loading_generator = vokhanalia()
+
+
         def on_update(self, delta_time) -> None:
             if not self.is_loading:
                 self.manager.enable()
@@ -573,7 +696,7 @@ class Views:
 
         def on_key_press(self, key: int, modifiers: int) -> None:
             if (key == arcade.key.L and modifiers & arcade.key.MOD_SHIFT) and not self.is_loading:
-                self.why.alpha = 255
+                self._start_vokhanalia()
                 self.is_loading  = True
 
         def show_main_windows(self) -> None:
@@ -585,7 +708,11 @@ class Views:
                     self.window.size = (1920, 1080)
                     self.window.set_fullscreen(True)
                     self.manager.disable()
+                    class pon:
+                        def __init__(self):
+                            pass
                     game = Views.GameView()
+                    self.window.GameView = game
                     self.window.show_view(game)
 
                 def open_saves(event=None):
@@ -601,10 +728,12 @@ class Views:
                     text_color=arcade.color.MIDNIGHT_BLUE,
                     font_name=FONT_NAME,
                     align="center",
-                    width=self.window.width,
-                    y=self.window.height * 0.7,
-                    font_size=70
+                    width=self.window.width*0.9,
+                    multiline=True,
+                    font_size=40
                 )
+                main_lebel.center_y = self.height * 0.7
+                main_lebel.center_x = self.width * 0.5
                 self.manager.add(main_lebel)
 
                 start_button = agui.UIFlatButton(
@@ -640,7 +769,8 @@ class Views:
                 self.v_box.add(exit_button)
 
                 ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-                ui_anchor_layout.add(child=self.v_box, anchor_x="center_x", anchor_y="center_y")
+                ui_anchor_layout.add(child=self.v_box)
+                ui_anchor_layout.center_y = self.window.height * -0.2
 
                 self.manager.add(ui_anchor_layout)
 
@@ -788,6 +918,11 @@ class Views:
                     game = Views.GameMenu(False)
                     self.window.show_view(game)
 
+                def show_fps(event=None):
+                    sm.Volume.set_other("show_fps", not sm.Volume.get_other("show_fps"))
+                    sm.Volume._save_data()
+
+
                 return_button = agui.UIFlatButton(
                     text="Назад",
                     width=300,
@@ -805,7 +940,7 @@ class Views:
                     height=50,
                     style=STYLE_DEFAULT_BUTTON
                 )
-                FPS_check_box.on_click = lambda event=None: sm.Volume.set_other("show_fps", not sm.Volume.get_other("show_fps"))
+                FPS_check_box.on_click = show_fps
                 FPS_check_box.center_x = self.window.center_x
                 FPS_check_box.center_y = self.window.height * 0.7
                 self.manager.add(FPS_check_box)
@@ -919,6 +1054,193 @@ class Views:
             create_menu_buttons()
 
 
+    class ShopCollecting(Main_template):
+        def __init__(self, session_id: str, NAMESPACE, actions):
+            super().__init__()
+
+
+            def return_back(event=None):
+                self.window.show_view(self.window.GameView)
+
+            NAMESPACE.Define.collected_items = {}
+
+            self.window.set_vsync(True)
+            self.scene = scene
+            self.actions = actions
+            self.NAMESPACE = NAMESPACE
+
+            self.layers = []
+            self.layers.append({
+                'sprite': scene.get_sprite("shop_shelf_bg_1.png"),
+                'speed': 0.0,
+                'original_x': self.width // 2,
+                'original_y': self.height // 2
+            })
+            self.layers.append({
+                'sprite': scene.get_sprite("shop_shelf_bg_1.png"),
+                'speed': 0.15,
+                'original_x': self.width // 2,
+                'original_y': self.height // 2
+            })
+            self.layers.append({
+                'sprite': scene.get_sprite("shop_shelf_bg_2.png"),
+                'speed': 0.3,
+                'original_x': self.width // 2,
+                'original_y': self.height // 2
+            })
+
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager.enable()
+
+            width = self.width
+            height = self.height
+            items = [
+                MovableBlockFalling(scene.get_texture("Boobles.png"), width * 0.1, height * 0.33),
+                MovableBlockFalling(scene.get_texture("Boobles.png"), width * 0.15, height * 0.33),
+                MovableBlockFalling(scene.get_texture("Boobles.png"), width * 0.2, height * 0.33),
+                MovableBlockFalling(scene.get_texture("Boobles.png"), width * 0.25, height * 0.33),
+                MovableBlockFalling(scene.get_texture("Boobles.png"), width * 0.3, height * 0.33),
+
+                MovableBlockFalling(scene.get_texture("crisps.png"), width * 0.48, height * 0.33),
+                MovableBlockFalling(scene.get_texture("crisps.png"), width * 0.45, height * 0.33),
+                MovableBlockFalling(scene.get_texture("crisps.png"), width * 0.5, height * 0.33),
+
+                MovableBlockFalling(scene.get_texture("pineapple.png"), width * 0.73, height * 0.30),
+
+                MovableBlockFalling(scene.get_texture("puki.png"), width * 0.1, height * 0.84),
+                MovableBlockFalling(scene.get_texture("puki.png"), width * 0.15, height * 0.84),
+                MovableBlockFalling(scene.get_texture("puki.png"), width * 0.2, height * 0.84),
+                MovableBlockFalling(scene.get_texture("puki.png"), width * 0.25, height * 0.84),
+
+                MovableBlockFalling(scene.get_texture("cheremsha.png"), width * 0.4, height * 0.79),
+                MovableBlockFalling(scene.get_texture("cheremsha.png"), width * 0.4, height * 0.79),
+                MovableBlockFalling(scene.get_texture("cheremsha.png"), width * 0.4, height * 0.79),
+
+                MovableBlockFalling(scene.get_texture("cheremsha.png"), width * 0.55, height * 0.79),
+                MovableBlockFalling(scene.get_texture("cheremsha.png"), width * 0.55, height * 0.79),
+                MovableBlockFalling(scene.get_texture("cheremsha.png"), width * 0.55, height * 0.79),
+
+                MovableBlockFalling(scene.get_texture("meat.png"), width * 0.7, height * 0.79),
+                MovableBlockFalling(scene.get_texture("meat.png"), width * 0.7, height * 0.79),
+                MovableBlockFalling(scene.get_texture("meat.png"), width * 0.7, height * 0.79),
+
+                MovableBlockFalling(scene.get_texture("milk.png"), width * 0.91, height * 0.79),
+                MovableBlockFalling(scene.get_texture("milk.png"), width * 0.91, height * 0.79)
+
+            ]
+            if random.random() > 0.9:
+                items.append(MovableBlockFalling(scene.get_texture("penis.png"), width * 0.90, height * 0.30))
+            else:
+                items.append(MovableBlockFalling(scene.get_texture("penis_bread.png"), width * 0.93, height * 0.30))
+
+            self.items_manager = arcade.SpriteList()
+            random.shuffle(items)
+            for i in items:
+                self.layers.append(
+                    {
+                        'sprite': i,
+                        'speed': 0.4,
+                        'original_x': i.center_x,
+                        'original_y': i.center_y
+                    }
+                )
+                self.items_manager.append(i)
+
+            self.on_mouse_motion(self.window._mouse_x, self.window._mouse_y, 0, 0)
+
+            self.table = {
+                "Boobles.png" : ("+ Лашчк",  (218, 148, 111)),
+                "cheremsha.png": ("+ Черемша",  (149, 177, 125)),
+                "crisps.png": ("+ Чипсеке",  (103, 82, 64)),
+                "meat.png": ("+ Лисья печень",  (103, 82, 64)),
+                "milk.png": ("+ Молочк Эпштейна",  (189, 192, 212)),
+                "penis.png": ("+ Дидлок",  (159, 100, 118)),
+                "penis_bread.png": ("+ Хлеб 100%",  (199, 189, 181)),
+                "pineapple.png": ("+ Дикий ананас",  (210, 184, 138)),
+                "puki.png": ("+ Пуки",  (240, 234, 203))
+            }
+
+            self.notifiers = []
+
+
+            self.return_button = agui.UIFlatButton(text="Продолжить", x=self.width*0.90, y=self.height*0.05, style=STYLE_DEFAULT_BUTTON, width=200)
+            self.return_button.on_click = return_back
+            self.return_button_manager = agui.UIManager()
+            self.return_button_manager.add(self.return_button)
+            self.return_button_manager.enable()
+
+
+        def on_draw(self) -> None:
+            self.clear()
+            self.scene.draw()
+            for layer in self.layers:
+                arcade.draw_sprite(layer['sprite'])
+            for i in self.notifiers:
+                if i.visible:
+                    i.draw()
+            self.return_button_manager.draw()
+            self.settings_manager.draw()
+
+            super().on_draw()
+
+        def plus_item(self, name):
+            if name in self.NAMESPACE.Define.collected_items:
+                self.NAMESPACE.Define.collected_items[name] += 1
+            else:
+                self.NAMESPACE.Define.collected_items[name] = 1
+
+        def on_update(self, delta_time: float) -> None:
+            super().on_update(delta_time)
+            self.scene.update()
+            if len(list(self.return_button_manager.get_widgets_at((self.window._mouse_x, self.window._mouse_y)))) == 0:
+                self.items_manager.update(delta_time, self.window.mouse.data)
+            for i in self.notifiers:
+                i.update(delta_time)
+
+            for e, i in enumerate(self.items_manager):
+                if i.clicked:
+                    self.items_manager.append(self.items_manager.pop(e))
+
+                if i.center_y < -30:
+                    self.plus_item(i.texture.file_path.name)
+                    print(self.NAMESPACE.Define.collected_items)
+                    text_data = self.table[i.texture.file_path.name]
+                    text: arcade.Text = ItemsNotifText(text_data[0], i.center_x, i.center_y, text_data[1], FONT_NAME)
+                    self.notifiers.append(text)
+                    self.items_manager.remove(i)
+                    i.kill()
+                    del i
+
+        def on_key_press(self, key: int, modifiers: int) -> bool | None:
+            if key == arcade.key.S or key == arcade.key.ESCAPE:
+                self.settings_manager.turn_visibl()
+
+        def _move_parallax(self,layer, x, y):
+            normalized_x = (x - self.width // 2) / (self.width // 2)
+            normalized_y = (y - self.height // 2) / (self.height // 2)
+
+            max_offset_x = 100 * layer['speed']
+            max_offset_y = 60 * layer['speed']
+
+            layer['sprite'].center_x = layer['original_x'] + normalized_x * max_offset_x
+            layer['sprite'].center_y = layer['original_y'] + normalized_y * max_offset_y
+
+        def on_mouse_motion(self, x, y, dx, dy):
+
+            for e, layer in enumerate(self.layers):
+                if hasattr(layer['sprite'], "freeze"):
+                    if layer['sprite'].freeze:
+                        self._move_parallax(layer, x, y)
+                    else:
+                        self.layers.append(self.layers.pop(e))
+
+                else:
+                    self._move_parallax(layer, x, y)
+
+                if layer['sprite'].center_y < -30:
+                    self.layers.remove(layer)
+
+
 
 def init_file() -> None:
     """
@@ -929,6 +1251,7 @@ def init_file() -> None:
     timee = time.time()
     print("files_manager...")
     fm = FilesManager()
+    fm.load_assets(os.listdir("./game/images/moving_shop_assets"), "movable_shop_assets")
     print("Saves...")
     sm = Saves_manager()
     print("Audio manager...")

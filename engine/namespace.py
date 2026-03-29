@@ -548,9 +548,13 @@ class Namespace:
             self.Game_view = Game_view
             self.Views = Views
 
-        def call_view(self, view_name: str):
-            view = getattr(self.Views, view_name)()
-            self.Game_view.window.show_view(view)
+        def call_view(self, view_name: str, *args, **kwargs):
+            def call():
+                self.Game_view.waiting_autoskip.off()
+                view = getattr(self.Views, view_name)(*args, **kwargs)
+                self.Game_view.window.show_view(view)
+                yield
+            self.Game_view.actions.active_generators.add_generator("consistently", call(), "call_screen")
 
     class Audio:
         def __init__(self, Game_view, AudioManager) -> None:
@@ -661,7 +665,7 @@ class Namespace:
             for e, i in enumerate(text):
                 if i.startswith("[") and i.endswith("]"):
                     text[e] = str(self.get(i.strip("[]"), "NONE"))
-            text = "".join(text).replace("\\\\", "\\")
+            text = "".join(text).replace("\\\\", "\\").replace("\[", "[").replace("\]", "]")
             return text
         gen = self.ListCharacters[character].talk(format_text(text))
 

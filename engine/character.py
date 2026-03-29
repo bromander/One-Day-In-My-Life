@@ -157,6 +157,7 @@ class Character:
 
             while True:
                 self.attributes.text_anchor = self.text_anchor
+                self.attributes.character_name = self.c_name
 
                 i = -1
                 if not self.wait_trigger:
@@ -282,7 +283,9 @@ class ListCharacters:
             "narr" : _Character(" ", None, text_anch="center"),
             "unk1" : _Character("???", None, text_anch="center", colour="#f0c4c0"),
             "unk2" : _Character("???", None, text_anch="center", colour="#d5dbf0"),
-            "shak" : _Character("Жаклин", "shak", "#f5a889", "#f0855b")
+            "shak" : _Character("Жаклин", "shak", "#f5a889", "#f0855b"),
+            "cash" : _Character("Кассир", "shak", "#E0FFFF", "#7FFFD4"),
+            "ed" : _Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
         }
 
     def __getitem__(self, item) -> dict[str : Character]:

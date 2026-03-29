@@ -2,6 +2,8 @@ import arcade.gui as agui
 import warnings
 import json
 import random
+import math
+from PIL import Image, ImageFilter, ImageDraw
 from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider
 from typing import Optional, List, Tuple, Union
@@ -19,7 +21,8 @@ from arcade import (
     draw_polygon_filled, Texture,
     check_for_collision_with_list,
     sprite_list, get_sprites_at_point, get_sprites_in_rect,
-    SpriteList
+    SpriteList, draw_sprite, draw_lbwh_rectangle_outline, draw_rect_filled, LBWH,
+    Text, get_window
 )
 from arcade.gui.events import UIMousePressEvent, UIMouseReleaseEvent, UIMouseMovementEvent, UIMouseDragEvent, UIOnUpdateEvent
 from arcade.gui import (
@@ -34,7 +37,7 @@ from .saves import Saves_manager
 from .audio import AudioManager
 from .waiter import Waiter
 from .character import Attributes
-
+from .files_manager import FilesManager
 
 class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
     """A simple vertical slider.
@@ -726,8 +729,11 @@ class Managers:
                     self.disable()
 
     class CharactersTextManager(agui.UIManager):
+
+
         def __init__(self, attributes: Attributes, window: Window, FONT_NAME: str):
             super().__init__(window)
+
             self.attributes = attributes
             self.window = window
             self.FONT_NAME = FONT_NAME
@@ -738,25 +744,15 @@ class Managers:
             self.add(self.texts_widget)
 
             self.last_character_text = self.attributes.character_text.copy()
+            self.last_character_name = str(self.attributes.character_name)
 
             self._create_texts()
 
         def _create_texts(self):
 
-            def create_cname_text():
-                self.cname_text = agui.UILabel(
-                    self.attributes.character_name,
-                    x=self.window.width * 0.19,
-                    y=self.window.height * 0.255,
-                    font_size=40,
-                    multiline=True,
-                    width=1150,
-                    text_color=self.attributes.character_name_colour,
-                    font_name=self.FONT_NAME
-                )
-                self.add(self.cname_text)
+            self.cname_text = Managers.UiLabelCNameText(self.attributes, self.window, self.FONT_NAME)
+            self.add(self.cname_text)
 
-            create_cname_text()
 
         def update(self, time_delta):
             super().on_update(time_delta)
@@ -837,6 +833,15 @@ class Managers:
                         self.texts_widget.add(t)
 
                 self.add(self.texts_widget)
+
+            if self.attributes.character_name != self.last_character_name:
+                self.cname_text.text = self.attributes.character_name
+                self.cname_text.update_font(font_color=self.attributes.character_name_colour)
+
+            if repr(self.attributes.character_name).strip("'") in [" ", "", "\t", "\n", " "]:
+                self.cname_text.visible = None
+            else:
+                self.cname_text.visible = True
 
     class InGameManager(agui.UIManager):
         def __init__(self, FONT_NAME, window: Window, autoskip_waiter):
@@ -949,11 +954,67 @@ class Managers:
                 else:
                     self.skip_button.style = self.BUTTONS_STYLE
 
+    class UiLabelCNameText(agui.UILabel):
+        def __init__(self, attributes, window, FONT_NAME):
+            super().__init__(
+                attributes.character_name,
+                x=window.width * 0.19,
+                y=window.height * 0.27,
+                font_size=40,
+                text_color=attributes.character_name_colour,
+                font_name=FONT_NAME
+            )
+            self.attributes = attributes
+            self.img = Image.open("./game/images/gui/name_window.png")
+            self.last_text = attributes.character_name
+
+        def _alpha_smooth_img(self, image, r_start, r_end):
+            image = image.convert("RGBA")
+            width, height = image.size
+
+            cx, cy = width // 2, height // 2
+
+            alpha = Image.new("L", (width, height), 0)
+            pixels = alpha.load()
+
+            for y in range(height):
+                for x in range(width):
+                    # расстояние до центра
+                    dx = abs(x - cx)
+
+                    if dx <= r_start:
+                        a = 255
+                    elif dx >= r_end:
+                        a = 0
+                    else:
+                        t = (dx - r_start) / (r_end - r_start)
+                        a = int(255 * (1 - t))
+
+                    pixels[x, y] = a
+
+            image.putalpha(alpha)
+            return image
+
+
+        def do_render_base(self, surface: Surface):
+            surface.limit(LBWH(self.rect.left - 25, self.rect.bottom, self.rect.width + 50, self.rect.height))
+
+            if self.attributes != self.last_text:
+                try:
+                    self.last_text = str(self.attributes)
+                    self.img = self.img.resize((int(self.rect.size[0]+50), int(self.rect.size[1])))
+                    img = self._alpha_smooth_img(self.img, self.width/2, self.img.width/2)
+                    self._bg_tex = Texture(img)
+                except ValueError:
+                    self.last_text = str(self.attributes)
+
+            if self._bg_tex:
+                surface.draw_texture(x=0, y=0, width=self.width + 50, height=self.height, tex=self._bg_tex)
+
 
 class MovableBlock(UISpriteWidget):
     def __init__(self, sprite, center_x = 0, center_y = 0, size=50):
         super().__init__(sprite=sprite)
-        print(sprite)
         self.center_x = center_x
         self.center_y = center_y
         self.size = (size, size)
@@ -961,8 +1022,8 @@ class MovableBlock(UISpriteWidget):
         self.clicked = False
         self.disabled = False
 
-
     def on_event(self, event: UIEvent) -> bool | None:
+        super().on_event(event)
         if type(event) is UIMousePressEvent:
             if self.rect.left <= event.x <= self.rect.right and self.rect.bottom <= event.y <= self.rect.top:
                 if list(self.get_ui_manager().get_widgets_at((event.x, event.y), MovableBlock))[-1] is self:
@@ -973,6 +1034,7 @@ class MovableBlock(UISpriteWidget):
             #if self.clicked:
                 #self.scale(0.667)
             self.clicked = False
+
         if type(event) is UIOnUpdateEvent:
             if (self.get_ui_manager().window.width * 0.1 <= self.center_x <= self.get_ui_manager().window.width * 0.2
                     and self.get_ui_manager().window.height * 0.35 <= self.center_y <= self.get_ui_manager().window.height * 0.65):
@@ -986,4 +1048,71 @@ class MovableBlock(UISpriteWidget):
             if self.clicked:
                 self.center_x = self.get_ui_manager().window._mouse_x
                 self.center_y = self.get_ui_manager().window._mouse_y
+
+class MovableBlockFalling(Sprite):
+    def __init__(self, texture, center_x = 0, center_y = 0):
+        super().__init__(path_or_texture=texture)
+        self.center_x = int(center_x) + random.randint(-30, 30)
+        self.center_y = int(center_y) + random.randint(-15, 30)
+        self.scale_x = self.scale_x * random.randint(95, 105)/100
+        self.scale_y = self.scale_y * random.randint(95, 105) / 100
+        color_rand = random.randint(230, 255)
+        self.color = (
+            color_rand,
+            color_rand,
+            color_rand,
+            255
+        )
+        self.clicked = False
+        self.freeze = True
+        self.falling_speed = 0.0
+
+    def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
+
+        if 1 in args[0]:
+            if args[0][1]:
+                if self.left <= args[0]["x"] <= self.right and self.bottom <= args[0]["y"] <= self.top:
+                    list_children = []
+                    for i in self.sprite_lists:
+                        list_children = list_children + list(get_sprites_at_point((args[0]["x"], args[0]["y"]), i))
+                    if len(list_children) > 0:
+                        if list_children[-1] is self:
+                            self.clicked = True
+                            self.freeze = False
+                    else:
+                        self.clicked = True
+                        self.freeze = False
+
+            else:
+                self.clicked = False
+
+        if self.clicked:
+            self.center_x = args[0]["x"]
+            self.center_y = args[0]["y"]
+
+        if not self.clicked and not self.freeze:
+            self.falling_speed = self.falling_speed - 2500 * delta_time
+            self.center_y = self.center_y + self.falling_speed * delta_time
+        else:
+            self.falling_speed = 0.0
+
+
+class ItemsNotifText(Text):
+    def __init__(self, text, x, y, color, FONT_NAME):
+        super().__init__(text=text, x=x, y=y,  color=color, font_size=35, font_name=FONT_NAME)
+        self.velocity = 0.0
+        self.color = (
+            self.color[0] + 10,
+            self.color[1] + 10,
+            self.color[1] + 10,
+            225
+        )
+        self.bold = True
+
+    def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
+        self.velocity  = self.velocity + 200 * delta_time
+        self.y = self.y + self.velocity * delta_time
+
+        if self.y > 2000:
+            self.visible = False
 

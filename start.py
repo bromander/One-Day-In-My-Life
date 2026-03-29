@@ -5,12 +5,14 @@ import random
 import json
 import engine
 from engine.main import Views
-
-WINDOW_TITLE = f"Game name"
-engine.main.GAME_NAME = "Game Name"
+import warnings
+# python -m nuitka --standalone --include-data-dir=./game/=game --windows-console-mode=attach --show-progress --assume-yes-for-downloads --include-module=scipy.io.wavfile --jobs=6 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests --noinclude-data-files=./game/saves.JSON start.py
+WINDOW_TITLE = "ОДИН ДЕНЬ :D "
+engine.main.GAME_NAME = "ОДИН ДЕНЬ из моей оБыЧнОй ЖиЗнИ с моей женой соседкой которая, возможно, демон или вампир :D"
 
 
 def main():
+    warnings.filterwarnings("ignore", category=SyntaxWarning)
 
     with open("game/other/splashes.json", "r", encoding="UTF-8") as splashes:
         splashes = json.load(splashes)
