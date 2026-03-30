@@ -1,5 +1,6 @@
 label main("Пролог", show_splash = True, speed = 4):
 
+    Audio.play("music", "outside_music.mp3", effect="fade")
     Scene.fade("fadeout", 3)
 
     <unk1> "Терпеть не могу первое апреля. Пожалуй, это самый бессмысленный повод что-то праздновать и валять дурака, что приходит на ум... \n Или, по крайней мере, один из них."
@@ -7,6 +8,8 @@ label main("Пролог", show_splash = True, speed = 4):
 
     <> "Сегодня на улице самый обыкновенный день из всех, что может быть."
 
+    def pon():
+        pass
     weekday, day, month = Data.format_time_seconds()
     <> "[weekday], [day] [month]."
 
@@ -26,6 +29,7 @@ label main("Пролог", show_splash = True, speed = 4):
 
     <> "Знаете, как иногда учителей называют «русичка» или «математичка»? Эту за глаза ученики кличут «злюкой». Но не дайте этой кислой роже себя обмануть – за ним скрывается невероятное терпение и ответственный подход к будущему этих спиногрызов."
     <> "По пути Жаклин заглядывает в продуктовый."
+    <> "\"Пяточка\"... \n Какое же странное название..."
 
     Scene.fade("fadein", 1)
 
@@ -35,6 +39,7 @@ label main("Пролог", show_splash = True, speed = 4):
 label shop("Проход по магазину")
 
     Scene.fade("fadeout", 1)
+    Audio.stop("music", "fade")
 
     <> "Магазин маленький, но проходя даже мимо единственного стеллажа ловишь весь спектр запахов, которые тебя словно по каталогу проносят через их главные и единственные разделы."
     <> "Вот пахнет легко пропечёной корочкой белого сэндвичного хлеба."
@@ -62,6 +67,10 @@ label shop_box_office("Поход к кассе")
 
     Scene.fade("fadein", 2)
     Screen.call_view("ShopCollecting", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
+
+    Scene.set_scene_parallax([("box_office_0.png", 0.0), ("box_office_0.png", 0.2), ("box_office_1.png", 0.4),  ("box_office_2.png", 0.6),  ("box_office_3.png", 0.7)])
+    Scene.character_slice = -2
+    Scene.show_character(character="masorubka netural", at="center")
     Scene.fade("fadeout", 2)
 
     <> "Мрачная физиономия кассира встречает не менее мрачную физиономию главного героя этой истории."
@@ -69,37 +78,82 @@ label shop_box_office("Поход к кассе")
     <> "Порой жизнь не жалеет и таких индивидов."
 
     <shak> "Доброго дня,\n {w=0.5}или типа того…"
-    <cash> "С днём дурака… \n {w=0.5}Или типа того…"
+    <masorubka> "С днём дурака… \n {w=0.5}Или типа того…"
     <shak> "Да, дурака… \n {w=0.5}или типа того…"
     <> "Дабы не продолжать этот марафон неловких ответов, кассир преступил к пробиванию содержимого корзины"
 
-    # TODO: {Идёт процесс обмена/продажи/покупки}
+    if len(Define.collected_items) == 1:
+        if list(Define.collected_items.values())[0] == 1:
+            Lore.jump("shop_box_office_one_prod")
 
     Lore.jump("shop_box_office_much_prod")
 
 
-label shop_box_office_much_prod("Поход к кассе"):
+label not_enough_money("Поход к кассе"):
 
-    <cash> "Ну вроде всё… вам пакет нужен или нет?"
+    <masorubka> "ммм..."
+    <masorubka> "Тут не хватает."
+    <shak> "Ой. Сколько?"
+    Scene.show_character(character="masorubka ugly", at="center")
+    <masorubka> "Сама считай..."
+    Lore.jump("shop_box_office_much_prod")
+
+
+label too_much_enough_money("Поход к кассе"):
+
+    <masorubka> "ммм..."
+    <masorubka> "Тут слишком много."
+    <shak> "Ну так выдаёте сдачу."
+    Scene.show_character(character="masorubka ugly", at="center")
+    <masorubka> "Не. Сама считай..."
+    Lore.jump("shop_box_office_much_prod")
+
+label shop_box_money_continue("Поход к кассе"):
+    <masorubka> "Ну вроде всё… вам пакет нужен или нет?"
     <shak> "Я с шопперами, спасибо…"
-    <cash> "ок… \n {w=0.1}ну тогда всего доброго и не возвращайтесь… \n {w=0.5}или типа того…"
+    Scene.show_character(character="masorubka ugly", at="center")
+    <masorubka> "ок… \n {w=0.1}ну тогда всего доброго и не возвращайтесь… \n {w=0.5}или типа того…"
 
     Lore.jump("shop_box_office_end")
 
+
+label shop_box_office_much_prod("Поход к кассе"):
+
+    Scene.fade("fadein", 2)
+    Screen.call_view("ShopGetting", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
+
+    Scene.show_character(character="masorubka netural", at="center")
+    Scene.fade("fadeout", 2)
+
+    <> "Жаклин выложила деньги на кассу."
+
+    print(Define.should_money, Define.got_money, int(Define.should_money) > int(Define.got_money))
+    if int(Define.should_money) > int(Define.got_money):
+        Lore.jump("not_enough_money")
+
+    elif int(Define.should_money) < int(Define.got_money):
+        Lore.jump("too_much_enough_money")
+    else:
+        Lore.jump("shop_box_money_continue")
+
+
+
 label shop_box_office_one_prod("Поход к кассе"):
 
-    <cash> "Ну типа… \n {w=0.1}блин…"
+    Scene.show_character(character="masorubka ugly", at="center")
+    <masorubka> "Ну типа… \n {w=0.1}блин…"
     <shak> "Что-то не так?"
-    <cash> "Уйдите."
+    <masorubka> "Уйдите."
     <shak> "что?..."
-    <cash> "У вас всего один продукт, мне лень заниматься такой мелочью… \n {w=0.1}Уйдите… \n {w=0.1}Продукт тоже заберите…"
+    <masorubka> "У вас всего один продукт, мне лень заниматься такой мелочью… {w=0.1}Уйдите… \n {w=0.1}Продукт тоже заберите…"
 
     Lore.jump("shop_box_office_end")
 
 
 label shop_box_office_end("Поход к кассе"):
     <shak> "Грубо…"
-    <cash> "Мне слишком мало платят для приличного общения…"
+    Scene.show_character(character="masorubka funny", at="center")
+    <masorubka> "Мне слишком мало платят для приличного общения…"
 
     <> "Неловкость так и смердела в магазине, пришлось уйти, чтобы перестать её вдыхать."
 

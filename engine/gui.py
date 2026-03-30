@@ -1012,42 +1012,67 @@ class Managers:
                 surface.draw_texture(x=0, y=0, width=self.width + 50, height=self.height, tex=self._bg_tex)
 
 
-class MovableBlock(UISpriteWidget):
-    def __init__(self, sprite, center_x = 0, center_y = 0, size=50):
-        super().__init__(sprite=sprite)
-        self.center_x = center_x
-        self.center_y = center_y
-        self.size = (size, size)
-        self.size_default = size
+class MovableBlock(Sprite):
+    def __init__(self, texture, center_x = 0, center_y = 0, angle=0, scale=1.0, collecting_zone: Optional[tuple] = None, collect: bool = False):
+        super().__init__(path_or_texture=texture)
+        self.start_x = center_x
+        self.start_y = center_y
+        self.start_angle = angle + random.randint(-5, 5)
+        self.center_x = int(center_x) + random.randint(-30, 30)
+        self.center_y = int(center_y) + random.randint(-15, 30)
+        color_rand = random.randint(230, 255)
+        self.angle = int(self.start_angle)
+        self.color = (
+            color_rand,
+            color_rand,
+            color_rand,
+            255
+        )
+        self.scale = scale
+        self.scale_x = self.scale_x * random.randint(95, 105) / 100
+        self.scale_y = self.scale_y * random.randint(95, 105) / 100
+
+        self.collecting_zone = collecting_zone
+        self.collect = collect
+
         self.clicked = False
-        self.disabled = False
+        self.freezed = False
 
-    def on_event(self, event: UIEvent) -> bool | None:
-        super().on_event(event)
-        if type(event) is UIMousePressEvent:
-            if self.rect.left <= event.x <= self.rect.right and self.rect.bottom <= event.y <= self.rect.top:
-                if list(self.get_ui_manager().get_widgets_at((event.x, event.y), MovableBlock))[-1] is self:
-                    self.clicked = True
-                    #self.scale(1.5)
+    def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
 
-        if type(event) is UIMouseReleaseEvent:
-            #if self.clicked:
-                #self.scale(0.667)
-            self.clicked = False
-
-        if type(event) is UIOnUpdateEvent:
-            if (self.get_ui_manager().window.width * 0.1 <= self.center_x <= self.get_ui_manager().window.width * 0.2
-                    and self.get_ui_manager().window.height * 0.35 <= self.center_y <= self.get_ui_manager().window.height * 0.65):
-                if not self.disabled and not self.clicked:
-                    self.center_x = self.get_ui_manager().window.width * 0.15 + random.randint(-50, 50)
-                    self.center_y = self.get_ui_manager().window.height * 0.5 + random.randint(-110, 110)
-                    self.disabled  = True
+        if 1 in args[0]:
+            if args[0][1]:
+                if self.left <= args[0]["x"] <= self.right and self.bottom <= args[0]["y"] <= self.top:
+                    list_children = []
+                    for i in self.sprite_lists:
+                        list_children = list_children + list(get_sprites_at_point((args[0]["x"], args[0]["y"]), i))
+                    if len(list_children) > 0:
+                        if list_children[-1] is self:
+                            self.clicked = True
+                    else:
+                        self.clicked = True
             else:
-                self.disabled = False
+                self.clicked = False
 
-            if self.clicked:
-                self.center_x = self.get_ui_manager().window._mouse_x
-                self.center_y = self.get_ui_manager().window._mouse_y
+        if self.clicked:
+            self.angle = 0
+            self.center_x = args[0]["x"]
+            self.center_y = args[0]["y"]
+
+        if self.collecting_zone[0] <= self.center_x <= self.collecting_zone[1] and self.collecting_zone[2] <= self.center_y <= self.collecting_zone[3]:
+            if self.collect:
+                if not self.clicked:
+                    if not self.freezed:
+                        self.center_x = random.randint(int(self.collecting_zone[0] + self.width/2), int(self.collecting_zone[1] - self.width/2))
+                        self.center_y = random.randint(int(self.collecting_zone[2] + self.height / 2), int(self.collecting_zone[3] - self.height / 2))
+                    self.freezed = True
+            else:
+                self.center_x = self.start_x
+                self.center_y = self.start_y
+                self.angle = self.start_angle
+                self.freezed=False
+        else:
+            self.freezed = False
 
 class MovableBlockFalling(Sprite):
     def __init__(self, texture, center_x = 0, center_y = 0):

@@ -1,5 +1,5 @@
 import time
-from arcade import Sprite, draw_sprite, Texture, load_texture
+from arcade import Sprite, draw_sprite, Texture, load_texture, get_window
 import os
 from pathlib import Path
 import threading
@@ -14,17 +14,24 @@ class Scene:
         """
         self.data: dict[str : dict[Union[dict[str : Sprite], str : Sprite]]] = {
             "bg": {},
+            "bg_parallax": [],
             "sprites": {},
             "gui": {},
             "fade": {"fade" : Sprite(), "splash": Sprite()}
         }
+
         self.save_points = []
+
+        self.characters_slice = -1
 
         self.fm: FilesManager = fm
 
         self.len_loaded_textures = 0
 
         self.textures = {}
+
+    def set_characters_slice(self, value):
+        self.characters_slice = value
 
 
     def get_texture(self, filename: str) -> Optional[Texture]:
@@ -48,6 +55,7 @@ class Scene:
     def clear_scene(self):
         self.data = {
             "bg": {},
+            "bg_parallax": {},
             "sprites": {},
             "gui": {},
             "fade": {"fade" : Sprite(), "splash": Sprite()}
@@ -127,6 +135,49 @@ class Scene:
 
         self.len_loaded_textures  = len_sprites
 
+    def add_parallax_bg(self, filename, speed, center_x, center_y):
+        sprite = self.get_sprite(filename)
+        sprite.scale_x = float(sprite.scale_x + 0.1 * speed)
+        sprite.scale_y = float(sprite.scale_y + 0.1 * speed)
+        self.data["bg_parallax"].append(
+            {
+                'sprite' : self.get_sprite(filename),
+                'speed': speed,
+                'original_x': center_x,
+                'original_y': center_y,
+                "scale" : sprite.scale
+            }
+        )
+
+    def _move_parallax(self, layer, x, y):
+        window = get_window()
+        normalized_x = (x - window.width // 2) / (window.width // 2)
+        normalized_y = (y - window.height // 2) / (window.height // 2)
+
+        max_offset_x = 100 * layer['speed']
+        max_offset_y = 60 * layer['speed']
+
+        layer['sprite'].center_x = layer['original_x'] + normalized_x * max_offset_x
+        layer['sprite'].center_y = layer['original_y'] + normalized_y * max_offset_y
+
+    def on_mouse_motion(self, x, y):
+
+        for e, layer in enumerate(self.data["bg_parallax"]):
+            if hasattr(layer['sprite'], "clicked"):
+                if not layer['sprite'].clicked:
+                    if hasattr(layer['sprite'], "freezed"):
+                        if not layer['sprite'].freezed:
+                            self._move_parallax(layer, x, y)
+                    else:
+                        self._move_parallax(layer, x, y)
+                else:
+                    self.data["bg_parallax"][e]['original_x'] = layer['sprite'].center_x
+                    self.data["bg_parallax"][e]['original_y'] = layer['sprite'].center_y
+                    self.data["bg_parallax"].append(self.data["bg_parallax"].pop(e))
+
+            else:
+                self._move_parallax(layer, x, y)
+
     def draw(self) -> None:
         """
         Рисует спрайты со всей сцены
@@ -138,9 +189,26 @@ class Scene:
             layers = sorted(bg_items.keys(), reverse=True)
             for layer in layers:
                 draw_sprite(bg_items[layer])
+        #print(self.characters_slice)
+        bg_items = data.get('bg_parallax')
+        for layer in bg_items[:self.characters_slice]:
+            sprite = layer["sprite"]
+            if "scale" in layer:
+                sprite.scale = layer["scale"]
+            draw_sprite(sprite)
+
+
+        for sprite in data["sprites"].values():
+            draw_sprite(sprite)
+
+        for layer in bg_items[self.characters_slice-1:]:
+            sprite = layer["sprite"]
+            if "scale" in layer:
+                sprite.scale = layer["scale"]
+            draw_sprite(sprite)
 
         for key, value in data.items():
-            if key == 'bg':
+            if key == 'bg' or key == "bg_parallax" or key == "sprites":
                 continue
 
             if isinstance(value, Sprite):

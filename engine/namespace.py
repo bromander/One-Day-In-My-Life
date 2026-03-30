@@ -2,6 +2,7 @@ import sys
 import time, datetime
 from io import StringIO
 import re
+from sqlite3.dbapi2 import paramstyle
 from typing import Optional, Literal, Tuple, Union
 import PIL
 from arcade import Sprite
@@ -55,6 +56,8 @@ class Namespace:
         except SyntaxError as e:
             raise SyntaxError(
                 f"{e}:\n{"\n    ".join([str(num) + " " + str(i) for num, i in enumerate(str(command).split("\n"))])}")
+
+
         old_ret = self.returning
         self.returning = None
         return old_ret
@@ -176,6 +179,11 @@ class Namespace:
 
             return weekday, day, month
 
+        def create_stamp(self):
+            def stamp():
+                yield
+            self.Game_view.actions.active_generators.add_generator("continuous", stamp(), "stamp")
+
     class Scene:
         def __init__(self, Game_view, ListCharacters, Wwl, Wait_trigger, sm: Saves_manager) -> None:
             """
@@ -189,6 +197,15 @@ class Namespace:
             self.Wwl = Wwl
             self.Wait_trigger = Wait_trigger
             self.sm = sm
+
+
+        @property
+        def character_slice(self):
+            return self.Game_view.scene.character_slice
+
+        @character_slice.setter
+        def character_slice(self, value):
+            self.Game_view.scene.set_characters_slice(value)
 
         def _get_norm(self,
                       at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]],
@@ -446,6 +463,8 @@ class Namespace:
             :raises FileNotFoundError: Если файл сцены не был найден
             """
 
+            #self.character_slice = -1
+
             if layer < 0:
                 raise ValueError("Layer must be greater than zero.")
 
@@ -478,6 +497,23 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(stream, effect.effect(bg_id, "bg", self.Game_view, self.sm), "set_scene_effect")
                 self.Game_view.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")
+
+        def set_scene_parallax(self,
+                      files: [tuple[str, float]],
+                      stream: Literal["consistently", "together"] = "consistently") -> None:
+
+            #self.character_slice = -1
+
+            self.Game_view.scene.clear_layer("sprites")
+
+            self.Game_view.scene.clear_layer("bg")
+
+            def target(file_name, speed):
+                self.Game_view.scene.add_parallax_bg(file_name, speed, self.Game_view.center_x, self.Game_view.center_y)
+                yield
+
+            for data in files:
+                self.Game_view.actions.active_generators.add_generator(stream, target(data[0], data[1]), "set_scene")
 
         def move(self, sprite: str,
                  position: tuple[Tuple[int, float]],

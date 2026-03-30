@@ -323,29 +323,41 @@ class LoreLogger:
             if layer == "fade" or layer == "gui":
                 continue
 
-            for name, sprite in self.main_self.scene[layer].items():
-                sprite: Sprite = sprite
+            if isinstance(self.main_self.scene[layer], dict):
+                for name, sprite in self.main_self.scene[layer].items():
+                    sprite: Sprite = sprite
 
-                data = {
-                    "name" : name,
-                    "layer" : layer,
-                    "pos" : sprite.position,
-                    "size" : sprite.size,
-                    "angle" : sprite.angle,
-                    "alpha" : sprite.alpha,
-                    "texture_name" : sprite.texture.file_path.name,
-                    "visible" : sprite.visible,
-                }
+                    data = {
+                        "name" : name,
+                        "layer" : layer,
+                        "pos" : sprite.position,
+                        "size" : sprite.size,
+                        "angle" : sprite.angle,
+                        "alpha" : sprite.alpha,
+                        "texture_name" : sprite.texture.file_path.name,
+                        "visible" : sprite.visible,
+                    }
+            elif isinstance(self.main_self.scene[layer], list):
+                for attributes in self.main_self.scene[layer]:
+                    data = {
+                        "layer": layer,
+                        "texture_name" : data['sprite'].texture.file_path.name,
+                        'speed': attributes["speed"],
+                        'original_x': attributes["original_x"],
+                        'original_y': attributes['original_y']
+                    }
 
-                snapshot.append(data)
+                    snapshot.append(data)
         return snapshot
 
     def _load_snapshot_scene(self, snapshot: list[dict]):
         for i in snapshot:
-            sprite = self.main_self.scene.get_sprite(i["texture_name"])
-            print(i["texture_name"], sprite)
-            sprite.size, sprite.angle, sprite.visible, sprite.position, sprite.alpha = i["size"], i["angle"], i["visible"], i["pos"], i["alpha"]
-            self.main_self.scene.add_sprite(i["layer"], i["name"], sprite)
+            if i["layer"] != "bg_parallax":
+                sprite = self.main_self.scene.get_sprite(i["texture_name"])
+                sprite.size, sprite.angle, sprite.visible, sprite.position, sprite.alpha = i["size"], i["angle"], i["visible"], i["pos"], i["alpha"]
+                self.main_self.scene.add_sprite(i["layer"], i["name"], sprite)
+            else:
+                self.main_self.scene.add_parallax_bg(i["texture_name"], i["speed"], i["original_x"], i["original_y"])
 
     def _snapshot_namespace(self):
         for name, value in self.main_self.NAMESPACE.NAMESPACE.items():

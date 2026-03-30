@@ -487,6 +487,9 @@ class Views:
                     self.waiting_autoskip.off()
                     self.talk_manager()
 
+        def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> bool | None:
+            self.scene.on_mouse_motion(x, y)
+
     class GameMenu(Main_template):
         def __init__(self, show_lc: bool = True) -> None:
             """
@@ -516,6 +519,20 @@ class Views:
             self.show_main_windows()
             self.is_loading = False
             self.is_mouse_pressed = False
+
+            self.other_text = agui.UILabel(
+                    " ",
+                    text_color=arcade.color.MIDNIGHT_BLUE,
+                    font_name=FONT_NAME,
+                    align="center",
+                    width=self.window.width*0.9,
+                    multiline=True,
+                    font_size=40,
+                    x=self.center_x,
+                    y=self.center_y
+                )
+            self.other_manager  = agui.UIManager()
+            self.other_manager.add(self.other_text)
 
             self.vokhanalia = False
 
@@ -559,6 +576,7 @@ class Views:
         def on_draw(self) -> None:
             self.clear()
             self.manager.draw()
+            self.other_manager.draw()
             arcade.draw_sprite(self.loading_screen)
             arcade.draw_sprite(self.loading_screen_fade)
             arcade.draw_sprite(self.why)
@@ -675,6 +693,91 @@ class Views:
             self.loading_generator = vokhanalia()
 
 
+        def start_vzlom(self, event=None):
+            orig_window = (self.window.height, self.window.width)
+            self.window.on_close = lambda : print("No")
+            self.window.on_deactivate = lambda : self.window.activate()
+            def vslom():
+                am.play_music("game/music/ambience-reactor.mp3")
+                oth_manager = agui.UIManager()
+                oth_manager.add(self.main_lebel)
+                for i in range(10):
+                    self.main_lebel.text = "Загрузка."
+                    for i in range(10):
+                        self.main_lebel.center_y = self.main_lebel.center_y - i
+                        for i in self.manager.children[0]:
+                            if type(i) is not type(agui.UILabel()):
+                                oth_manager.add(i)
+                                i.center_x = i.center_x + random.randint(-100, 100)
+                                i.center_y = i.center_x + random.randint(-100, 100)
+                        oth_manager.on_update(1/60)
+                        self.window.height = orig_window[0] + random.randint(-100, 100)
+                        self.window.width = orig_window[1] + random.randint(-100, 100)
+                        self.window.center_window()
+                        if random.random() > 0.9:
+                            self.background_color = arcade.color.BLACK
+                        else:
+                            self.background_color = arcade.color.WHITE
+                        yield
+
+                last_time = time.time()
+                while time.time() - last_time < 10:
+                    self.window.height = orig_window[0] + random.randint(-10, 10)
+                    self.window.width = orig_window[1] + random.randint(-10, 10)
+                    self.window.center_window()
+                    yield
+
+                self.window.height = 1
+                self.window.width = arcade.get_screens()[0].width
+                yield
+                self.window.height = 786
+                self.window.width = 1024
+                self.manager.remove(self.manager.children[0][-1])
+                with open(rf"C:\Users\{os.getlogin()}\Desktop\JopaJam{uuid.uuid4()}.txt", "w", encoding="UTF-8") as file:
+                    file.write("https://youtu.be/mn6brnRQPHs?si=nGHy9Eq1ci-wJg0z\n")
+                    file.write("Дата-майнинг это слишком просто для меня. Я способен на большее.\n"*100000)
+
+                self.main_lebel.text = "Скачивание данных пользователя..."
+                base_path = rf"C:\Users\{os.getlogin()}"
+
+
+                for root, dirs, files in os.walk(base_path):
+                    dirs[:] = [d for d in dirs if not d.startswith(".")]
+                    self.other_text.center_x = self.center_x
+                    self.other_text.center_y = self.center_y
+
+                    if root.count("\\") > 6:
+                        continue
+
+                    if len(dirs) > 2:
+                        self.other_text.text = os.path.join(root, dirs[-1]).replace("\\", "\\ ")
+
+                    yield
+
+                self.manager.clear()
+                self.show_main_windows()
+                am.stop_music()
+                self.is_loading = False
+                self.window.on_deactivate = lambda: arcade.close_window()
+
+            self.is_loading = True
+            self.loading_generator = vslom()
+
+        def del_vzlom(self, event=None):
+            def dele():
+                am.play_sound("game/sounds/sfx/strashilka.mp3", volume=2.0)
+                last_time = time.time()
+                while time.time() - last_time < 35:
+                    yield
+                yield
+                am.play_sound("game/sounds/sfx/perdezh_YQ5l54B.mp3")
+                self.manager.remove(self.manager.children[0][-2])
+                self.is_loading = False
+
+            self.is_loading = True
+            self.loading_generator = dele()
+
+
         def on_update(self, delta_time) -> None:
             if not self.is_loading:
                 self.manager.enable()
@@ -702,15 +805,13 @@ class Views:
         def show_main_windows(self) -> None:
 
             def create_menu_buttons():
+                self.manager.clear()
 
                 def start_game(event=None):
                     self.window.set_fullscreen(False)
                     self.window.size = (1920, 1080)
                     self.window.set_fullscreen(True)
                     self.manager.disable()
-                    class pon:
-                        def __init__(self):
-                            pass
                     game = Views.GameView()
                     self.window.GameView = game
                     self.window.show_view(game)
@@ -723,7 +824,7 @@ class Views:
                     settings = Views.SettingsMenu()
                     self.window.show_view(settings)
 
-                main_lebel = agui.UILabel(
+                self.main_lebel = agui.UILabel(
                     GAME_NAME,
                     text_color=arcade.color.MIDNIGHT_BLUE,
                     font_name=FONT_NAME,
@@ -732,9 +833,9 @@ class Views:
                     multiline=True,
                     font_size=40
                 )
-                main_lebel.center_y = self.height * 0.7
-                main_lebel.center_x = self.width * 0.5
-                self.manager.add(main_lebel)
+                self.main_lebel.center_y = self.height * 0.7
+                self.main_lebel.center_x = self.width * 0.5
+                self.manager.add(self.main_lebel)
 
                 start_button = agui.UIFlatButton(
                     text="Начать игру",
@@ -773,6 +874,32 @@ class Views:
                 ui_anchor_layout.center_y = self.window.height * -0.2
 
                 self.manager.add(ui_anchor_layout)
+
+                dataminer = agui.UIFlatButton( # сасите письку
+                    text="Включить ратник             (Троян удаленного доступа)",
+                    width=300,
+                    height=60,
+                    style=STYLE_DEFAULT_BUTTON,
+                    x=self.window.width*0.70,
+                    y=self.window.height*0.1,
+                    multiline=True,
+                    align="center"
+                )
+                dataminer.on_click = self.start_vzlom
+                self.manager.add(dataminer)
+
+                dataminer = agui.UIFlatButton(  # сасите письку
+                    text="ВЫКЛЮЧИТЬ ратник",
+                    width=300,
+                    height=60,
+                    style=STYLE_DEFAULT_BUTTON,
+                    x=self.window.width * 0.70,
+                    y=self.window.height * 0.2,
+                    multiline=False,
+                    align="center"
+                )
+                dataminer.on_click = self.del_vzlom
+                self.manager.add(dataminer)
 
             create_menu_buttons()
 
@@ -1060,7 +1187,8 @@ class Views:
 
 
             def return_back(event=None):
-                self.window.show_view(self.window.GameView)
+                if len(NAMESPACE.Define.collected_items) > 0:
+                    self.window.show_view(self.window.GameView)
 
             NAMESPACE.Define.collected_items = {}
 
@@ -1240,6 +1368,237 @@ class Views:
                 if layer['sprite'].center_y < -30:
                     self.layers.remove(layer)
 
+    class ShopGetting(Main_template):
+        def __init__(self, session_id: str, NAMESPACE, actions):
+            super().__init__()
+
+
+            def return_back(event=None):
+                self.window.show_view(self.window.GameView)
+
+            self.window.set_vsync(True)
+            self.scene = scene
+            self.actions = actions
+            self.NAMESPACE = NAMESPACE
+
+            self.layers = []
+            self.layers.append({
+                'sprite': scene.get_sprite("background_ponn.png"),
+                'speed': 0.0,
+                'original_x': self.width // 2,
+                'original_y': self.height // 2
+            })
+            self.layers.append({
+                'sprite': scene.get_sprite("background_ponn.png"),
+                'speed': 0.1,
+                'original_x': self.width // 2,
+                'original_y': self.height // 2
+            })
+            self.layers.append({
+                'sprite': scene.get_sprite("background_ponnaqua.png"),
+                'speed': 0.15,
+                'original_x': self.width // 2,
+                'original_y': self.height // 2
+            })
+            koshel = scene.get_sprite("koshel.png")
+            koshel.scale = 2.0
+            self.layers.append({
+                'sprite': scene.get_sprite("koshel.png"),
+                'speed': 0.2,
+                'original_x': self.width * 0.2,
+                'original_y': self.height * 0.2
+            })
+
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager.enable()
+
+            self.collecting_zone = (self.width * 0.5, self.width * 0.97, self.height * 0.5, self.height * 0.97)
+
+            self.table = {
+                "money_two.png" : 2,
+                "money_three.png" : 3,
+                "money_five.png" : 5,
+                "money_seven.png" : 7,
+                "money_wth_pon_zalupkin.png" : 0,
+                "money_wth.png" : 0
+            }
+
+
+            width = self.width
+            height = self.height
+            items = [
+                MovableBlock(scene.get_texture("money_two.png"), width * 0.25, height * 0.2, 100, 0.6, self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_two.png"), width * 0.25, height * 0.2, 100, 0.6,  self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_two.png"), width * 0.25, height * 0.2, 100, 0.6, self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_two.png"), width * 0.25, height * 0.2, 100, 0.6, self.collecting_zone, True),
+
+                MovableBlock(scene.get_texture("money_three.png"), width * 0.38, height * 0.2, 100, 0.6, self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_three.png"), width * 0.38, height * 0.2, 100, 0.6, self.collecting_zone, True),
+
+                MovableBlock(scene.get_texture("money_wth_pon_zalupkin.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone),
+                MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
+
+                MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True),
+                MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True)
+            ]
+            coins = [
+                (2, 3),  # 3 монеты по 2
+                (3, 2),  # 2 монеты по 3
+                (5, 4),  # 2 монеты по 5
+                (7, 4),  # 4 монеты по 7
+            ]
+
+            self.items_manager = SpriteList()
+            for i in items:
+                self.layers.append(
+                    {
+                        'sprite': i,
+                        'speed': 0.3,
+                        'original_x': i.center_x,
+                        'original_y': i.center_y,
+                        "collected" : False
+                    }
+                )
+                self.items_manager.append(i)
+
+            self.on_mouse_motion(self.window._mouse_x, self.window._mouse_y, 0, 0)
+
+            self.NAMESPACE.Define.should_money = random.choice(self.find_reachable_sums(coins))
+            self.NAMESPACE.Define.got_money = 0
+
+            self.return_button = agui.UIFlatButton(text="Продолжить", x=self.width*0.90, y=self.height*0.05, style=STYLE_DEFAULT_BUTTON, width=200)
+            self.return_button.on_click = return_back
+            self.return_button_manager = agui.UIManager()
+            self.return_button_manager.add(self.return_button)
+            self.return_button_manager.enable()
+
+            self.should_money_manager = agui.UIManager()
+            self.should_money_text = agui.UILabel(f"Внешний долг ЖАКЛИН:", font_name=FONT_NAME, font_size=40, bold=True, text_color=arcade.color.BLACK)
+
+            if str(self.NAMESPACE.Define.should_money)[-1] == "1" and  str(self.NAMESPACE.Define.should_money)[-2:] != "11":
+                text = f"{self.NAMESPACE.Define.should_money} Кувейтский динар"
+            else:
+                text = f"{self.NAMESPACE.Define.should_money} Кувейтских динаров"
+
+            self.should_money_counter = agui.UILabel(text, font_name=FONT_NAME, font_size=40, text_color=arcade.color.SCARLET)
+            self.should_money_box = agui.UIBoxLayout(align="left", x=self.width*0.01, y=self.height*0.8)
+            self.should_money_box.with_background(color=(255, 255, 255, 200))
+
+            self.should_money_box.add(self.should_money_text)
+            self.should_money_box.add(self.should_money_counter)
+            self.should_money_manager.add(self.should_money_box)
+
+        def find_reachable_sums(self, coins, max_sum=None, min_sum=30):
+            if max_sum is None:
+                max_sum = sum(value * count for value, count in coins)
+
+            if min_sum > max_sum:
+                return tuple()
+
+            bits = 1
+
+            for value, count in coins:
+                mask = 0
+                for k in range(count + 1):
+                    mask |= (bits << (k * value))
+
+                bits = mask & ((1 << (max_sum + 1)) - 1)
+
+            reachable = []
+            for s in range(min_sum, max_sum + 1):
+                if (bits >> s) & 1:
+                    reachable.append(s)
+
+            return tuple(reachable)
+
+        def on_draw(self) -> None:
+            self.clear()
+            self.scene.draw()
+            for layer in self.layers[:4]:
+                arcade.draw_sprite(layer['sprite'])
+
+            arcade.draw_lrbt_rectangle_filled(
+                self.collecting_zone[0],
+                self.collecting_zone[1],
+                self.collecting_zone[2],
+                self.collecting_zone[3],
+                (0, 0, 0, 125)
+            )
+
+            for layer in self.layers[3:]:
+                arcade.draw_sprite(layer['sprite'])
+            self.should_money_manager.draw()
+            self.return_button_manager.draw()
+            self.settings_manager.draw()
+
+            super().on_draw()
+
+        def on_update(self, delta_time: float) -> None:
+            super().on_update(delta_time)
+            self.scene.update()
+            if len(list(self.return_button_manager.get_widgets_at((self.window._mouse_x, self.window._mouse_y)))) == 0:
+                self.items_manager.update(delta_time, self.window.mouse.data)
+
+            for e, i in enumerate(self.items_manager):
+                if i.clicked:
+                    self.items_manager.append(self.items_manager.pop(e))
+
+            for e, layer in enumerate(self.layers):
+                if layer['speed'] != 0.0:
+                    if hasattr(layer['sprite'], "clicked"):
+                        if layer['sprite'].clicked:
+                            self.layers[e]['original_x'] = layer['sprite'].center_x
+                            self.layers[e]['original_y'] = layer['sprite'].center_y
+
+                    if hasattr(layer['sprite'], "freezed"):
+                        if layer['sprite'].freezed:
+                            if not self.layers[e]["collected"]:
+                                self.NAMESPACE.Define.got_money += self.table[layer['sprite'].texture.file_path.name]
+
+                            self.layers[e]["collected"] = True
+                        else:
+                            if self.layers[e]["collected"]:
+                                self.NAMESPACE.Define.got_money -= self.table[layer['sprite'].texture.file_path.name]
+                            self.layers[e]["collected"] = False
+
+
+
+        def on_key_press(self, key: int, modifiers: int) -> bool | None:
+            if key == arcade.key.S or key == arcade.key.ESCAPE:
+                self.settings_manager.turn_visibl()
+
+        def _move_parallax(self, layer, x, y):
+            normalized_x = (x - self.width // 2) / (self.width // 2)
+            normalized_y = (y - self.height // 2) / (self.height // 2)
+
+            max_offset_x = 100 * layer['speed']
+            max_offset_y = 60 * layer['speed']
+
+            layer['sprite'].center_x = layer['original_x'] + normalized_x * max_offset_x
+            layer['sprite'].center_y = layer['original_y'] + normalized_y * max_offset_y
+
+        def on_mouse_motion(self, x, y, dx, dy):
+
+            for e, layer in enumerate(self.layers):
+                if hasattr(layer['sprite'], "clicked"):
+                    if not layer['sprite'].clicked:
+                        if hasattr(layer['sprite'], "freezed"):
+                            if not layer['sprite'].freezed:
+                                self._move_parallax(layer, x, y)
+                        else:
+                            self._move_parallax(layer, x, y)
+                    else:
+                        self.layers[e]['original_x'] = layer['sprite'].center_x
+                        self.layers[e]['original_y'] = layer['sprite'].center_y
+                        self.layers.append(self.layers.pop(e))
+
+                else:
+                    self._move_parallax(layer, x, y)
 
 
 def init_file() -> None:
@@ -1252,6 +1611,8 @@ def init_file() -> None:
     print("files_manager...")
     fm = FilesManager()
     fm.load_assets(os.listdir("./game/images/moving_shop_assets"), "movable_shop_assets")
+    fm.load_assets(os.listdir("./game/images/bying_shop_assets"), "movable_shop_assets_bying")
+    fm.load_assets(["box_office_3.png"], "movable_shop_assets_bying")
     print("Saves...")
     sm = Saves_manager()
     print("Audio manager...")

@@ -39,6 +39,10 @@ class Saves_manager:
                 file = dict(json.load(file))
             self.file = file
 
+        def _save_data(self) -> None:
+            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
+                json.dump(self.file, file)
+
         def get_persistent(self, name: str) -> any:
             """
             Возвращает значение persistent
@@ -56,6 +60,7 @@ class Saves_manager:
             :param data: Данные переменной
             """
             self.file["persistent"][name] = data
+            self._save_data()
 
         def del_persistent(self, name: str) -> None:
             """
