@@ -126,8 +126,10 @@ class Views:
             }
 
         def on_update(self, delta_time: float) -> None:
-            self.cursor_texture.position = (self.window._mouse_x, self.window._mouse_y)
-            self.window.set_mouse_visible(False)
+            if "x" in self.window.mouse.data and "y" in self.window.mouse.data:
+                mouse_x, mouse_y = self.window.mouse.data["x"], self.window.mouse.data["y"]
+                self.cursor_texture.position = (mouse_x, mouse_y)
+            self.window.set_mouse_visible(True)
 
             if Saves_manager().Volume.get_other("show_fps"):
                 current_fps = 1.0 / delta_time if delta_time > 0 else 0
@@ -437,7 +439,7 @@ class Views:
             ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
             ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y")
 
-            self.menu_manager.add(ui_anchor_layout)
+            self.menu_manager.add(self.menu_v_box)
 
         def on_update(self, delta_time) -> None:
 
