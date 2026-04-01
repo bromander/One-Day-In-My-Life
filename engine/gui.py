@@ -878,7 +878,7 @@ class Managers:
             self.BUTTONS_STYLE_ON_STATE = {
                 "normal": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
-                    font_color=(87, 191, 255, 255),
+                    font_color=(191, 161, 27, 255),
                     font_name=FONT_NAME,
                     border=(255, 255, 255, 0),
                     border_width=0,

@@ -37,20 +37,26 @@ STYLE_DEFAULT_BUTTON = {
     "normal": arcade.gui.UIFlatButton.UIStyle(
         font_size=16,
         font_name=(FONT_NAME, ),
-        font_color=arcade.color.WHITE,
-        bg=(44, 62, 80)
+        font_color=arcade.color.BLACK,
+        bg=(225, 184, 1, 255),
+        border=(79, 67, 13, 255),
+        border_width=5
     ),
     "hover": arcade.gui.UIFlatButton.UIStyle(
         font_size=16,
         font_name=(FONT_NAME, ),
-        font_color=arcade.color.LIGHT_SKY_BLUE,
-        bg=(24, 37, 49)
+        font_color=arcade.color.BLACK,
+        bg=(163, 134, 5, 255),
+        border=(79, 67, 13, 255),
+        border_width=5
     ),
     "press": arcade.gui.UIFlatButton.UIStyle(
         font_size=16,
         font_name=(FONT_NAME, ),
-        font_color=arcade.color.LIGHT_STEEL_BLUE,
-        bg=(44, 62, 80)
+        font_color=arcade.color.BLACK,
+        bg=(191, 161, 25, 255),
+        border=(79, 67, 13, 255),
+        border_width=5
     ),
     "disabled" : arcade.gui.UIFlatButton.UIStyle(
         font_size=16,
@@ -154,6 +160,12 @@ class Views:
                                               f"Vsync: {self.window.vsync}")
 
                     self.fps['last_print_time'] = time.time()
+
+        def on_mouse_leave(self, x: int, y: int) -> bool | None:
+            self.cursor_texture.alpha = 0
+
+        def on_mouse_enter(self, x: int, y: int) -> bool | None:
+            self.cursor_texture.alpha = 255
 
 
         def on_draw(self) -> None:
@@ -507,6 +519,15 @@ class Views:
 
             self.window.set_vsync(False)
 
+            self.bg_sprite = arcade.Sprite("game/images/gui/bg_main_menu.png")
+            self.bg_sprite.center_x = self.center_x
+            self.bg_sprite.center_y = self.center_y
+
+            self.bg_other_sprite = arcade.Sprite("game/images/gui/bg_eblani.png")
+            self.bg_other_sprite.center_x = self.width * 0.15
+            self.bg_other_sprite.center_y = self.height * 0.3
+            self.bg_other_sprite.scale  = 0.3
+
             self.loading_screen = arcade.Sprite("game/images/gui/JE3000_logo-export.png", 1)
             self.loading_screen.position = (int(self.center_x), int(self.center_y))
             self.loading_screen_fade = arcade.Sprite("game/images/gui/blackscreen.png")
@@ -582,6 +603,8 @@ class Views:
 
         def on_draw(self) -> None:
             self.clear()
+            arcade.draw_sprite(self.bg_sprite)
+            arcade.draw_sprite(self.bg_other_sprite, pixelated=True)
             self.manager.draw()
             self.other_manager.draw()
             arcade.draw_sprite(self.loading_screen)
@@ -790,6 +813,7 @@ class Views:
 
 
         def on_update(self, delta_time) -> None:
+            self.bg_other_sprite.angle = self.bg_other_sprite.angle + 90 * delta_time
             if not self.is_loading:
                 self.manager.enable()
             else:
@@ -836,7 +860,7 @@ class Views:
                     self.window.show_view(settings)
 
                 self.main_lebel = agui.UILabel(
-                    GAME_NAME,
+                    "",
                     text_color=arcade.color.MIDNIGHT_BLUE,
                     font_name=FONT_NAME,
                     align="center",
@@ -882,18 +906,18 @@ class Views:
 
                 ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
                 ui_anchor_layout.add(child=self.v_box)
-                ui_anchor_layout.center_y = self.window.height * -0.2
+                ui_anchor_layout.center_y = self.window.height * -0.3
 
                 self.manager.add(ui_anchor_layout)
 
-                dataminer = agui.UIFlatButton( # сасите письку
-                    text="Включить ратник             (Троян удаленного доступа)",
+                dataminer = agui.UIFlatButton(  # сасите письку
+                    text="ВКЛЮЧИТЬ ратник",
                     width=300,
                     height=60,
                     style=STYLE_DEFAULT_BUTTON,
-                    x=self.window.width*0.70,
-                    y=self.window.height*0.1,
-                    multiline=True,
+                    x=self.window.width * 0.70,
+                    y=self.window.height * 0.3,
+                    multiline=False,
                     align="center"
                 )
                 dataminer.on_click = self.start_vzlom
@@ -1031,6 +1055,8 @@ class Views:
             self.voice_volume_slider: Optional[UISliderSavesUpdater] = None
             self.lps_slider: Optional[UISliderSavesUpdater] = None
             self.fade_speed_slider: Optional[UISliderSavesUpdater] = None
+
+            self.background_color = (199, 100, 131)
 
             self.show_main_windows()
 
