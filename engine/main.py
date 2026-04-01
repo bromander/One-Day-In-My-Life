@@ -295,8 +295,8 @@ class Views:
 
                     thread = fm.load_assets(list(_files_manager["loaded_textures"].keys()) + list(_files_manager["loaded_audios"].keys()), "loading_ponn")
 
-                    while thread.is_alive():
-                        continue
+                    #while thread.is_alive():
+                    #    continue
 
                     wwl._preload_assets(wwl.label)
                     if wwl.label in wwl.graf:
