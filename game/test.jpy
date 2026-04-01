@@ -338,8 +338,8 @@ label home_late_continue():
     <oz> "И я тебя тоже, дорогая."
 
 
-label home("Дом милый дом", "Это что за покемон?", show_splash = True, speed = 2, volume=0.6):
-    Audio.play("music", "Scarlet Forest (Deltarune) - Meowsynth Orchestra.mp3", effect="fade")
+label home("Дом милый дом", "Это что за покемон?", show_splash = True, speed = 2):
+    Audio.play("music", "Scarlet Forest (Deltarune) - Meowsynth Orchestra.mp3", effect="fade", volume=0.6)
     <> "В прихожую впорхнула леди в вычурном претенциозном наряде со смутными претензиями на готику."
     <> "Было удивительно, как вся эта чопорная одежда, покрывающая чуть ли не всё тело, не заставляла её выглядеть упаренной вусмерть."
     <> "Напротив, обладательница сего гардероба выглядела вполне жизнерадостно."
