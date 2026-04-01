@@ -2,3 +2,4 @@
 start.build/
 start.dist/
 nuitka-crash-report.xml
+/Setuper/

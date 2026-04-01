@@ -468,7 +468,6 @@ class Namespace:
             if layer < 0:
                 raise ValueError("Layer must be greater than zero.")
 
-            self.Game_view.scene.clear_layer("sprites")
 
             sprite = self.Game_view.scene.get_sprite(file_name)
             if sprite is None:
@@ -480,10 +479,11 @@ class Namespace:
             if effect is not None:
                 sprite.alpha = 0
                 bg_id = -1
-            else:
-                self.Game_view.scene.clear_layer("bg")
 
-            def target(bg_id):
+            def target(bg_id, hide_scene: bool):
+                self.Game_view.scene.clear_layer("sprites")
+                if hide_scene:
+                    self.Game_view.scene.clear_layer("bg")
                 self.Game_view.scene.add_sprite(f"bg", bg_id, sprite)
                 yield
 
@@ -493,7 +493,7 @@ class Namespace:
                 self.Game_view.scene["bg"][layer] = old_bg
                 yield
 
-            self.Game_view.actions.active_generators.add_generator(stream, target(bg_id), "set_scene")
+            self.Game_view.actions.active_generators.add_generator(stream, target(bg_id, effect is None), "set_scene")
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(stream, effect.effect(bg_id, "bg", self.Game_view, self.sm), "set_scene_effect")
                 self.Game_view.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")

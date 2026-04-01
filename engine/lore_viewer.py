@@ -341,7 +341,7 @@ class LoreLogger:
                 for attributes in self.main_self.scene[layer]:
                     data = {
                         "layer": layer,
-                        "texture_name" : data['sprite'].texture.file_path.name,
+                        "texture_name" : attributes['sprite'].texture.file_path.name,
                         'speed': attributes["speed"],
                         'original_x': attributes["original_x"],
                         'original_y': attributes['original_y']

@@ -1141,3 +1141,45 @@ class ItemsNotifText(Text):
         if self.y > 2000:
             self.visible = False
 
+
+class ClickableSprite(Sprite):
+    def __init__(self, textures: list, center_x = 0, center_y = 0, angle=0, scale=1.0):
+        super().__init__(path_or_texture=textures[0])
+        self.start_angle = angle + random.randint(-5, 5)
+        self.center_x = int(center_x) + random.randint(-30, 30)
+        self.center_y = int(center_y) + random.randint(-15, 30)
+        color_rand = random.randint(230, 255)
+        self.angle = int(self.start_angle)
+        self.color = (
+            color_rand,
+            color_rand,
+            color_rand,
+            255
+        )
+        self.scale = scale
+        self.scale_x = self.scale_x * random.randint(95, 105) / 100
+        self.scale_y = self.scale_y * random.randint(95, 105) / 100
+
+        self.textures = textures
+
+    def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
+
+        if 1 in args[0]:
+            if args[0][1]:
+                if self.left <= args[0]["x"] <= self.right and self.bottom <= args[0]["y"] <= self.top:
+                    list_children = []
+                    for i in self.sprite_lists:
+                        list_children = list_children + list(get_sprites_at_point((args[0]["x"], args[0]["y"]), i))
+                    if len(list_children) > 0:
+                        if list_children[-1] is self:
+                            self.clicked = True
+                    else:
+                        self.clicked = True
+
+            else:
+                self.clicked = False
+
+        if self.clicked:
+            self.set_texture(1)
+        else:
+            self.set_texture(0)

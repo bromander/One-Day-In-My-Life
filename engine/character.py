@@ -185,7 +185,7 @@ class Character:
                         index += 1
 
                         if ((index % 4 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
-                            if os.path.isdir(f"./game/sounds/voice/{self.char_id}"):
+                            if os.path.isfile(f"./game/sounds/voice/{self.char_id}"):
                                 self.am.play_voice(random.choice(self.talk_sounds))
 
                         if char == ".":
@@ -286,6 +286,7 @@ class ListCharacters:
             "shak" : _Character("Жаклин", "shak", "#f5a889", "#f0855b"),
             "masorubka" : _Character("Кассир", "masorubka", "#E0FFFF", "#7FFFD4"),
             "ed" : _Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
+            "oz": _Character("ОЗИНАЖ", "oz", "#12d3da"),
         }
 
     def __getitem__(self, item) -> dict[str : Character]:

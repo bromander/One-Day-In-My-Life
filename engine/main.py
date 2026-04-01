@@ -1,6 +1,6 @@
 import threading
 import arcade
-from arcade import SpriteList
+from arcade import SpriteList, View
 from pyglet.event import EVENT_HANDLE_STATE
 from pyglet.graphics import Batch
 import arcade.gui as agui
@@ -15,7 +15,10 @@ import os
 import random
 import json
 import uuid
-from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText
+
+from pyglet.math import Mat4
+
+from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText, ClickableSprite
 from .scene import Scene
 from .lore_viewer import Wwl, LoreLogger
 from .waiter import Waiter
@@ -104,6 +107,9 @@ class Views:
             Создаёт счётчик ФПС и отвечает за курсор
             """
             super().__init__()
+
+            self.scale = arcade.get_screens()[0].get_scale()
+
             self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
             self.window.background_color = arcade.color.WHITE
             self.background_color = arcade.color.WHITE
@@ -129,7 +135,7 @@ class Views:
             if "x" in self.window.mouse.data and "y" in self.window.mouse.data:
                 mouse_x, mouse_y = self.window.mouse.data["x"], self.window.mouse.data["y"]
                 self.cursor_texture.position = (mouse_x, mouse_y)
-            self.window.set_mouse_visible(True)
+            self.window.set_mouse_visible(False)
 
             if Saves_manager().Volume.get_other("show_fps"):
                 current_fps = 1.0 / delta_time if delta_time > 0 else 0
@@ -262,8 +268,8 @@ class Views:
                 if session_id is None:
                     self.session_id = str(uuid.uuid4())
                 else:
-                    self.session_id = session_id
-                    save = sm.Save.get_save(self.session_id)
+                    self.session_id = str(uuid.uuid4())
+                    save = sm.Save.get_save(session_id)
                     wwl.label = save["label"]
                     wwl.pose = save["position"]
                     for i, o in save["defines"].items():
@@ -292,8 +298,6 @@ class Views:
             load_saves(session_id)
 
             self.actions = Actions(self, sm)
-
-            print(self.session_id)
 
             self.NAMESPACE = Namespace(self, Views, self.lc, wwl, am, wait_trigger, sm)
 
@@ -391,7 +395,8 @@ class Views:
                     case "SHOW_SPLASH":
                         if now["data"]['show_splash']:
                             self.actions.start_action("show_splash", now["data"], "together")
-                        da.update(now["data"]["name"], now["data"]["description"])
+                        if (now["data"]["name"] != ")" and now["data"]["name"]) or now["data"]["description"] != '':
+                            da.update(now["data"]["name"], now["data"]["description"])
                         return "NEXT"
 
                     case _:
@@ -582,6 +587,10 @@ class Views:
             arcade.draw_sprite(self.loading_screen)
             arcade.draw_sprite(self.loading_screen_fade)
             arcade.draw_sprite(self.why)
+            if self.is_loading:
+                self.background_color = (0, 69, 255)
+            else:
+                self.background_color = (255, 255, 255)
             super().on_draw()
 
         def _start_vokhanalia(self):
@@ -1443,6 +1452,7 @@ class Views:
                 MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
                 MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
 
+                ClickableSprite([scene.get_texture("money_wth.png"), scene.get_texture("money_wth_clicked.png")], width * 0.64, height * 0.2, 100, 0.6),
                 MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True),
                 MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True),
                 MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True),

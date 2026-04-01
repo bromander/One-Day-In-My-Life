@@ -54,12 +54,11 @@ class Discord_act:
                 self.connected = True
 
         Thread(target=con).start()
-
     def update(self, name: str, description: str):
 
         try:
             if self.connected:
-                if name and description:
+                if name != ")" and description:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
                         activity_type=ActivityType.PLAYING,
@@ -72,7 +71,7 @@ class Discord_act:
                         activity_type=ActivityType.PLAYING,
                         details=name
                     )
-                if not name:
+                else:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
                         activity_type=ActivityType.PLAYING,
