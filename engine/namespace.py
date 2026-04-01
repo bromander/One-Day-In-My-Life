@@ -1,11 +1,8 @@
-import sys
 import time, datetime
-from io import StringIO
 import re
-from sqlite3.dbapi2 import paramstyle
 from typing import Optional, Literal, Tuple, Union
 import PIL
-from arcade import Sprite
+from arcade import Sprite, Texture, load_image, get_window, load_animated_gif
 
 from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
@@ -291,12 +288,13 @@ class Namespace:
             return sprite_size
 
 
-        def add_sprite(self, filename: str,
+        def add_sprite(self, filename: [str, Sprite],
                        at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
                        size: Optional[Union[tuple[int, int], int]] = None,
                        angle: int = 0.0,
                        effect = None,
-                       stream: Literal["consistently", "together"] = "consistently") -> None:
+                       stream: Literal["consistently", "together"] = "consistently",
+                       layer: str = "sprites") -> None:
             """
             Добавляет спрайт на сцену
             :param filename: Название спрайта
@@ -307,9 +305,12 @@ class Namespace:
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
             """
 
-            sprite: Sprite = self.Game_view.scene.get_sprite(filename)
-            if sprite is None:
-                raise FileNotFoundError(f"File {filename} not found!")
+            if isinstance(filename, Sprite):
+                sprite = filename
+            else:
+                sprite: Sprite = self.Game_view.scene.get_sprite(filename)
+                if sprite is None:
+                    raise FileNotFoundError(f"File {filename} not found!")
 
             sprite.size = self._get_size(size, sprite.size)
 
@@ -336,14 +337,14 @@ class Namespace:
                 sprite.alpha = 255
 
             def target():
-                self.Game_view.scene.add_sprite("sprites", filename, sprite)
+                self.Game_view.scene.add_sprite(layer, filename, sprite)
                 yield
 
             self.Game_view.actions.active_generators.add_generator(stream, target(), "show_sprite")
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(filename, "sprites", self.Game_view, self.sm),
+                    effect.effect(filename, layer, self.Game_view, self.sm),
                     "show_sprite_effect"
                 )
 
@@ -447,7 +448,7 @@ class Namespace:
             self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
 
         def set_scene(self,
-                      file_name: str,
+                      file_name: Union[str, Sprite],
                       size: Optional[Union[tuple[int, int], int]] = None,
                       layer: int = 0,
                       effect = None,
@@ -468,10 +469,15 @@ class Namespace:
             if layer < 0:
                 raise ValueError("Layer must be greater than zero.")
 
+            if isinstance(file_name, str):
 
-            sprite = self.Game_view.scene.get_sprite(file_name)
-            if sprite is None:
-                raise FileNotFoundError(f"File {file_name} not found!")
+                sprite = self.Game_view.scene.get_sprite(file_name)
+                if sprite is None:
+                    raise FileNotFoundError(f"File {file_name} not found!")
+
+            elif isinstance(file_name, Sprite):
+                sprite = file_name
+
 
             sprite.center_x, sprite.center_y, sprite.size = self.Game_view.width * 0.5, self.Game_view.height * 0.5, self._get_size(size, sprite.size)
 
@@ -482,6 +488,8 @@ class Namespace:
 
             def target(bg_id, hide_scene: bool):
                 self.Game_view.scene.clear_layer("sprites")
+                self.Game_view.scene.clear_layer("bg_parallax")
+                self.Game_view.scene.clear_layer("animated_sprites")
                 if hide_scene:
                     self.Game_view.scene.clear_layer("bg")
                 self.Game_view.scene.add_sprite(f"bg", bg_id, sprite)
@@ -489,6 +497,7 @@ class Namespace:
 
             def edit_layer_name_and_del_old(bg_id, layer):
                 old_bg = self.Game_view.scene["bg"][bg_id]
+                self.Game_view.scene.clear_layer("animated_sprites")
                 self.Game_view.scene.clear_layer("bg")
                 self.Game_view.scene["bg"][layer] = old_bg
                 yield
@@ -502,13 +511,11 @@ class Namespace:
                       files: [tuple[str, float]],
                       stream: Literal["consistently", "together"] = "consistently") -> None:
 
-            #self.character_slice = -1
-
-            self.Game_view.scene.clear_layer("sprites")
-
-            self.Game_view.scene.clear_layer("bg")
+            self.Game_view.scene.clear_layer("bg_parallax")
 
             def target(file_name, speed):
+                self.Game_view.scene.clear_layer("sprites")
+                self.Game_view.scene.clear_layer("bg")
                 self.Game_view.scene.add_parallax_bg(file_name, speed, self.Game_view.center_x, self.Game_view.center_y)
                 yield
 
@@ -557,9 +564,49 @@ class Namespace:
                 "Сдохнуть" : "Лейбл_сдохнуть"
             }
             '''
-            self.Wait_trigger.on()
 
             self.Game_view.show_menu(buttons)
+
+        def add_sorry_sprite(self):
+
+
+            class Soorry(Sprite):
+                def __init__(self):
+                    super().__init__("game/images/scenes/sorry1.png")
+                    self.textures = [
+                        Texture(load_image("game/images/scenes/sorry1.png")),
+                        Texture(load_image("game/images/scenes/sorry2.png")),
+                        Texture(load_image("game/images/scenes/sorry3.png"))
+                    ]
+                    self.center_x = get_window().center_x
+                    self.center_y = get_window().center_y
+                    self.width = get_window().width
+                    self.height = get_window().height
+
+                    self.id = 0
+                    self.timer = time.time()
+
+                def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
+                    super().update(delta_time)
+                    if time.time() - self.timer > 0.1:
+                        self.timer = time.time()
+                        self.set_texture(self.id)
+                        self.id += 1
+                        if self.id > 2:
+                            self.id = 0
+
+            self.Game_view.scene.clear_layer("sprites")
+            self.Game_view.scene.clear_layer("bg")
+            self.Game_view.scene.clear_layer("bg_parallax")
+            self.set_scene(Soorry())
+
+        def start_cutscene(self, path):
+
+            cutscene = self.Game_view.scene.get_sprite(path)
+            cutscene.size  = get_window().size
+            self.Game_view.scene.clear_layer("bg")
+            self.Game_view.scene.clear_layer("animated_sprites")
+            self.add_sprite(cutscene, layer="animated_sprites", at=(0.5, 0.5))
 
     class Lore:
         def __init__(self, Game_view, Wwl) -> None:

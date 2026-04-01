@@ -1,5 +1,5 @@
 import time
-from arcade import Sprite, draw_sprite, Texture, load_texture, get_window
+from arcade import Sprite, draw_sprite, Texture, load_texture, get_window, TextureAnimationSprite
 import os
 from pathlib import Path
 import threading
@@ -16,6 +16,7 @@ class Scene:
             "bg": {},
             "bg_parallax": [],
             "sprites": {},
+            "animated_sprites": {},
             "gui": {},
             "fade": {"fade" : Sprite(), "splash": Sprite()}
         }
@@ -44,6 +45,8 @@ class Scene:
 
     def get_sprite(self, filename: str) -> Optional[Sprite]:
         texture = self.fm.textures.get(filename, None)
+        if isinstance(texture, TextureAnimationSprite):
+            return texture
         if texture:
             sprite = Sprite(texture)
             return sprite
@@ -57,6 +60,7 @@ class Scene:
             "bg": {},
             "bg_parallax": {},
             "sprites": {},
+            "animated_sprites": {},
             "gui": {},
             "fade": {"fade" : Sprite(), "splash": Sprite()}
         }
@@ -114,12 +118,18 @@ class Scene:
 
         self.data[layer].clear()
 
-    def update(self) -> None:
+    def update(self, delta_time = 1/60) -> None:
         """Обновляет все спрайты"""
 
         len_sprites = 0
 
-        for layer_content in self.data.values():
+        for layer, layer_content in self.data.items():
+            if layer == "animated_sprites":
+                for sprite in layer_content.values():
+                    if isinstance(sprite, Sprite):
+                        sprite.update_animation(delta_time)
+                        continue
+
             if isinstance(layer_content, Sprite):
                 layer_content.update()
             elif isinstance(layer_content, dict):

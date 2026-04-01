@@ -205,7 +205,7 @@ class Wwl:
                         if i in self.fm.textures_paths or i in self.fm.audio_paths:
                             sprites.append(i)
                     else:
-                        for o in [".png", ".jpg", ".jpeg", ".PNG", ".JPEG"]:
+                        for o in [".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"]:
                             i = i + o
                             if i in self.fm.textures_paths or i in self.fm.audio_paths:
                                 sprites.append(i)
@@ -323,31 +323,36 @@ class LoreLogger:
             if layer == "fade" or layer == "gui":
                 continue
 
-            if isinstance(self.main_self.scene[layer], dict):
-                for name, sprite in self.main_self.scene[layer].items():
-                    sprite: Sprite = sprite
+            try:
+                if isinstance(self.main_self.scene[layer], dict):
+                    for name, sprite in self.main_self.scene[layer].items():
+                        sprite: Sprite = sprite
 
-                    data = {
-                        "name" : name,
-                        "layer" : layer,
-                        "pos" : sprite.position,
-                        "size" : sprite.size,
-                        "angle" : sprite.angle,
-                        "alpha" : sprite.alpha,
-                        "texture_name" : sprite.texture.file_path.name,
-                        "visible" : sprite.visible,
-                    }
-            elif isinstance(self.main_self.scene[layer], list):
-                for attributes in self.main_self.scene[layer]:
-                    data = {
-                        "layer": layer,
-                        "texture_name" : attributes['sprite'].texture.file_path.name,
-                        'speed': attributes["speed"],
-                        'original_x': attributes["original_x"],
-                        'original_y': attributes['original_y']
-                    }
+                        data = {
+                            "name" : name,
+                            "layer" : layer,
+                            "pos" : sprite.position,
+                            "size" : sprite.size,
+                            "angle" : sprite.angle,
+                            "alpha" : sprite.alpha,
+                            "texture_name" : sprite.texture.file_path.name,
+                            "visible" : sprite.visible,
+                        }
+                        snapshot.append(data)
 
-                    snapshot.append(data)
+                elif isinstance(self.main_self.scene[layer], list):
+                    for attributes in self.main_self.scene[layer]:
+                        data = {
+                            "layer": layer,
+                            "texture_name" : attributes['sprite'].texture.file_path.name,
+                            'speed': attributes["speed"],
+                            'original_x': attributes["original_x"],
+                            'original_y': attributes['original_y']
+                        }
+
+                        snapshot.append(data)
+            except AttributeError:
+                pass
         return snapshot
 
     def _load_snapshot_scene(self, snapshot: list[dict]):

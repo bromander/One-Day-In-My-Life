@@ -3,7 +3,7 @@ import os
 import mutagen
 from typing import Union, Optional, Dict, Literal
 from threading import Thread
-from arcade import load_sound, load_texture, Texture, Sound
+from arcade import load_sound, load_texture, Texture, Sound, load_animated_gif
 
 class FilesManager:
     """
@@ -45,7 +45,7 @@ class FilesManager:
         self.music_path = Path(paths["music"]).absolute()
         self.sounds_path = Path(paths["sounds"]).absolute()
 
-        self.image_extensions = [".png", ".jpg", ".jpeg", ".PNG", ".JPEG"]
+        self.image_extensions = [".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"]
         self.audio_extensions = [".mp3", ".wav", ".ogg"]
 
         self.textures_paths: dict[str : Path] = find_files(self.image_extensions, self.images_path) # Пути к текстурам всех спрайтов {Название файла : полный путь}
@@ -74,7 +74,10 @@ class FilesManager:
                 if i in self.textures_paths: # Текстуры
                     if i in self.textures:
                         continue
-                    self.textures[i] = load_texture(str(self.textures_paths[i]))
+                    if str(i).endswith(".gif"):
+                        self.textures[i] = load_animated_gif(str(self.textures_paths[i]))
+                    else:
+                        self.textures[i] = load_texture(str(self.textures_paths[i]))
 
                 elif i in self.audio_paths: # Аудио
                     if i in self.audios:

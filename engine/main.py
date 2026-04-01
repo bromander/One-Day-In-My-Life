@@ -428,18 +428,14 @@ class Views:
             super().on_draw()
 
         def show_menu(self, data) -> None:
-            global wait_trigger
+            self.menu_manager.clear()
 
             def jump(label: str):
-                global wait_trigger
                 wwl.pose = 0
                 wwl.label = label
                 self.menu_manager.clear()
                 self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
-                wait_trigger.off()
                 self.talk_manager()
-
-            wait_trigger.on()
 
             for k, v in data.items():
                 button = agui.UIFlatButton(
@@ -451,10 +447,8 @@ class Views:
                 button.on_click = lambda event, label=v: jump(label)
                 self.menu_v_box.add(button)
 
-            wait_trigger.on()
-
             ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-            ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y")
+            ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y", align_x=self.center_x, align_y=self.center_y)
 
             self.menu_manager.add(self.menu_v_box)
 
@@ -462,7 +456,9 @@ class Views:
 
             self.delta_time = delta_time
 
-            self.scene.update()
+            self.scene.update(delta_time)
+
+            self.menu_manager.on_update(delta_time)
 
             self.actions.update(delta_time)
 
@@ -1260,9 +1256,9 @@ class Views:
             width = self.width
             height = self.height
             items = [
-                MovableBlockFalling(scene.get_texture("Boobles.png"), width * 0.1, height * 0.33),
-                MovableBlockFalling(scene.get_texture("Boobles.png"), width * 0.12, height * 0.33),
-                MovableBlockFalling(scene.get_texture("Boobles.png"), width * 0.14, height * 0.33),
+                MovableBlockFalling(scene.get_texture("puki.png"), width * 0.1, height * 0.33),
+                MovableBlockFalling(scene.get_texture("puki.png"), width * 0.12, height * 0.33),
+                MovableBlockFalling(scene.get_texture("puki.png"), width * 0.14, height * 0.33),
 
                 MovableBlockFalling(scene.get_texture("eggs.png"), width * 0.3, height * 0.28),
                 MovableBlockFalling(scene.get_texture("eggs.png"), width * 0.32, height * 0.28),
@@ -1327,7 +1323,7 @@ class Views:
                 MovableBlockFalling(scene.get_texture("milk.png"), width * 0.91, height * 0.79)
 
             ]
-            if random.random() > 0.9:
+            if random.random() > 0.99:
                 items.append(MovableBlockFalling(scene.get_texture("penis.png"), width * 0.90, height * 0.30))
             else:
                 items.append(MovableBlockFalling(scene.get_texture("penis_bread.png"), width * 0.93, height * 0.30))
@@ -1395,7 +1391,7 @@ class Views:
 
         def on_update(self, delta_time: float) -> None:
             super().on_update(delta_time)
-            self.scene.update()
+            self.scene.update(delta_time)
             if len(list(self.return_button_manager.get_widgets_at((self.window._mouse_x, self.window._mouse_y)))) == 0:
                 self.items_manager.update(delta_time, self.window.mouse.data)
             for i in self.notifiers:
@@ -1617,7 +1613,7 @@ class Views:
 
         def on_update(self, delta_time: float) -> None:
             super().on_update(delta_time)
-            self.scene.update()
+            self.scene.update(delta_time)
             if len(list(self.return_button_manager.get_widgets_at((self.window._mouse_x, self.window._mouse_y)))) == 0:
                 self.items_manager.update(delta_time, self.window.mouse.data)
 
