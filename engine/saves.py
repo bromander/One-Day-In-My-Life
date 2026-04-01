@@ -1,5 +1,8 @@
+import copy
 import  json, os
 from .Exceptions import PersistentDoesNotExistError, VolumeDoesNotExistError, SaveDoesNotExistError
+from .files_manager import FilesManager
+from arcade import Sprite, TextureAnimationSprite
 
 class Saves_manager:
     def  __init__(self):
@@ -162,7 +165,7 @@ class Saves_manager:
                 json.dump(self.file, file)
 
 
-        def create_save(self, session_id, am, scene, NAMESPACE, wwl) -> None:
+        def create_save(self, session_id, am, scene, NAMESPACE, wwl, fm: FilesManager) -> None:
             """
             Создаёт текущее сохранение
             :param session_id: Айди сессии
@@ -171,12 +174,11 @@ class Saves_manager:
             :param NAMESPACE: Класс Namespace
             :param wwl: Класс WorkWithLore
             """
-            try:
-                music_file = am.music.sound.file_name
-            except FileNotFoundError:
-                music_file = None
-            except AttributeError:
-                music_file = None
+            if am.music.is_playing():
+                music_file = am.music.now_playing_path
+            else:
+                music_file =  None
+
 
             sprites = [
                 {
@@ -188,6 +190,12 @@ class Saves_manager:
                 for i, o in scene["sprites"].items()
             ]
 
+            defines = {}
+            for name, value in NAMESPACE.Define.__dict__.items():
+                if not name.startswith("__") and not name.endswith("__"):
+                    defines[name] = copy.deepcopy(value)
+
+
             bg = [
                 {
                     "layer": 0,
@@ -198,25 +206,48 @@ class Saves_manager:
                 for i in scene["bg"].values()
             ]
 
+            bg_parallax = [
+                {
+                    'path': i["sprite"].texture.file_path.name,
+                    'speed': i["speed"],
+                    'original_x': i["original_x"],
+                    'original_y': i["original_y"],
+                    "scale": i["scale"]
+                }
+                for i in scene["bg_parallax"]
+            ]
+
+            files_manager = {
+                "loaded_lables" : copy.copy(fm.loaded_labels),
+                "loaded_textures" : {
+                    filename : str(texture.file_path) for filename, texture in fm.textures.items() if type(texture) is not TextureAnimationSprite
+                },
+                "loaded_audios" : {
+                    filename: str(sound.file_name) for filename, sound in fm.audios.items()
+                }
+            }
+            for filename, texture in fm.textures.items():
+                if type(texture) is not TextureAnimationSprite:
+                    files_manager["loaded_textures"][filename] = str(texture.file_path)
+                else:
+                    paths = [str(i.texture.file_path) for i in texture.textures]
+                    files_manager["loaded_textures"][filename] = paths
+
+
             scene = {
                 "bg": bg,
+                "bg_parallax" : bg_parallax,
                 "sprites": sprites,
-                "music": music_file
-
+                "music": music_file,
+                "characters_slice": scene.characters_slice
             }
-            self._add_save(session_id,
-                           defines=NAMESPACE["Define"].defines,
-                           position=wwl.pose - 1,
-                           label=wwl.label,
-                           scene=scene
-                           )
 
-        def _add_save(self, session_id: str, defines: dict, position: int, label: str, scene: dict) -> None:
             self.file["saves"][session_id] = {
-                "position" : position,
-                "label" : label,
-                "defines" : defines,
-                "scene" : scene
+                "position": wwl.pose - 1,
+                "label": wwl.label,
+                "defines": defines,
+                "scene": scene,
+                "files_manager" : files_manager
             }
             self._save_data()
 

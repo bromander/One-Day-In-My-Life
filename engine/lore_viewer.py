@@ -6,6 +6,7 @@ from arcade import Sprite
 from typing import Optional
 from .files_manager import FilesManager
 from .Exceptions import MainLabelNotFoundError
+from .audio import AudioManager
 
 
 class Wwl:
@@ -312,9 +313,10 @@ class Wwl:
             return lore
 
 class LoreLogger:
-    def __init__(self, main_self, wwl: Wwl):
+    def __init__(self, main_self, wwl: Wwl, am: AudioManager):
         self.main_self =  main_self
         self.wwl = wwl
+        self.am = am
         self.logs = []
 
     def _snapshot_scene(self):

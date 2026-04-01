@@ -58,7 +58,7 @@ class Scene:
     def clear_scene(self):
         self.data = {
             "bg": {},
-            "bg_parallax": {},
+            "bg_parallax": [],
             "sprites": {},
             "animated_sprites": {},
             "gui": {},
@@ -151,7 +151,7 @@ class Scene:
         sprite.scale_y = float(sprite.scale_y + 0.1 * speed)
         self.data["bg_parallax"].append(
             {
-                'sprite' : self.get_sprite(filename),
+                'sprite' : sprite,
                 'speed': speed,
                 'original_x': center_x,
                 'original_y': center_y,

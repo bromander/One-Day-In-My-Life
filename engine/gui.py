@@ -573,12 +573,13 @@ class Managers:
                     width=200,
                     style=self.STYLE_DEFAULT_BUTTON
                 )
-                save_button.on_click = lambda action=None, session_id=self.session_id, am=self.am, scene=self.MainView_self.scene, NAMESPACE=self.MainView_self.NAMESPACE, wwl=self.wwl: self.sm.Save.create_save(
+                save_button.on_click = lambda action=None, session_id=self.session_id, am=self.am, scene=self.MainView_self.scene, NAMESPACE=self.MainView_self.NAMESPACE, wwl=self.wwl, fm=self.MainView_self.fm: self.sm.Save.create_save(
                     session_id,
                     am,
                     scene,
                     NAMESPACE,
-                    wwl
+                    wwl,
+                    fm
                 )
 
                 self.settings_v_box.add(save_button)

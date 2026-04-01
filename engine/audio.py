@@ -1,6 +1,6 @@
 from typing import Optional, Literal, Tuple, Union
 from pathlib import Path
-from arcade import load_sound, sound
+from arcade import load_sound, sound, Sound
 import random
 import pyglet.media.player
 from .saves import Saves_manager
@@ -17,6 +17,7 @@ class AudioChannel:
         self.player: Optional[pyglet.media.player.Player] = None
         self.default_volume: float = default_volume # Громкость по умолчанию
         self.volume_type: Optional[str] = volume_type # Тип канала
+        self.now_playing_path:  Optional[str] = None
         self.modifier = modifier # Модификатор громкости. Предназначен для управления громкостью ползунками из настроек
         self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью во время плавных переходов (FADEIN/FADEOUT)
         self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью текущего трека. Сбрасывается при запуске нового трека
@@ -57,14 +58,15 @@ class AudioChannel:
             self._local_modifier = 1
 
         if type(file) is str or type(file) is type(Path()):
+            self.now_playing_path = str(file)
             file_sound = load_sound(str(file), streaming=streaming)
         elif type(file) is sound.Sound:
             file_sound = file
+            self.now_playing_path = file.file_name
         else:
             raise TypeError("Sound type is not the desired data type")
 
         volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
-
         self.player = file_sound.play(volume=volume, loop=loop, speed=speed)
         self.paused = False
 
@@ -77,6 +79,7 @@ class AudioChannel:
                 self.player.delete()
                 del self.player
         self.paused = False
+        self.now_playing_path = None
 
     def pause(self) -> None:
         """

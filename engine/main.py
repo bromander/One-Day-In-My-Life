@@ -273,6 +273,9 @@ class Views:
             self.start_trigger: bool = True
 
             self.session_id = ""
+
+            self.NAMESPACE = Namespace(self, Views, self.lc, wwl, am, wait_trigger, sm)
+
             def load_saves(session_id):
                 """
                 Загружает сохранение
@@ -284,34 +287,60 @@ class Views:
                     save = sm.Save.get_save(session_id)
                     wwl.label = save["label"]
                     wwl.pose = save["position"]
+
                     for i, o in save["defines"].items():
-                        self.NAMESPACE["Define"].defines[i] = o
+                        self.NAMESPACE["Define"].__setattr__(i, o)
 
-                    scene = save["scene"]
+                    _files_manager = save["files_manager"]
 
-                    for i in scene["bg"]:
+                    thread = fm.load_assets(list(_files_manager["loaded_textures"].keys()) + list(_files_manager["loaded_audios"].keys()), "loading_ponn")
+
+                    while thread.is_alive():
+                        continue
+
+
+                    wwl._preload_assets(wwl.label)
+                    if wwl.label in wwl.graf:
+                        for i in wwl.graf[wwl.label]:
+                            wwl._preload_assets(i)
+
+                    old_scene = save["scene"]
+                    scene.characters_slice = old_scene["characters_slice"]
+
+                    for i in old_scene["bg_parallax"]:
+                        self.scene.add_parallax_bg(i["path"], i["speed"], i["original_x"], i["original_y"])
+
+                    for i in old_scene["bg"]:
                         bg_sprite = arcade.Sprite(i["path"])
                         bg_sprite.size = tuple(i["size"])
                         bg_sprite.position = tuple(i["pos"])
                         self.scene.add_sprite("bg", i["layer"], bg_sprite)
 
-                    for i in scene["sprites"]:
-                        character_sprite = arcade.Sprite(i["path"])
-                        character_sprite.size = tuple(i["size"])
-                        character_sprite.position = tuple(i["pos"])
-                        self.scene.add_sprite("sprites", i["id"], character_sprite)
+                    for i in old_scene["sprites"]:
+                        if isinstance(i["path"], str):
+                            sprite = arcade.Sprite(i["path"])
+                        elif isinstance(i["path"], list):
+                            anim = arcade.TextureAnimation([arcade.TextureKeyframe(scene.get_texture(i)) for i in i["path"]])
+                            sprite = arcade.TextureAnimationSprite(animation=anim)
 
-                    if scene["music"] is not None:
-                        am.play_music(scene["music"])
+                        sprite.size = tuple(i["size"])
+                        sprite.position = tuple(i["pos"])
+                        self.scene.add_sprite("sprites", i["id"], sprite)
+
+
+                    if old_scene["music"] is not None:
+                        am.play_music(old_scene["music"])
                     else:
                         am.stop_sound()
                         am.stop_music()
+
+                    self.window.GameView = self
 
             load_saves(session_id)
 
             self.actions = Actions(self, sm)
 
-            self.NAMESPACE = Namespace(self, Views, self.lc, wwl, am, wait_trigger, sm)
+            self.fm = fm
 
             self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
             self.settings_manager.enable()
@@ -319,7 +348,7 @@ class Views:
             self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
             self.characters_texts_manager.enable()
 
-            self.LoreLogger = LoreLogger(self, wwl)
+            self.LoreLogger = LoreLogger(self, wwl, am)
 
             self.in_game_manager = Managers.InGameManager(FONT_NAME, self.window, autoskip_waiter = self.waiting_autoskip)
             self.in_game_manager.settings_button.on_click = self.settings_manager.turn_visibl
@@ -1229,6 +1258,7 @@ class Views:
             self.scene = scene
             self.actions = actions
             self.NAMESPACE = NAMESPACE
+            self.fm = fm
 
             self.layers = []
             self.layers.append({
@@ -1452,6 +1482,7 @@ class Views:
             self.scene = scene
             self.actions = actions
             self.NAMESPACE = NAMESPACE
+            self.fm = fm
 
             self.layers = []
             self.layers.append({

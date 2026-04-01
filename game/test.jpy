@@ -178,19 +178,19 @@ label road_to_home("Путь домой", "Ну наконец-то", show_splas
     <> "Тем не менее, последние шаги до дома были самыми тихими за этот день, если бы не скрип карандаша о бумагу блокнота в руках джентльмена, сидящего на скамейке в буром костюме с кремовым пиджаком и в очках."
     <> "Безымянный сосед, как его называла Жаклин, потому что каждый раз забывала его имя при встрече. Интересно, что видела она его довольно редко, как будто он вечно то появлялся то исчезал бесследно."
 
-    Scene.show_character("shak usual 1.png", at="right", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("shak usual 1", at="right", effect=SpriteEffects.Dissolve(0.5))
     <ed> "Миссис Жаклин! \n Рад вас сегодня видеть! \n Как ваши дела? \n Надеюсь детишки вам ещё не докучали, нынче этого избежать всё трудней."
     <shak> "Да, мистер… \n Настроение вполне… \n В пределах нормы…"
     <ed> "Ну и чудесно, но тем не менее, выскажу свои опасения, в районе я всё чаще начал слышать какие-то странные звуки, будто какой-то медведь или… \n {w=0.5}орёл… \n {w=0.2}трудно сказать…"
     <> "Странное высказывание даже для него, такое сравнение не только вгоняет в ступор, но и делает ситуацию всё более неловкой."
-    Scene.show_character("shak usual.png")
+    Scene.show_character("shak usual")
     <shak> "Я возьму ваши опасения в учёт, а теперь мне нужно домой… \n {w=0.1}мистер…"
     <ed> "Хорошего дня Мисс жаклин!"
     Scene.fade("fadein", 1)
     <> "На этом разговор был окончен и путь домой был продолжен."
     <shak> "Блин, ну это уже не дело, надо ж хотя бы спросить имя, а то неловко каждый раз называть его…"
-     Scene.show_character("shak usual.png")
-     Scene.fade("fadeout", 1)
+    Scene.show_character("shak usual")
+    Scene.fade("fadeout", 1)
     <shak> "Эй мистер…!"
     <> "Оборот в ту сторону не дал результата \"Безымянный сосед\" пропал будто его на том месте никогда и не было."
     <> "Это Странно, но тем не менее пора домой."
@@ -306,14 +306,14 @@ label food_choice():
     Scene.fade("fadein", 2)
     Audio.play("music", "ponos_deda_(remix).mp3", effect="fade", volume=0.5)
     Scene.set_scene("home_hallway.jpg")
-    Scene.show_character("shak usual.png", at="right")
+    Scene.show_character("shak usual", at="right")
     Scene.fade("fadeout", 1)
     Audio.play("music", "ponos_deda_(remix).mp3", effect="fade", volume=0.5)
 
 
     <shak> "Не помогаешь."
     <oz> "Ну значит, это моя неотразимая харизма!"
-    Scene.show_character("shak usual 1.png")
+    Scene.show_character("shak usual 1")
     <shak> "..."
     <oz> "..."
     <shak> "...убирать беспорядок будешь сама."
@@ -321,7 +321,7 @@ label food_choice():
     Scene.set_scene("home_kitchen.jpg", effect=SpriteEffects.Dissolve(1.0))
     <> "Жаклин устало вздохнула и направилась на кухню, игнорируя протесты сожительницы."
     <> "Разложив оставшиеся продукты по местам, она решила, что аппетит, в принципе, был весьма успешно отбит на ближайшие пару-тройку часов, и начала раскладывать на столе рабочие вещи:"
-    Scene.show_character("shak book.png", at="center", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak book", at="center", effect=SpriteEffects.Dissolve(1.0))
     <> "Сегодня предстояло проверить стопку самостоятельных. Что ж, посмотрим, насколько она была успешной…"
 
     Lore.jump("survey_program_maybe_correct")
@@ -435,7 +435,7 @@ label home_late_continue():
 
 label home("Дом милый дом", "Это что за покемон?", show_splash = True, speed = 2):
     Scene.set_scene("home_hallway.jpg")
-    Scene.show_character("shak usual.png", at="right")
+    Scene.show_character("shak usual", at="right")
     Audio.play("music", "ponos_deda_(remix).mp3", effect="fade", volume=0.5)
     Scene.fade("fadeout", 1)
 
@@ -444,7 +444,7 @@ label home("Дом милый дом", "Это что за покемон?", sho
     <> "Напротив, обладательница сего гардероба выглядела вполне жизнерадостно."
     <oz> "А ВОТ И МОЯ ЛЮБИМАЯ СОСЕДУШКАААА!~"
     <> "Жаклин устало поморщилась."
-    Scene.show_character("shak angry.png")
+    Scene.show_character("shak angry")
     <shak> "Нельзя ли потише... "
     <oz> "А у меня для тебя сюрприз! Хочешь узнать, какой?~"
     <shak> "Я бы больше хотела, чтобы ты мне с пакетами помогла..."
@@ -453,15 +453,15 @@ label home("Дом милый дом", "Это что за покемон?", sho
     wait(10.0)
     Scene.set_scene("home_hallway.jpg")
 
-    Scene.show_character("shak angry.png")
+    Scene.show_character("shak angry")
     <shak> "...что это."
     <oz> "Это зайка)"
-    Scene.show_character("shak usual.png")
+    Scene.show_character("shak usual")
     <shak> "Чт- какой зайка, где ты *это* подобрала?.."
     <oz> "С ПЕРВЫМ АПРЕЛЯ)))"
     <shak> "..."
     <oz> ")))"
-    Scene.show_character("shak usual 1.png")
+    Scene.show_character("shak usual 1")
     <shak> "Оно хоть привито?"
     <oz> "Их не нужно прививать, я их достала прямиком из черничного моря ;3"
     <shak> "*вздох смирения* И где ты взяла это черничное море? Не дай боже снова заляпаешь комнату своими порталами, оттирать будешь сама."
@@ -470,12 +470,12 @@ label home("Дом милый дом", "Это что за покемон?", sho
     <oz> "Кто знает, какая дурь оттуда бы выползла, если б ты сейчас не сказала"
     <shak> "А ты разве не знаешь?"
     <oz> "...!"
-    Scene.show_character("shak funny 2.png")
+    Scene.show_character("shak funny 2")
     <oz> "Окей, в этот раз подловила"
     <shak> "Это не то что бы сложно. Пошли, расскажешь мне об этой штуке, пока я что-нибудь нам состряпаю."
     Scene.set_scene("home_kitchen.jpg", effect=SpriteEffects.Dissolve(1.0))
 
-    Scene.show_character("shak funny 2.png", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak funny 2", effect=SpriteEffects.Dissolve(1.0))
     <oz> "Ну-с, что собираешься устроить?~"
     <shak> "Ну... из того, что сейчас под рукой, можно по-быстрому приготовить..."
     Scene.hide_character("shak", effect=SpriteEffects.Dissolve(1.0))
@@ -493,46 +493,46 @@ label home("Дом милый дом", "Это что за покемон?", sho
 
 ###### > Омлет
 label cooking_omlet():
-    Scene.show_character("shak usual 1.png", at="right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak usual 1", at="right", effect=SpriteEffects.Dissolve(1.0))
     <> "Жаклин начала смешивать смесь яиц и молока в миске."
     <oz> "Так что готовишь-то?"
     <shak> "Запечённую курицу."
     <oz> "А если серьёзно?"
-    Scene.show_character("shak usual.png")
+    Scene.show_character("shak usual")
     <shak> "Тогда блины."
     <oz> "Что-то непохоже."
-    Scene.show_character("shak funny 3.png")
+    Scene.show_character("shak funny 3")
     <shak> "Ты много блинов в своей жизни сделала?"
     <oz> "Да не то что бы- стой, не переводи тему!"
     <shak> "Ну так вот я в этой теме всё-таки немного поопытнее... и я говорю, что это будут блины. Сейчас буду жарить."
     <oz> "А муку кто добавлять будет?"
-    Scene.show_character("shak usual 1.png")
+    Scene.show_character("shak usual 1")
     <> "Жаклин сдержала в горле подступивший смешок, напустив на себя серьёзное выражение лица."
     <shak> "Этот рецепт называется \"панкейки без муки\", Ози."
     <oz> "Да это же не блины никакие, а клятучий омлет! В блинах обязательно должна быть мука!"
     <shak> "А панкейки это ещё и оладьи..."
     <> "ОЗИНАД на секунду остановилась, то ли потеряв дар речи, то ли пытаясь прочитать мысли кулинарного гения местного разлива."
     <oz> "В оладьях тоже нужна мука, ты поехавшая!..."
-    Scene.show_character("shak funny 2.png")
+    Scene.show_character("shak funny 2")
     <shak> "Ну так я повторюсь, это в любом случае рецепт \"панкейки без муки\", он даже называется так, специально для таких, как ты~"
     <oz> "ПАНКЕЙКИ БЕЗ МУКИ ЭТО СРАНЫЙ ОМЛЕТ-"
     <> "УГАШЕННЫЙ ТЫ ОБ ДЕРЕВО"
-    Scene.show_character("shak funny 3.png")
+    Scene.show_character("shak funny 3")
     <> "Дамы от души рассмеялись в унисон."
-    Scene.show_character("shak funny 1.png")
+    Scene.show_character("shak funny 1")
     <shak> "Спасибо, что подыграла~"
     <oz> "Буду честна, в начале я действительно подумала, что у тебя начала течь крыша, но потом пришло осознание."
     <oz> "И как ты вообще могла так шутить со мной, ах..."
     <shak> "То есть когда ты меняешь берёзовый сок на уксус, это окей, а когда я меняю местами понятия, это катастрофа?"
     <oz> "Твоё лицо того стоило~"
-    Scene.show_character("shak funny 2.png")
+    Scene.show_character("shak funny 2")
     <shak> "Твоё тоже~"
     <> "Жаклин тихо хихикнула под нос, накрывая сковороду с омлетом крышкой."
     <shak> "И, раз уж начистоту, есть что-то особенное в том, чтобы перехитрить такую чертилу, как ты~"
     <oz> "Да ты чтооооо! Вот это ты великомученица, страдальчески терпишь такую страшную бесовщина!"
     <shak> "Хех... Да и не то что бы я особенно страшно страдала с этой \"страшной бесовщиной\"."
     <oz> "Почему же?"
-    Scene.show_character("shak confused.png")
+    Scene.show_character("shak confused")
     <shak> "Потому что ты моя бесовщина~"
     end()
 
