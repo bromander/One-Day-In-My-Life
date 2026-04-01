@@ -242,6 +242,9 @@ label home_late("Дом милый дом", "Удачная шутка?", show_s
 
 
 label bad_ending_hrum_hrum("Плохая концовка", "Ну кто же знал!", show_splash = True, speed = 2):
+    <> "Ничего!"
+    <> "У вас ничего не осталось!"
+    <> "Прими же свою смерть."
     # TODO: звуки чавканья
     wait(5)
     end()
@@ -254,7 +257,11 @@ label food_choice():
         "meat.png" : "Лисья печень",
         "milk.png" : "Молочко Эпштейна",
         "pineapple.png"  : "Дикий ананас",
-        "puki.png" : "Муки"
+        "puki.png" : "Муки",
+        "cheese.png": "Козий сыр",
+        "tomatoes.png": "Помидоры Скидка 15%! 1+1=3! Только сегодня по новой скидке. Действует до 24.09.2077г! Приведите друга и получите 1488 козьих сыров по ссылке https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "teramisu.png": "Терамису",
+        "eggs.png": "Яйца мамонта"
     }
 
     import random

@@ -1075,10 +1075,11 @@ class MovableBlock(Sprite):
             self.freezed = False
 
 class MovableBlockFalling(Sprite):
-    def __init__(self, texture, center_x = 0, center_y = 0):
+    def __init__(self, texture, center_x = 0, center_y = 0, scale=1.0):
         super().__init__(path_or_texture=texture)
         self.center_x = int(center_x) + random.randint(-30, 30)
         self.center_y = int(center_y) + random.randint(-15, 30)
+        self.scale = scale
         self.scale_x = self.scale_x * random.randint(95, 105)/100
         self.scale_y = self.scale_y * random.randint(95, 105) / 100
         color_rand = random.randint(230, 255)
@@ -1127,9 +1128,9 @@ class ItemsNotifText(Text):
         super().__init__(text=text, x=x, y=y,  color=color, font_size=35, font_name=FONT_NAME)
         self.velocity = 0.0
         self.color = (
-            self.color[0] + 10,
-            self.color[1] + 10,
-            self.color[1] + 10,
+            self.color[0] + 10 if self.color[0] + 10  <= 255 else self.color[0],
+            self.color[1] + 10 if self.color[1] + 10  <= 255 else self.color[1],
+            self.color[2] + 10 if self.color[2] + 10  <= 255 else self.color[2],
             225
         )
         self.bold = True
