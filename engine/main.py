@@ -298,7 +298,6 @@ class Views:
                     while thread.is_alive():
                         continue
 
-
                     wwl._preload_assets(wwl.label)
                     if wwl.label in wwl.graf:
                         for i in wwl.graf[wwl.label]:

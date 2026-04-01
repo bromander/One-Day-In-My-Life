@@ -68,27 +68,30 @@ class FilesManager:
 
         self.loaded_labels.append(label)
 
+        textures_paths = self.textures_paths
+        audio_paths = self.audio_paths
+        textures = self.textures
+        audios = self.audios
+
         def load(filenames):
+
             for i in filenames:
-
-                if i in self.textures_paths: # Текстуры
-                    if i in self.textures:
-                        continue
-                    if str(i).endswith(".gif"):
-                        self.textures[i] = load_animated_gif(str(self.textures_paths[i]))
+                if i in textures_paths and i not in textures:
+                    path = str(textures_paths[i])
+                    if path.endswith(".gif"):
+                        textures[i] = load_animated_gif(path)
                     else:
-                        self.textures[i] = load_texture(str(self.textures_paths[i]))
+                        textures[i] = load_texture(path)
 
-                elif i in self.audio_paths: # Аудио
-                    if i in self.audios:
-                        continue
+                elif i in audio_paths and i not in audios:
+                    path = str(audio_paths[i])
+                    try:
+                        duration = mutagen.File(path).info.length
+                        streaming = duration > 10
+                    except:
+                        streaming = False
 
-                    streaming = False
-                    file = mutagen.File(str(self.audio_paths[i]))
-                    if file.info.length > 10:
-                        streaming = True
-
-                    self.audios[i] = load_sound(str(self.audio_paths[i]), streaming=streaming)
+                    audios[i] = load_sound(path, streaming=streaming)
 
         target = Thread(target=load, args=(filenames,))
         target.start()
