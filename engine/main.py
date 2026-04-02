@@ -455,31 +455,6 @@ class Views:
                 self.settings_manager.draw()
             super().on_draw()
 
-        def show_menu(self, data) -> None:
-            self.menu_manager.clear()
-
-            def jump(label: str):
-                wwl.pose = 0
-                wwl.label = label
-                self.menu_manager.clear()
-                self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
-                self.talk_manager()
-
-            for k, v in data.items():
-                button = agui.UIFlatButton(
-                    text=k,
-                    width=200,
-                    font_name=FONT_NAME,
-                    style=STYLE_DEFAULT_BUTTON
-                )
-                button.on_click = lambda event, label=v: jump(label)
-                self.menu_v_box.add(button)
-
-            ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-            ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y", align_x=self.center_x, align_y=self.center_y)
-
-            self.menu_manager.add(self.menu_v_box)
-
         def on_update(self, delta_time) -> None:
 
             self.delta_time = delta_time
@@ -1245,6 +1220,32 @@ class Views:
         def __init__(self):
             super().__init__()
             self.window.set_vsync(True)
+            text = ""
+            self.lore = self._lore()
+
+        def show_menu(self, data) -> None:
+            self.menu_manager.clear()
+
+            for k, v in data.items():
+                button = agui.UIFlatButton(
+                    text=k,
+                    width=200,
+                    font_name=FONT_NAME,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                button.on_click = lambda event, label=v: next(self.lore)
+                self.menu_v_box.add(button)
+
+            ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
+            ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y", align_x=self.center_x, align_y=self.center_y)
+
+            self.menu_manager.add(self.menu_v_box)
+
+        def _lore(self):
+            text = "Какое из слов является местоимением?"
+            yield
+
+
 
 
     class ShopCollecting(Main_template):

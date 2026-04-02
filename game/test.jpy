@@ -358,8 +358,8 @@ label food_choice():
     Scene.show_character("shak book", at="center", effect=SpriteEffects.Dissolve(1.0))
     <> "Сегодня предстояло проверить стопку самостоятельных. Что ж, посмотрим, насколько она была успешной…"
 
-    #Lore.jump("survey_program_maybe_correct")
-    Lore.jump("menu1")
+    Lore.jump("survey_program_maybe_correct")
+    #Lore.jump("menu1")
 
 label menu1():
     Define.correct_answers = 0
