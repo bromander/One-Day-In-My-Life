@@ -181,6 +181,12 @@ class Namespace:
                 yield
             self.Game_view.actions.active_generators.add_generator("continuous", stamp(), "stamp")
 
+        def trig_dialogue_window(self, state: Optional[bool]):
+            if state:
+                self.Game_view.show_dialogue_bg_trigger = state
+            else:
+                self.Game_view.show_dialogue_bg_trigger = not self.Game_view.show_dialogue_bg_trigger
+
     class Scene:
         def __init__(self, Game_view, ListCharacters, Wwl, Wait_trigger, sm: Saves_manager) -> None:
             """
@@ -479,7 +485,8 @@ class Namespace:
             elif isinstance(file_name, Sprite):
                 sprite = file_name
 
-
+            #sprite.scale_x = self.Game_view.width
+            #sprite.scale_y = self.Game_view.height
             sprite.center_x, sprite.center_y, sprite.size = self.Game_view.width * 0.5, self.Game_view.height * 0.5, self._get_size(size, sprite.size)
 
             bg_id = int(layer)

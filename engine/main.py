@@ -195,6 +195,8 @@ class Views:
 
             self.dialog_window: Optional[arcade.Sprite] = None
 
+            self.show_dialogue_bg_trigger = True
+
             self.scene = scene
 
             self.menu_manager = agui.UIManager()
@@ -448,7 +450,8 @@ class Views:
                 self.clear()
                 self.scene.draw()
                 self.splash_manager.draw()
-                arcade.draw_sprite(self.dialog_window)
+                if self.show_dialogue_bg_trigger:
+                    arcade.draw_sprite(self.dialog_window)
                 self.characters_texts_manager.draw()
                 self.in_game_manager.draw()
                 self.menu_manager.draw()

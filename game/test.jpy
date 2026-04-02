@@ -1,4 +1,15 @@
-label main("Пролог", "А всё так хорошо начиналось!", show_splash = True, speed = 4):
+
+label main():
+    Data.trig_dialogue_window(False)
+    Scene.set_scene("warning.png", size=(1.0, 0.856))
+    wait(5)
+    Scene.fade("fadein", 3)
+    <> "Нажмите чтобы продолжить"
+    Data.trig_dialogue_window(True)
+    Lore.jump("start")
+
+label start("Пролог", "А всё так хорошо начиналось!", show_splash = True, speed = 4):
+
     Scene.set_scene("blackscreen.png")
     Scene.add_sprite("perduni.png", "center")
     Scene.fade("fadeout", 3)
@@ -8,7 +19,6 @@ label main("Пролог", "А всё так хорошо начиналось!"
 
     Scene.set_scene("outside.png")
     Audio.play("music", "outside_music.mp3", effect="fade")
-    Scene.fade("fadeout", 3)
 
     <> "Сегодня на улице самый обыкновенный весенний день из всех, что может быть."
 
