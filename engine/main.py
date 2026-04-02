@@ -28,7 +28,7 @@ from .actions import Actions
 from .audio import AudioManager
 from .presence import Discord_act
 from .files_manager import FilesManager
-from .character import ListCharacters
+from .character import ListCharacters, Attributes
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
@@ -1217,33 +1217,113 @@ class Views:
             create_menu_buttons()
 
     class MenuView(Main_template):
-        def __init__(self):
+        def __init__(self, session_id: str, NAMESPACE, actions):
             super().__init__()
+
+            texture = arcade.load_texture("game/images/gui/dialog_window.png")
+
+            self.dialog_window = arcade.Sprite(
+                texture,
+                scale=6 * min(self.width / 1920, self.height / 1080),
+                center_x=self.width * 0.5,
+                center_y=self.height * 0.13
+            )
+
+            self.actions = actions
+            self.NAMESPACE = NAMESPACE
+            self.fm = fm
+
+            self.bg_image = scene.get_sprite("home_kitchen.jpg")
+            self.bg_image.center_y = self.center_y
+            self.bg_image.center_x = self.center_x
+
+            self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+
             self.window.set_vsync(True)
-            text = ""
+            self.menu_manager = agui.UIManager()
             self.lore = self._lore()
+            self.scene = scene
+
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager.enable()
+
+            self.attributes = Attributes()
+            self.attributes.character_name = ""
+            self.attributes.text_anchor = "center"
+            self.attributes.character_text_colour = arcade.color.WHITE
+            self.attributes.character_text = [""]
+
+            self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
+            self.characters_texts_manager.enable()
+
+            self.correct_ans = 0
+            NAMESPACE.Define.correct_ans = 0
+            next(self.lore)
+
+        def plus(self, do:  bool):
+            if do:
+                self.correct_ans += 1
+            try:
+                next(self.lore)
+            except StopIteration:
+                pass
 
         def show_menu(self, data) -> None:
             self.menu_manager.clear()
+            self.menu_manager.enable()
+            self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
             for k, v in data.items():
-                button = agui.UIFlatButton(
-                    text=k,
-                    width=200,
-                    font_name=FONT_NAME,
-                    style=STYLE_DEFAULT_BUTTON
-                )
-                button.on_click = lambda event, label=v: next(self.lore)
+                button = agui.UIFlatButton(text=k, width=250, height=100, font_name=FONT_NAME, style=STYLE_DEFAULT_BUTTON)
+                button.on_click = lambda event, do=v: self.plus(do)
                 self.menu_v_box.add(button)
 
             ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-            ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y", align_x=self.center_x, align_y=self.center_y)
+            ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y")
 
-            self.menu_manager.add(self.menu_v_box)
+            self.menu_manager.add(ui_anchor_layout)
+
+        def on_update(self, delta_time: float) -> None:
+            super().on_update(delta_time)
+            self.characters_texts_manager.update(delta_time)
+            self.settings_manager.on_update(delta_time)
+            self.menu_manager.on_update(delta_time)
+
+        def on_draw(self) -> None:
+            self.clear()
+            arcade.draw_sprite(self.bg_image)
+            arcade.draw_sprite(self.dialog_window)
+            self.characters_texts_manager.draw()
+            self.menu_manager.draw()
+            self.settings_manager.draw()
+            super().on_draw()
 
         def _lore(self):
-            text = "Какое из слов является местоимением?"
+            self.attributes.character_text = ["Какое из слов является местоимением?"]
+            self.show_menu({
+                "'Другой'" : True,
+                "'Первый'" : False,
+                "'Отдельный'" : False,
+                "'Вчерашний'" : False
+            })
             yield
+            self.attributes.character_text = ["Что вы скажете об очень эффективном человеке?"]
+            self.show_menu({
+                "Супер эфективный" : False,
+                "Суперэффективный" : True,
+                "Супер эффективный" : False,
+                "Супер-эффективный" : False
+            })
+            yield
+            self.attributes.character_text = ["Как правильно?"]
+            self.show_menu({
+                "ТвОрог": True,
+                "ТворОг": True
+            })
+            yield
+            self.NAMESPACE.Define.correct_ans = self.correct_ans
+            self.window.show_view(self.window.GameView)
+
 
 
 
@@ -1251,7 +1331,6 @@ class Views:
     class ShopCollecting(Main_template):
         def __init__(self, session_id: str, NAMESPACE, actions):
             super().__init__()
-
 
             def return_back(event=None):
                 if len(NAMESPACE.Define.collected_items) > 0:

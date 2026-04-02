@@ -358,58 +358,13 @@ label food_choice():
     Scene.show_character("shak book", at="center", effect=SpriteEffects.Dissolve(1.0))
     <> "Сегодня предстояло проверить стопку самостоятельных. Что ж, посмотрим, насколько она была успешной…"
 
-    Lore.jump("survey_program_maybe_correct")
-    #Lore.jump("menu1")
-
-label menu1():
-    Define.correct_answers = 0
-
-    <> "Какое из слов является местоимением?"
-    Scene.show_menu({
-        "'Другой'" : "plus_one1",
-        "'Первый'" : "none1",
-        "'Отдельный'" : "none1",
-        "'Вчерашний'" : "none1"
-    })
-
-
-label plus_one1():
-    Define.correct_answers += 1
-    Lore.jump("menu2")
-
-label none1():
-    Lore.jump("menu2")
-
-label menu2():
-
-    <> "Что вы скажете об очень эффективном человеке?"
-    Scene.show_menu({
-        "Супер эфективный" : "none2",
-        "Суперэффективный" : "plus_one2",
-        "Супер эффективный" : "none2",
-        "Супер-эффективный" : "none2"
-    })
-
-label plus_one2():
-    Define.correct_answers += 1
-    Lore.jump("menu3")
-
-label none2():
-    Lore.jump("menu3")
-
-label menu3():
-    <> "Как правильно?"
-    Scene.show_menu({
-        "ТвОрог" : "loading_menu",
-        "ТворОг" : "loading_menu"
-    })
+    Screen.call_view("MenuView", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
+    <> "Итого..."
+    Lore.jump("loading_menu")
 
 label loading_menu():
-    Define.correct_answers += 1
 
-    <> "Итого..."
-
-    ans = Define.correct_answers
+    ans = Define.correct_ans
     if ans == 3:
         Lore.jump("survey_program_correct")
     elif ans == 2:
