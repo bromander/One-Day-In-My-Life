@@ -358,13 +358,8 @@ label food_choice():
     Scene.show_character("shak book", at="center", effect=SpriteEffects.Dissolve(1.0))
     <> "Сегодня предстояло проверить стопку самостоятельных. Что ж, посмотрим, насколько она была успешной…"
 
-    Lore.jump("survey_program_maybe_correct")
-    #Lore.jump("menu1")
-
-#Ещё тест добей пожож я уже спатб завтра с утра пораньше дорасставлю спрайты
-#Только новые чёт не отображаются в игре, глянешь проблему?
-#Ещё у игры новые вылеты возникли, я войти могу только с сохранений
-#Ещё заглушку сорри надо повтыкать на дефолт при вопросе готовки
+    #Lore.jump("survey_program_maybe_correct")
+    Lore.jump("menu1")
 
 label menu1():
     Define.correct_answers = 0
@@ -515,7 +510,7 @@ label home("Дом милый дом", "Это что за покемон?", sho
     Scene.show_character("shak funny 1", effect=SpriteEffects.Dissolve(1.0))
     <oz> "Ну-с, что собираешься устроить?~"
     <shak> "Ну... из того, что сейчас под рукой, можно по-быстрому приготовить..."
-    Scene.set_scene("home_hallway.jpg")
+    Scene.set_scene("home_kitchen.jpg")
 
     if "puki.png" in Define.collected_items and "milk.png" in Define.collected_items and "eggs.png" in Define.collected_items:
         Lore.jump("sorry")

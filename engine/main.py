@@ -1241,6 +1241,11 @@ class Views:
 
             create_menu_buttons()
 
+    class MenuView(Main_template):
+        def __init__(self):
+            super().__init__()
+            self.window.set_vsync(True)
+
 
     class ShopCollecting(Main_template):
         def __init__(self, session_id: str, NAMESPACE, actions):
@@ -1543,8 +1548,6 @@ class Views:
             if self.length <= 0:
                 self.NAMESPACE["Lore"].jump("bad_ending_golubi")
                 self.window.show_view(self.window.GameView)
-
-
 
     class ShopGetting(Main_template):
         def __init__(self, session_id: str, NAMESPACE, actions):
