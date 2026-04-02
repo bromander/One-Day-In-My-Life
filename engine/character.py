@@ -260,6 +260,7 @@ class Character:
             raise FileNotFoundError(f"Character sprite \"{sprite}\" was not found in \"./game/images/characters/{self.char_id}/{sprite}\"")
 
         now_sprite = Sprite(textures[sprite])
+        now_sprite.scale = self.c_scale
         return now_sprite
 
 class ListCharacters:
@@ -286,7 +287,7 @@ class ListCharacters:
             "shak" : _Character("Жаклин", "shak", "#f5a889", "#f0855b"),
             "masorubka" : _Character("Кассир", "masorubka", "#E0FFFF", "#7FFFD4"),
             "ed" : _Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
-            "oz": _Character("Ф. ОЗИНАД", "oz", "#12d3da", c_scale=1.5),
+            "oz": _Character("Ф. ОЗИНАД", "oz", "#12d3da", c_scale=1.3),
         }
 
     def __getitem__(self, item) -> dict[str : Character]:
