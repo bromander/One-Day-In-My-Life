@@ -409,33 +409,33 @@ label home_late_continue():
     <oz> "Есть положительные изменения или всё стабильно?"
     <shak> "Ну… у некоторых, очевидно, вообще ничего никогда не меняется. \n Ленивые заразы… как же я устала…"
     <oz> "Могу немного облегчить твои страдания~"
-    Scene.show_character("oz na", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz na")
     <> "Она продемонстрировала какую-то чёрную склизкую креветку, неестественно переливающуюся на свету."
     <oz> "Хочешь запечатать в одну из работ и вспугнуть кого-нибудь?"
     <> "Жаклин вытаращилась на неё."
     <shak> "Ты издеваешься?.. Нет, я знаю, что ты любишь устраивать такие фокусы – к слову, незачем было подкладывать их мне в кошель – но это совсем выходит за границы. Я ещё не настолько-"
     <> "Ms. Ф.ОЗИНАД ловко выхватила один из листочков, взглянула на него с усмешкой и протянула Жаклин, подняв брови."
-    Scene.show_character("oz derji", effect=SpriteEffects.Dissolve(0.5))
-    Scene.show_character("shak book angry", at = "right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("oz derji")
+    Scene.show_character("shak book angry")
     <oz> "Вот эта джекушка полупокера буквально написала: «Я не готовилась, и что вы мне сделаете?»."
     
-    Scene.show_character("shak funny 3", at = "right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak funny 3")
     <> "Жаклин вспыхнула и сжала челюсти, глядя на листок. Одно из её век дёрнулось, губы дрогнули, превращаясь в истеричную улыбку. Затем она подняла взгляд на собеседницу."
     <shak> "Нет, знаешь что… вперёд. Давай сюда свою мерзость."
-    Scene.show_character("shak usual", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak usual")
     <shak> "Это была последняя капля, видит вселенная – я держалась до последнего. Запечатывай что хочешь, хуже уже не будет. Может, хотя бы раз я не увижу эту глупую улыбку на лице Джексон."
-    Scene.show_character("oz table 2", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz table 2")
     <> "Ms. Ф.ОЗИНАД хихикнула, втирая существо в её руках в листок. Оно быстро растворилось в нём, сливаясь с чернилами."
     <oz> "Вот и треснула твоя выдержка, хе-хе~ Не парься, оно в любом случае заслуженно. Они там все бестолочи, а ты у нас главный недооценённый великомученик~"
-    Scene.show_character("oz table 1", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz table 1")
     <> "Она дружески хлопнула подругу по плечу. Жаклин криво улыбнулась."
-    Scene.show_character("shak funny 3", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak funny 3")
     <shak> "Иногда я задумываюсь, ради чего вообще пытаюсь, и есть ли в этом настолько много моей вины… а потом смотрю на тебя и понимаю, что, в целом, всё ещё неплохо."
-    Scene.show_character("oz table 2", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz table 2")
     <oz> "Ну и супер! Ты давай держись, я жду твоих абсурдных историй с работы как вечернюю газету~"
-    Scene.show_character("shak funny 2", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak funny 2")
     <shak> "Только благодаря тебе и держусь, Оз."
-    Scene.set_scene("ewwwwwww.png", effect=SpriteEffects.Dissolve(1.0))
+    Scene.set_scene("ewwwwwww.png")
     <> "Она грустно улыбнулась и закрыла глаза, положив голову на плечо подруге."
     <shak> "Спасибо за понимание."
     <oz> "Спасибо на хлеб не намажешь~"
