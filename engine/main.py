@@ -1473,8 +1473,6 @@ class Views:
         def __init__(self, session_id: str, NAMESPACE, actions):
             super().__init__()
 
-            NAMESPACE.Define.collected_items = {}
-
             self.window.set_vsync(True)
             self.scene = scene
             self.actions = actions
@@ -1501,12 +1499,23 @@ class Views:
             )
             self.click_text.x = self.window.width * 0.02
             self.click_text.y = self.window.height * 0.95
+            self.length = 10
+
+            self.timer = time.time()
+
 
         def on_draw(self) -> None:
             self.clear()
             self.scene.draw()
             arcade.draw_sprite(self.draw_sprite)
             self.click_text.draw()
+            arcade.draw_lrbt_rectangle_filled(self.width*0.2, self.width*0.8, self.height * 0.85, self.height * 0.95, (0,0,0,120))
+            arcade.draw_lrbt_rectangle_filled(self.width * 0.21, self.width * 0.79, self.height * 0.87, self.height * 0.93, (0, 0, 0, 255))
+            try:
+                arcade.draw_lrbt_rectangle_filled(self.width * 0.21, (self.width * 0.79) * self.length/10, self.height * 0.87, self.height * 0.93, (255, 255, 255, 255))
+            except ValueError:
+                pass
+
             self.settings_manager.draw()
 
             super().on_draw()
@@ -1525,6 +1534,14 @@ class Views:
 
         def on_update(self, delta_time: float) -> None:
             if self.clicks >= self.max_clicks:
+                self.window.show_view(self.window.GameView)
+
+            if time.time() - self.timer >= 1:
+                self.timer = time.time()
+                self.length -= 1
+
+            if self.length <= 0:
+                self.NAMESPACE["Lore"].jump("bad_ending_golubi")
                 self.window.show_view(self.window.GameView)
 
 
