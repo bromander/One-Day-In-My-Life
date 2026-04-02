@@ -252,32 +252,32 @@ label home_late("Дом милый дом", "Удачная шутка?", show_s
     <oz> "А- {w=0.5}О,{w=0.5} привет там!"
     Scene.show_character("shak blank", at="right", effect=SpriteEffects.Dissolve(0.5))
     <shak> "Что тут, чёрт побери, происходит?!"
-    Scene.show_character("foz mage 1", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 1", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Это Олежик))) скажи привет!"
     Scene.show_character("shak angry", at="right", effect=SpriteEffects.Dissolve(0.5))
     <shak> "УБЕРИ ЭТО НЕМЕДЛЕНО"
-    Scene.show_character("foz mage 2", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 2", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "…да брось, он же просто прелесть~"
 
     Audio.play("sound", "roar2.mp3")
 
     <shak> "Что я говорила насчёт сатанинских ритуалов в этом доме?!"
-    Scene.show_character("foz mage 3", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 3", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Эй, эй! Ничего сатанинского! За матчастью следи!"
 
     Audio.play("sound", "tresk.mp3")
 
-    Scene.show_character("foz mage 4", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 4", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Окей, ладно, это немного выходит за рамки плана…"
     Scene.show_character("shak blank", at="right", effect=SpriteEffects.Dissolve(0.5))
     <shak> "…какого ещё плана…"
-    Scene.show_character("foz mage 2", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 2", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Ну ты ж хотела завести зайку, помнишь? С первым апреля! Вот тебе зайка-"
     <shak> "…"
 
     Audio.play("sound", "roar3.mp3")
 
-    Scene.show_character("foz mage 4", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 4", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Он выглядит голодным…! у тебя есть с собой что-нибудь?!"
 
     Lore.jump("food_choice")
@@ -333,7 +333,7 @@ label food_choice():
 
     Scene.show_character("shak angry", at="right", effect=SpriteEffects.Dissolve(0.5))
     <shak> "Напомни, почему я всё ещё держу тебя тут?"
-    Scene.show_character("foz mage 2", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 2", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Потому что я помогаю со счетами?"
 
     Scene.fade("fadein", 2)
@@ -349,7 +349,7 @@ label food_choice():
     Scene.show_character("shak usual 1")
     <shak> "..."
     <oz> "..."
-    Scene.show_character("foz mage 3", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 3", at="left", effect=SpriteEffects.Dissolve(0.5))
     <shak> "...убирать беспорядок будешь сама."
 
     Scene.set_scene("home_kitchen.jpg", effect=SpriteEffects.Dissolve(1.0))
@@ -594,8 +594,9 @@ label sorry():
     <> "Я смею предположить что это твоя первая сессия"
     <> "Попробуй там хлеб взять..."
     <> "Или муку не брать..."
-    <> "Или я хз."
+    <> "Вообще: попробуй с этим поэкспериментировать."
     <> "Ну мы обязательно это доделаем в течении следующих пары дней!"
+    <> "Отдохнём только чут чут"
     <> "Френч какашка"
     <> "да да да!"
     <> "так."

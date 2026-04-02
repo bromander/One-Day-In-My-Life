@@ -15,8 +15,8 @@ class Scene:
         self.data: dict[str : dict[Union[dict[str : Sprite], str : Sprite]]] = {
             "bg": {},
             "bg_parallax": [],
-            "sprites": {},
             "animated_sprites": {},
+            "sprites": {},
             "gui": {},
             "fade": {"fade" : Sprite(), "splash": Sprite()}
         }
@@ -72,8 +72,8 @@ class Scene:
         self.data = {
             "bg": {},
             "bg_parallax": [],
-            "sprites": {},
             "animated_sprites": {},
+            "sprites": {},
             "gui": {},
             "fade": {"fade" : Sprite(), "splash": Sprite()}
         }
