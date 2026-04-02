@@ -406,9 +406,10 @@ label home_late_continue():
     <shak> "Ты издеваешься?.. Нет, я знаю, что ты любишь устраивать такие фокусы – к слову, незачем было подкладывать их мне в кошель – но это совсем выходит за границы. Я ещё не настолько-"
     <> "Ms. Ф.ОЗИНАД ловко выхватила один из листочков, взглянула на него с усмешкой и протянула Жаклин, подняв брови."
     Scene.show_character("oz derji", effect=SpriteEffects.Dissolve(0.5))
-    Scene.show_character("shak book angry", at = "right" effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak book angry", at = "right", effect=SpriteEffects.Dissolve(1.0))
     <oz> "Вот эта джекушка полупокера буквально написала: «Я не готовилась, и что вы мне сделаете?»."
-    Scene.show_character("shak funny 3", effect=SpriteEffects.Dissolve(1.0))
+    
+    Scene.show_character("shak funny 3", at = "right", effect=SpriteEffects.Dissolve(1.0))
     <> "Жаклин вспыхнула и сжала челюсти, глядя на листок. Одно из её век дёрнулось, губы дрогнули, превращаясь в истеричную улыбку. Затем она подняла взгляд на собеседницу."
     <shak> "Нет, знаешь что… вперёд. Давай сюда свою мерзость."
     Scene.show_character("shak usual", effect=SpriteEffects.Dissolve(1.0))
