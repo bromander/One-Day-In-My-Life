@@ -1,3 +1,4 @@
+import arcade.cache
 import arcade.gui as agui
 import warnings
 import json
@@ -553,6 +554,12 @@ class Managers:
                     self.am.stop_sound()
                     self.am.stop_music()
                     self.am.stop_voice()
+
+                    tex_cache = arcade.cache.TextureCache()
+                    self.MainView_self.scene.clear_scene()
+                    for i in arcade.cache.TextureCache().get_all_textures():
+                        tex_cache.delete(i)
+
 
                     self.window.set_fullscreen(False)
                     self.window.size = (1024, 786)
@@ -1163,6 +1170,7 @@ class ClickableSprite(Sprite):
         self.scale_y = self.scale_y * random.randint(95, 105) / 100
 
         self.textures = textures
+        self.clicked = False
 
     def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
 

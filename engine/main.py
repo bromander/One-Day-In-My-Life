@@ -327,8 +327,8 @@ class Views:
                         self.scene.add_sprite("sprites", i["id"], sprite)
 
 
-                    if old_scene["music"] is not None:
-                        am.play_music(old_scene["music"])
+                    if old_scene["music"]["path"] is not None:
+                        am.play_music(old_scene["music"]["path"], volume=old_scene["music"]["volume"])
                     else:
                         am.stop_sound()
                         am.stop_music()
@@ -1469,6 +1469,66 @@ class Views:
                 if layer['sprite'].center_y < -30:
                     self.layers.remove(layer)
 
+    class CTW(Main_template):
+        def __init__(self, session_id: str, NAMESPACE, actions):
+            super().__init__()
+
+            NAMESPACE.Define.collected_items = {}
+
+            self.window.set_vsync(True)
+            self.scene = scene
+            self.actions = actions
+            self.NAMESPACE = NAMESPACE
+            self.fm = fm
+
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager.enable()
+
+            self.sprites = [self.scene.get_sprite("golub.png"), self.scene.get_sprite("golub_click.png")]
+            for i in self.sprites:
+                i.center_x = self.center_x
+                i.center_y = self.center_y
+                i.width = self.width
+                i.height = self.height
+
+            self.draw_sprite = self.sprites[0]
+
+            self.clicks = 1
+            self.max_clicks = 30
+
+            self.click_text = arcade.Text(
+                f"0 / {self.max_clicks}", 0, 0, arcade.color.BLACK, 54
+            )
+            self.click_text.x = self.window.width * 0.02
+            self.click_text.y = self.window.height * 0.95
+
+        def on_draw(self) -> None:
+            self.clear()
+            self.scene.draw()
+            arcade.draw_sprite(self.draw_sprite)
+            self.click_text.draw()
+            self.settings_manager.draw()
+
+            super().on_draw()
+
+        def on_key_press(self, key: int, modifiers: int) -> bool | None:
+            if key == arcade.key.S or key == arcade.key.ESCAPE:
+                self.settings_manager.turn_visibl()
+            if key == arcade.key.SPACE:
+                self.draw_sprite = self.sprites[1]
+                self.click_text.text = f"{self.clicks} / {self.max_clicks}"
+                self.clicks += 1
+
+        def on_key_release(self, symbol: int, modifiers: int) -> bool | None:
+            if symbol == arcade.key.SPACE:
+                self.draw_sprite = self.sprites[0]
+
+        def on_update(self, delta_time: float) -> None:
+            if self.clicks >= self.max_clicks:
+                self.window.show_view(self.window.GameView)
+
+
+
     class ShopGetting(Main_template):
         def __init__(self, session_id: str, NAMESPACE, actions):
             super().__init__()
@@ -1716,6 +1776,7 @@ def init_file() -> None:
     fm.load_assets(os.listdir("./game/images/moving_shop_assets"), "movable_shop_assets")
     fm.load_assets(os.listdir("./game/images/bying_shop_assets"), "movable_shop_assets_bying")
     fm.load_assets(["box_office_3.png"], "movable_shop_assets_bying")
+    fm.load_assets(["golub_click.png", "golub.png"], "CTW")
     print("Saves...")
     sm = Saves_manager()
     print("Audio manager...")

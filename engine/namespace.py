@@ -304,7 +304,6 @@ class Namespace:
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
             """
-
             if isinstance(filename, Sprite):
                 sprite = filename
             else:
@@ -384,7 +383,7 @@ class Namespace:
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
             """
-
+            print("show", self.Game_view.scene.data)
             char_id = character.split(" ")[0]
             sprite = self.ListCharacters[char_id].show(character)
 
@@ -434,18 +433,20 @@ class Namespace:
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
             """
-
-            def target():
-                self.Game_view.scene.delete_sprite("sprites", character)
+            print("hide", id(self.Game_view.scene.data), self.Game_view.scene.data)
+            def target(scene):
+                print("hide", id(scene.data), scene.data)
+                scene.delete_sprite("sprites", character)
                 yield
 
             if effect is not None:
+                effect = effect.effect(character, "sprites", self.Game_view, self.sm, 0)
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(character, "sprites", self.Game_view, self.sm, 0),
+                    effect,
                     "hide_sprite_effect"
                 )
-            self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
+            self.Game_view.actions.active_generators.add_generator(stream, target(self.Game_view.scene), "hide_sprite")
 
         def set_scene(self,
                       file_name: Union[str, Sprite],

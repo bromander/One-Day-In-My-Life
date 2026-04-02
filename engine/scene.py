@@ -56,6 +56,19 @@ class Scene:
         return self.data[item]
 
     def clear_scene(self):
+        for name, dat in self.data.items():
+            if name == "fade" or "gui":
+                continue
+            if isinstance(dat, dict):
+                for i in dat.values():
+                    i: Sprite = i
+                    i.kill()
+                    del i
+            elif isinstance(dat, list):
+                for i in dat:
+                    i["sprite"].kill()
+                    del i["sprite"]
+
         self.data = {
             "bg": {},
             "bg_parallax": [],
@@ -92,6 +105,7 @@ class Scene:
 
     def delete_sprite(self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str],
                       name: str) -> None:
+        print("inside", id(self.data), self.data)
         """
         Удаляет спрайт со сцены
         :param layer: Слой

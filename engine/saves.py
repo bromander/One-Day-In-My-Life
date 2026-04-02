@@ -176,8 +176,10 @@ class Saves_manager:
             """
             if am.music.is_playing():
                 music_file = am.music.now_playing_path
+                music_volume = am.music._local_modifier
             else:
                 music_file =  None
+                music_volume = 1.0
 
 
             sprites = [
@@ -238,7 +240,7 @@ class Saves_manager:
                 "bg": bg,
                 "bg_parallax" : bg_parallax,
                 "sprites": sprites,
-                "music": music_file,
+                "music": {"volume" : music_volume, "path" : music_file},
                 "characters_slice": scene.characters_slice
             }
 
