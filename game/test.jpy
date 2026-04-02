@@ -357,7 +357,7 @@ label food_choice():
     Scene.set_scene("teacher_homework.png", effect=SpriteEffects.Dissolve(1.0))
     <> "Жаклин устало вздохнула и направилась на кухню, игнорируя протесты сожительницы."
     <> "Разложив оставшиеся продукты по местам, она решила, что аппетит, в принципе, был весьма успешно отбит на ближайшие пару-тройку часов, и начала раскладывать на столе рабочие вещи:"
-    Scene.show_character("shak book", at="right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak book", at=(0.7, 0.7), effect=SpriteEffects.Dissolve(1.0))
     <> "Сегодня предстояло проверить стопку самостоятельных. Что ж, посмотрим, насколько она была успешной…"
 
     Screen.call_view("MenuView", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
@@ -392,37 +392,37 @@ label survey_program_uncorrect():
 
 
 label home_late_continue():
-    Scene.show_character("oz sit 1", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz sit 1", at=(0.3, 0.615), effect=SpriteEffects.Dissolve(0.5))
     <> "Незаметно за столом возникла ещё одна личность. Она некоторое время понаблюдала за работой с ухмылкой, а потом внезапно спросила:"
     <oz> "Ну, как продвигается?~ "
     <> "Жаклин пробормотала что-то невнятное."
     <oz> "Есть положительные изменения или всё стабильно?"
     <shak> "Ну… у некоторых, очевидно, вообще ничего никогда не меняется. \n Ленивые заразы… как же я устала…"
     <oz> "Могу немного облегчить твои страдания~"
-    Scene.show_character("oz na", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz na", effect=SpriteEffects.Dissolve(0.5))
     <> "Она продемонстрировала какую-то чёрную склизкую креветку, неестественно переливающуюся на свету."
     <oz> "Хочешь запечатать в одну из работ и вспугнуть кого-нибудь?"
     <> "Жаклин вытаращилась на неё."
     <shak> "Ты издеваешься?.. Нет, я знаю, что ты любишь устраивать такие фокусы – к слову, незачем было подкладывать их мне в кошель – но это совсем выходит за границы. Я ещё не настолько-"
     <> "Ms. Ф.ОЗИНАД ловко выхватила один из листочков, взглянула на него с усмешкой и протянула Жаклин, подняв брови."
-   Scene.show_character("oz derji", at="left", effect=SpriteEffects.Dissolve(0.5))
-    Scene.show_character("shak angry", at="right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("oz derji", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("shak book angry", effect=SpriteEffects.Dissolve(1.0))
     <oz> "Вот эта джекушка полупокера буквально написала: «Я не готовилась, и что вы мне сделаете?»."
-    Scene.show_character("shak funny 3", at="right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak funny 3", effect=SpriteEffects.Dissolve(1.0))
     <> "Жаклин вспыхнула и сжала челюсти, глядя на листок. Одно из её век дёрнулось, губы дрогнули, превращаясь в истеричную улыбку. Затем она подняла взгляд на собеседницу."
     <shak> "Нет, знаешь что… вперёд. Давай сюда свою мерзость."
-    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak usual", effect=SpriteEffects.Dissolve(1.0))
     <shak> "Это была последняя капля, видит вселенная – я держалась до последнего. Запечатывай что хочешь, хуже уже не будет. Может, хотя бы раз я не увижу эту глупую улыбку на лице Джексон."
-    Scene.show_character("oz sit 2", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz sit 2", effect=SpriteEffects.Dissolve(0.5))
     <> "Ms. Ф.ОЗИНАД хихикнула, втирая существо в её руках в листок. Оно быстро растворилось в нём, сливаясь с чернилами."
     <oz> "Вот и треснула твоя выдержка, хе-хе~ Не парься, оно в любом случае заслуженно. Они там все бестолочи, а ты у нас главный недооценённый великомученик~"
-    Scene.show_character("oz sit 1", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz sit 1", effect=SpriteEffects.Dissolve(0.5))
     <> "Она дружески хлопнула подругу по плечу. Жаклин криво улыбнулась."
-    Scene.show_character("shak funny 3", at="right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak funny 3", effect=SpriteEffects.Dissolve(1.0))
     <shak> "Иногда я задумываюсь, ради чего вообще пытаюсь, и есть ли в этом настолько много моей вины… а потом смотрю на тебя и понимаю, что, в целом, всё ещё неплохо."
-    Scene.show_character("oz sit 2", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz sit 2", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Ну и супер! Ты давай держись, я жду твоих абсурдных историй с работы как вечернюю газету~"
-    Scene.show_character("shak funny 2", at="right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak funny 2", effect=SpriteEffects.Dissolve(1.0))
     <shak> "Только благодаря тебе и держусь, Оз."
     Scene.set_scene("ewwwwwww.png", effect=SpriteEffects.Dissolve(1.0))
     <> "Она грустно улыбнулась и закрыла глаза, положив голову на плечо подруге."

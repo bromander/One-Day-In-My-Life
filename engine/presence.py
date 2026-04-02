@@ -55,27 +55,26 @@ class Discord_act:
 
         Thread(target=con).start()
     def update(self, name: str, description: str):
-
         try:
             if self.connected:
                 if name != ")" and description:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
-                        activity_type=ActivityType.PLAYING,
                         details=name,
-                        state=description
+                        state=description,
+                        start=time.time()
                     )
                 elif not description:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
-                        activity_type=ActivityType.PLAYING,
-                        details=name
+                        details=name,
+                        start=time.time()
                     )
                 else:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
-                        activity_type=ActivityType.PLAYING,
-                        state=description
+                        state=description,
+                        start=time.time()
                     )
             else:
                 raise PipeClosed

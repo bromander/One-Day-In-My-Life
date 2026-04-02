@@ -189,7 +189,7 @@ class Views:
             """
             super().__init__()
 
-            self.window.set_vsync(True)
+            #self.window.set_vsync(True)
 
             self.delta_time = 0.0
 
@@ -1233,13 +1233,13 @@ class Views:
             self.NAMESPACE = NAMESPACE
             self.fm = fm
 
-            self.bg_image = scene.get_sprite("home_kitchen.jpg")
+            self.bg_image = scene.get_sprite("teacher_homework.png")
             self.bg_image.center_y = self.center_y
             self.bg_image.center_x = self.center_x
 
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
-            self.window.set_vsync(True)
+            #self.window.set_vsync(True)
             self.menu_manager = agui.UIManager()
             self.lore = self._lore()
             self.scene = scene
@@ -1338,7 +1338,7 @@ class Views:
 
             NAMESPACE.Define.collected_items = {}
 
-            self.window.set_vsync(True)
+            #self.window.set_vsync(True)
             self.scene = scene
             self.actions = actions
             self.NAMESPACE = NAMESPACE
@@ -1558,7 +1558,7 @@ class Views:
         def __init__(self, session_id: str, NAMESPACE, actions):
             super().__init__()
 
-            self.window.set_vsync(True)
+            #self.window.set_vsync(True)
             self.scene = scene
             self.actions = actions
             self.NAMESPACE = NAMESPACE
@@ -1637,7 +1637,7 @@ class Views:
             def return_back(event=None):
                 self.window.show_view(self.window.GameView)
 
-            self.window.set_vsync(True)
+            #self.window.set_vsync(True)
             self.scene = scene
             self.actions = actions
             self.NAMESPACE = NAMESPACE
