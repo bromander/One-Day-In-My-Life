@@ -389,7 +389,7 @@ class Namespace:
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
             """
-            print("show", self.Game_view.scene.data)
+
             char_id = character.split(" ")[0]
             sprite = self.ListCharacters[char_id].show(character)
 

@@ -19,6 +19,15 @@ class Attributes:
 
         self.text_anchor = "left"
 
+    def reset(self):
+        self.character_name = ""
+        self.character_text = [""]
+
+        self.character_name_colour = color.BLACK
+        self.character_text_colour = color.BLACK
+
+        self.text_anchor = "left"
+
 class Character:
 
     def __init__(self,

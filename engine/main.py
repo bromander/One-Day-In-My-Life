@@ -206,6 +206,7 @@ class Views:
 
             self.waiting_dialogue = Waiter(True)
             self.waiting_autoskip = Waiter(False)
+            self.waiting_talk = Waiter(False)
 
             self.last_text_skip = time.time()
 
@@ -379,6 +380,7 @@ class Views:
             """
             Получает инструкции сценария и запускает функцию talk(), обрабатывая её результаты
             """
+
             gens = self.actions.active_generators
             if gens.active_generators_consistently:
                 if gens.active_generators_consistently[0][0] == 'talk':
@@ -388,10 +390,12 @@ class Views:
                             break
                     return
 
+
             gen = self.actions.active_generators.active_generators_consistently
             if gen:
                 if clicked:
                     if gen[0][0] != 'talk':
+                        self.attributes.reset()
                         return
                     else:
                         if time.time() - self.last_text_skip < 0.05:
@@ -399,9 +403,21 @@ class Views:
                         else:
                             self.last_text_skip = time.time()
 
+            if self.actions.active_generators.active_generators_consistently and not clicked:
+                self.waiting_talk.on()
+                return
+
+            self.attributes.reset()
             now = wwl.get_thing(pos_offset)
+            print(now)
+            print(self.actions.active_generators.active_generators_consistently)
+            print(">")
             res = self.talk(now)
-            self.start_trigger = False
+
+            if self.start_trigger:
+                self.start_trigger = False
+
+            self.waiting_talk.off()
 
 
             match res:
@@ -472,6 +488,9 @@ class Views:
 
             if self.waiting_autoskip:
                 self.talk_manager(clicked=True)
+
+            if self.waiting_talk:
+                self.talk_manager(clicked=False)
             
             super().on_update(delta_time)
 
@@ -1251,10 +1270,7 @@ class Views:
             self.settings_manager.enable()
 
             self.attributes = Attributes()
-            self.attributes.character_name = ""
-            self.attributes.text_anchor = "center"
-            self.attributes.character_text_colour = arcade.color.WHITE
-            self.attributes.character_text = [""]
+            self.attributes.reset()
 
             self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
             self.characters_texts_manager.enable()

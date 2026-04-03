@@ -1,9 +1,26 @@
 from pathlib import Path
 import os
+
+import arcade
 import mutagen
 from typing import Union, Optional, Dict, Literal
 from threading import Thread
-from arcade import load_sound, load_texture, Texture, Sound, load_animated_gif
+from arcade import (
+load_sound,
+load_texture,
+Texture,
+Sound,
+Sprite,
+TextureAnimationSprite,
+TextureKeyframe,
+TextureAnimation,
+SpriteSheet,
+load_animated_gif,
+
+)
+from PIL import Image, ImageSequence
+from arcade.texture import default_texture_cache
+
 
 class FilesManager:
     """
@@ -81,7 +98,26 @@ class FilesManager:
                     if path.endswith(".gif"):
                         textures[i] = load_animated_gif(path)
                     else:
-                        textures[i] = load_texture(path)
+                        #textures[i] = load_texture(path)
+
+                        #'''
+                        im: Image.Image = Image.open(path)  # type: ignore
+                        
+                        original_size = tuple(im.size)
+                        size_resiz = (int(im.size[0] * 0.7), int(im.size[1] * 0.7))
+                        im = im.resize(size_resiz, Image.Resampling.LANCZOS, reducing_gap=5.0)
+
+                        if im.mode != "RGBA":
+                            im = im.convert("RGBA")
+
+                        im = im.resize(original_size, Image.Resampling.LANCZOS, reducing_gap=5.0)
+
+                        tex = Texture(im, hit_box_algorithm=None)
+
+                        tex.file_path = Path(path)
+
+                        textures[i] = tex
+                        #'''
 
                 elif i in audio_paths and i not in audios:
                     path = str(audio_paths[i])
@@ -92,6 +128,8 @@ class FilesManager:
                         streaming = False
 
                     audios[i] = load_sound(path, streaming=streaming)
+
+            default_texture_cache.flush(True, True, True, True)
 
         target = Thread(target=load, args=(filenames,))
         target.start()

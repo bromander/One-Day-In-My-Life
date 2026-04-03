@@ -2,9 +2,8 @@
 label main():
     Data.trig_dialogue_window(False)
     Scene.set_scene("warning.png", size=(1.0, 0.856))
-    wait(5)
+    wait(2)
     Scene.fade("fadein", 3)
-    <> "Нажмите чтобы продолжить"
     Data.trig_dialogue_window(True)
     Lore.jump("start")
 
@@ -185,7 +184,6 @@ label bread():
     <> "Почуяв свежую буханку хлеба, на Жаклин накинулась стая голубей!"
     <> "Кликай на пробел чтобы сбежать!"
     Screen.call_view("CTW", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
-    <> "..."
     Scene.fade("fadeout", 1)
     <shak> "Сволочи. Я так до дома вовремя не успею"
     <> "иииии у нас украли хлеб!"
@@ -234,12 +232,12 @@ label road_to_home_continue():
 
     if "penis_bread.png" in items:
         Define.late = True
-        Lore.jump("home_late")
+        Lore.jump("home_late_first")
     else:
         Define.late = False
-        Lore.jump("home")
+        Lore.jump("home_first")
 
-label home_late("Дом милый дом", "Удачная шутка?", show_splash = True, speed = 2):
+label home_late_first("Дом милый дом", "Удачная шутка?", show_splash = True, speed = 2):
 
     Audio.stop("music", "fade")
     <> "Дорога домой заняла однозначно больше ожидаемого, но, по крайней мере, она наконец-то…"
@@ -247,6 +245,10 @@ label home_late("Дом милый дом", "Удачная шутка?", show_s
     <shak> "Что там такое…"
     Scene.set_scene("home_hallway.jpg")
     Audio.play("sound", "door_open.mp3")
+    Lore.jump("home_late")
+
+
+label home_late():
 
     # TODO: [сцена вакханалии и вышедшего из-под контроля вызова хтони]
 
@@ -444,7 +446,7 @@ label home_late_continue():
     <oz> "И я тебя тоже, дорогая."
     end()
 
-label home("Дом милый дом", "Это что за покемон?", show_splash = True, speed = 2):
+label home_first("Дом милый дом", "Это что за покемон?", show_splash = True, speed = 2):
     Scene.set_scene("home_hallway.jpg")
     Scene.show_character("shak usual", at="right")
     Audio.play("music", "ponos_deda_(remix).mp3", effect="fade", volume=0.5)
@@ -460,13 +462,18 @@ label home("Дом милый дом", "Это что за покемон?", sho
     <shak> "Нельзя ли потише... "
     Scene.show_character("oz meet 2")
     <oz> "А у меня для тебя сюрприз! Хочешь узнать, какой?~"
+
+    Lore.jump("home")
+
+label home():
+
     <shak> "Я бы больше хотела, чтобы ты мне с пакетами помогла..."
 
     Scene.start_cutscene("strashilka_xodit.gif")
     wait(10.0)
     Scene.set_scene("home_hallway.jpg")
 
-    Scene.show_character("shak angry")
+    Scene.show_character("shak angry", at="right")
     Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(0.5))
     <shak> "...что это."
     <oz> "Это зайка)"
@@ -484,7 +491,8 @@ label home("Дом милый дом", "Это что за покемон?", sho
     <shak> "*вздох смирения* И где ты взяла это черничное море? Не дай боже снова заляпаешь комнату своими порталами, оттирать будешь сама."
     Scene.show_character("oz meet 4")
     <oz> "Да неееее, я не- \n {w=1.0} ОХ БЛИН СПАСИБО ЧТО НАПОМНИЛА ЗАКРЫТЬ-"
-    Scene.hide_character("oz meet 4", effect="fade")
+    Scene.set_scene("home_hallway.jpg")
+    Scene.show_character("shak usual", at="right")
     <shak> "Мгм, всегда пожалуйста"
     <oz> "Кто знает, какая дурь оттуда бы выползла, если б ты сейчас не сказала..."
     <shak> "А ты разве сама не знаешь?"

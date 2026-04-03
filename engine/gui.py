@@ -856,6 +856,7 @@ class Managers:
             super().__init__(window)
             self.window = window
             self.autoskip_waiter = autoskip_waiter
+            self.last_autoskip_waiter_data = None
             self.BUTTONS_STYLE = {
                 "normal": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
@@ -956,11 +957,13 @@ class Managers:
         def on_update(self, time_delta):
             super().on_update(time_delta)
 
-            if hasattr(self, 'skip_button'):
+            if self.last_autoskip_waiter_data != self.autoskip_waiter.state:
                 if self.autoskip_waiter:
                     self.skip_button.style = self.BUTTONS_STYLE_ON_STATE
                 else:
                     self.skip_button.style = self.BUTTONS_STYLE
+                self.skip_button.trigger_full_render()
+                self.last_autoskip_waiter_data = self.autoskip_waiter.state
 
     class UiLabelCNameText(agui.UILabel):
         def __init__(self, attributes, window, FONT_NAME):
