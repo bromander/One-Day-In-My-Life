@@ -3,9 +3,9 @@ label main():
     Data.trig_dialogue_window(False)
     Scene.set_scene("warning.png", size=(1.0, 0.856))
     wait(2)
-    Scene.fade("fadein", 3)
+    #Scene.fade("fadein", 3)
     Data.trig_dialogue_window(True)
-    Lore.jump("start")
+    Lore.jump("home_late")
 
 label start("Пролог", "А всё так хорошо начиналось!", show_splash = True, speed = 4):
 
@@ -96,7 +96,9 @@ label shop_box_office()
 
     <shak> "Доброго дня,\n {w=0.5}или типа того…"
     <masorubka> "С днём дурака… \n {w=0.5}Или типа того…"
+    Scene.show_character(character="masorubka funny", at="center")
     <shak> "Да, дурака… \n {w=0.5}или типа того…"
+    Scene.show_character(character="masorubka netural", at="center")
     <> "Дабы не продолжать этот марафон неловких ответов, кассир преступил к пробиванию содержимого корзины"
 
     if len(Define.collected_items) == 1:
@@ -250,8 +252,6 @@ label home_late_first("Дом милый дом", "Удачная шутка?", 
 
 label home_late():
 
-    # TODO: [сцена вакханалии и вышедшего из-под контроля вызова хтони]
-
     # Жаклин: *disgust & праведный гнев*
     #Жаклин: *немой вопрос* …..?!?!?
     wait(1.0)
@@ -260,36 +260,26 @@ label home_late():
     Scene.start_cutscene("strashilka.gif")
     Scene.fade("fadeout", 3)
 
-    #Сможешь их поменять местами, но развернуть так, чтобы они смотрели друг на друга?
     <oz> "А- {w=0.5}О,{w=0.5} привет там!"
-    Scene.show_character("shak blank", at="right", effect=SpriteEffects.Dissolve(0.5))
     <shak> "Что тут, чёрт побери, происходит?!"
-    Scene.show_character("oz mage 1", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Это Олежик))) скажи привет!"
-    Scene.show_character("shak angry", at="right", effect=SpriteEffects.Dissolve(0.5))
     <shak> "УБЕРИ ЭТО НЕМЕДЛЕНО"
-    Scene.show_character("oz mage 2", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "…да брось, он же просто прелесть~"
 
     Audio.play("sound", "roar2.mp3")
 
     <shak> "Что я говорила насчёт сатанинских ритуалов в этом доме?!"
-    Scene.show_character("oz mage 3", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Эй, эй! Ничего сатанинского! За матчастью следи!"
 
     Audio.play("sound", "tresk.mp3")
 
-    Scene.show_character("oz mage 4", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Окей, ладно, это немного выходит за рамки плана…"
-    Scene.show_character("shak blank", at="right", effect=SpriteEffects.Dissolve(0.5))
     <shak> "…какого ещё плана…"
-    Scene.show_character("oz mage 2", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Ну ты ж хотела завести зайку, помнишь? С первым апреля! Вот тебе зайка-"
     <shak> "…"
 
     Audio.play("sound", "roar3.mp3")
 
-    Scene.show_character("oz mage 4", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Он выглядит голодным…! у тебя есть с собой что-нибудь?!"
 
     Lore.jump("food_choice")
@@ -304,6 +294,7 @@ label bad_ending_hrum_hrum("Плохая концовка", "Ну кто же з
     Audio.play("sound", "feast3.mp3")
     wait(5)
     <> "лох"
+    Scene.fade("fadein", 5)
     end()
 
 label food_choice():
@@ -351,19 +342,16 @@ label food_choice():
     Scene.fade("fadein", 2)
     Audio.play("music", "ponos_deda_(remix).mp3", effect="fade", volume=0.5)
     Scene.set_scene("home_hallway.jpg")
-    Scene.show_character("shak usual", at="right")
     Scene.fade("fadeout", 1)
-    Audio.play("music", "ponos_deda_(remix).mp3", effect="fade", volume=0.5)
 
-    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Dissolve(1.0))
     <shak> "Не помогаешь."
-    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(1.0))
     <oz> "Ну значит, это моя неотразимая харизма!"
     Scene.show_character("shak usual 1")
     <shak> "..."
     <oz> "..."
-    Scene.show_character("oz mage 3", at="left", effect=SpriteEffects.Dissolve(0.5))
-    Scene.show_character("oz meet 4", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 3", at="left")
     <shak> "...убирать беспорядок будешь сама."
 
     Scene.set_scene("teacher_homework.png", effect=SpriteEffects.Dissolve(1.0))
@@ -415,35 +403,37 @@ label home_late_continue():
     <> "Она продемонстрировала какую-то чёрную склизкую креветку, неестественно переливающуюся на свету."
     <oz> "Хочешь запечатать в одну из работ и вспугнуть кого-нибудь?"
     <> "Жаклин вытаращилась на неё."
+    Scene.show_character("shak book discontent")
     <shak> "Ты издеваешься?.. Нет, я знаю, что ты любишь устраивать такие фокусы – к слову, незачем было подкладывать их мне в кошель – но это совсем выходит за границы. Я ещё не настолько-"
     <> "Ms. Ф.ОЗИНАД ловко выхватила один из листочков, взглянула на него с усмешкой и протянула Жаклин, подняв брови."
     Scene.show_character("oz derji")
-    Scene.show_character("shak book angry")
     <oz> "Вот эта джекушка полупокера буквально написала: «Я не готовилась, и что вы мне сделаете?»."
     
-    Scene.show_character("shak funny 3")
+    Scene.show_character("shak book angry")
     <> "Жаклин вспыхнула и сжала челюсти, глядя на листок. Одно из её век дёрнулось, губы дрогнули, превращаясь в истеричную улыбку. Затем она подняла взгляд на собеседницу."
     <shak> "Нет, знаешь что… вперёд. Давай сюда свою мерзость."
-    Scene.show_character("shak usual")
+    Scene.show_character("shak book discontent")
     <shak> "Это была последняя капля, видит вселенная – я держалась до последнего. Запечатывай что хочешь, хуже уже не будет. Может, хотя бы раз я не увижу эту глупую улыбку на лице Джексон."
-    Scene.show_character("oz table 2")
+    Scene.show_character("shak book discontent")
     <> "Ms. Ф.ОЗИНАД хихикнула, втирая существо в её руках в листок. Оно быстро растворилось в нём, сливаясь с чернилами."
     <oz> "Вот и треснула твоя выдержка, хе-хе~ Не парься, оно в любом случае заслуженно. Они там все бестолочи, а ты у нас главный недооценённый великомученик~"
     Scene.show_character("oz table 1")
     <> "Она дружески хлопнула подругу по плечу. Жаклин криво улыбнулась."
-    Scene.show_character("shak funny 3")
+    Scene.show_character("shak funny 3", at=(0.75, 0.5), effect=SpriteEffects.Dissolve(0.2))
     <shak> "Иногда я задумываюсь, ради чего вообще пытаюсь, и есть ли в этом настолько много моей вины… а потом смотрю на тебя и понимаю, что, в целом, всё ещё неплохо."
     Scene.show_character("oz table 2")
     <oz> "Ну и супер! Ты давай держись, я жду твоих абсурдных историй с работы как вечернюю газету~"
     Scene.show_character("shak funny 2")
     <shak> "Только благодаря тебе и держусь, Оз."
-    Scene.set_scene("ewwwwwww.png")
+    Scene.set_scene("ewwwwwww.png", effect=SpriteEffects.Dissolve(1.0))
     <> "Она грустно улыбнулась и закрыла глаза, положив голову на плечо подруге."
     <shak> "Спасибо за понимание."
     <oz> "Спасибо на хлеб не намажешь~"
     <> "Жаклин слегка пихнула её, но улыбки на лицах леди никуда не исчезли."
     <shak> "Иногда ты невыносима, знаешь?"
     <oz> "И я тебя тоже, дорогая."
+    Audio.stop("music", "fade")
+    Scene.fade("fadein", 5)
     end()
 
 label home_first("Дом милый дом", "Это что за покемон?", show_splash = True, speed = 2):
@@ -575,6 +565,8 @@ label cooking_omlet():
     <oz> "Почему же?"
     Scene.show_character("lshak funny 2", at="left")
     <shak> "Потому что ты моя бесовщина~"
+    Audio.stop("music", "fade")
+    Scene.fade("fadein", 5)
     end()
 
     #[[Концовка: Омлет без муки]]

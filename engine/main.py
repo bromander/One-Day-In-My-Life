@@ -17,6 +17,7 @@ import json
 import uuid
 
 from pyglet.math import Mat4
+from pyglet.resource import scene
 
 from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText, ClickableSprite
 from .scene import Scene
@@ -1258,6 +1259,9 @@ class Views:
             self.bg_image = scene.get_sprite("teacher_homework.png")
             self.bg_image.center_y = self.center_y
             self.bg_image.center_x = self.center_x
+            self.bg_image_character = scene.get_sprite("shak book.png")
+            self.bg_image_character.center_y = self.height * 0.65
+            self.bg_image_character.center_x = self.width * 0.75
 
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
@@ -1270,7 +1274,8 @@ class Views:
             self.settings_manager.enable()
 
             self.attributes = Attributes()
-            self.attributes.reset()
+            self.attributes.character_text_colour = arcade.color.WHITE
+            self.attributes.text_anchor = "center"
 
             self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
             self.characters_texts_manager.enable()
@@ -1311,6 +1316,7 @@ class Views:
         def on_draw(self) -> None:
             self.clear()
             arcade.draw_sprite(self.bg_image)
+            arcade.draw_sprite(self.bg_image_character)
             arcade.draw_sprite(self.dialog_window)
             self.characters_texts_manager.draw()
             self.menu_manager.draw()
