@@ -3,9 +3,9 @@ label main():
     Data.trig_dialogue_window(False)
     Scene.set_scene("warning.png", size=(1.0, 0.856))
     wait(2)
-    #Scene.fade("fadein", 3)
+    Scene.fade("fadein", 3)
     Data.trig_dialogue_window(True)
-    Lore.jump("home_late")
+    Lore.jump("start")
 
 label start("Пролог", "А всё так хорошо начиналось!", show_splash = True, speed = 4):
 
