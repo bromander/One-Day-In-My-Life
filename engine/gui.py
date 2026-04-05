@@ -4,6 +4,7 @@ import warnings
 import json
 import random
 import math
+import os
 from PIL import Image, ImageFilter, ImageDraw
 from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider
@@ -488,7 +489,21 @@ class UISliderSavesUpdater(agui.UISlider):
     
     def on_click(self, event: UIOnClickEvent):
         super().on_click(event)
-        print(self.type)
+        match self.type:
+            case "music":
+                self.am.music.set_volume(round(self.value / 100, 2))
+            case "sound":
+                self.am.sound.set_volume(round(self.value / 100, 2))
+            case "voice":
+                self.am.voice.set_volume(round(self.value / 100, 2))
+            case "lps":
+                self.sm.Volume.set_other("lps", round(self.value, 2))
+            case "fade_speed":
+                self.sm.Volume.set_other("fade_speed", round(self.value, 2))
+        self.sm.Volume._save_data()
+
+    def on_change(self, event: UIOnChangeEvent):
+        super().on_change(event)
         match self.type:
             case "music":
                 self.am.music.set_volume(round(self.value / 100, 2))
@@ -544,7 +559,8 @@ class Managers:
             self.settings_scene["in_game_settings"].alpha = 0
 
             def create_settings_buttons():
-                with open("game/saves.JSON", "r", encoding="UTF-8") as data:
+                save_folder = self.sm.get_save_path()
+                with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as data:
                     data = json.load(data)
                 volumes = data['options']
 
@@ -1090,9 +1106,9 @@ class MovableBlockFalling(Sprite):
         super().__init__(path_or_texture=texture)
         self.center_x = int(center_x) + random.randint(-30, 30)
         self.center_y = int(center_y) + random.randint(-15, 30)
-        self.scale = scale
-        self.scale_x = self.scale_x * random.randint(95, 105)/100
-        self.scale_y = self.scale_y * random.randint(95, 105) / 100
+        #self.scale = scale
+        #self.scale_x = self.scale_x * random.randint(95, 105)/100
+        #self.scale_y = self.scale_y * random.randint(95, 105) / 100
         color_rand = random.randint(230, 255)
         self.color = (
             color_rand,

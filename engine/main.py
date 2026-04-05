@@ -297,7 +297,9 @@ class Views:
 
                     _files_manager = save["files_manager"]
 
-                    thread = fm.load_assets(list(_files_manager["loaded_textures"].keys()) + list(_files_manager["loaded_audios"].keys()), "loading_ponn")
+                    assets = list(_files_manager["loaded_textures"].keys()) + list(_files_manager["loaded_audios"].keys())
+
+                    thread = fm.load_assets(assets, "loading_ponn")
 
                     #while thread.is_alive():
                     #    continue
@@ -997,7 +999,12 @@ class Views:
                 self.window.set_fullscreen(False)
                 self.window.size = (1920, 1080)
                 self.window.set_fullscreen(True)
+
                 self.manager.disable()
+
+                print("OPENING!")
+                print("-"*20)
+
                 game = Views.GameView(session_id)
                 self.window.show_view(game)
 
@@ -1040,7 +1047,8 @@ class Views:
 
         def on_draw(self) -> bool | None:
             self.clear()
-            self.manager.draw()
+            if hasattr(self, "manager"):
+                self.manager.draw()
             super().on_draw()
 
         def on_update(self, delta_time: float) -> bool | None:
@@ -1093,7 +1101,8 @@ class Views:
         def show_main_windows(self) -> None:
 
             def create_menu_buttons():
-                with open("game/saves.JSON", "r", encoding="UTF-8") as data:
+                save_folder = sm.get_save_path()
+                with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as data:
                     data = json.load(data)
                 volumes = data['options']
 
@@ -1347,6 +1356,107 @@ class Views:
             })
             yield
             self.NAMESPACE.Define.correct_ans = self.correct_ans
+            self.window.show_view(self.window.GameView)
+
+    class MenuViewFood(Main_template):
+        def __init__(self, session_id: str, NAMESPACE, actions):
+            super().__init__()
+
+            texture = arcade.load_texture("game/images/gui/dialog_window.png")
+
+            self.dialog_window = arcade.Sprite(
+                texture,
+                scale=6 * min(self.width / 1920, self.height / 1080),
+                center_x=self.width * 0.5,
+                center_y=self.height * 0.13
+            )
+
+            self.actions = actions
+            self.NAMESPACE = NAMESPACE
+            self.fm = fm
+
+            self.bg_image = scene.get_sprite("home_kitchen.jpg")
+            self.bg_image.center_y = self.center_y
+            self.bg_image.center_x = self.center_x
+
+            self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+
+            #self.window.set_vsync(True)
+            self.menu_manager = agui.UIManager()
+            self.lore = self._lore()
+            self.scene = scene
+
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager.enable()
+
+            self.attributes = Attributes()
+            self.attributes.character_text_colour = arcade.color.WHITE
+            self.attributes.text_anchor = "center"
+
+            self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
+            self.characters_texts_manager.enable()
+
+            if not hasattr(self.NAMESPACE["Persistent"], "collected_foods"):
+                self.NAMESPACE["Persistent"].collected_foods = []
+
+            if self.NAMESPACE["Persistent"].collected_foods is None:
+                self.NAMESPACE["Persistent"].collected_foods = []
+
+
+            self.available_food = self.NAMESPACE["Data"].get_food_root()
+            self.menu = {i[0]: i[1] for i in self.available_food}
+
+            if "cooking_omlet" in self.NAMESPACE["Persistent"].collected_foods and \
+                    "cooking_bliny" in self.NAMESPACE["Persistent"].collected_foods and \
+                    "cooking_salad" in self.NAMESPACE["Persistent"].collected_foods:
+                self.menu["???"] = "MGRoL"
+
+            next(self.lore)
+
+        def set_choice(self, label):
+            self.NAMESPACE.Define.cooking_label = label
+            self.NAMESPACE["Persistent"].collected_foods = self.NAMESPACE["Persistent"].collected_foods + [label]
+
+            try:
+                next(self.lore)
+            except StopIteration:
+                pass
+
+        def show_menu(self, data) -> None:
+            self.menu_manager.clear()
+            self.menu_manager.enable()
+            self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+
+            for k, v in data.items():
+                button = agui.UIFlatButton(text=k, width=250, height=100, font_name=FONT_NAME, style=STYLE_DEFAULT_BUTTON)
+                button.on_click = lambda event, label=v: self.set_choice(label)
+                self.menu_v_box.add(button)
+
+            ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
+            ui_anchor_layout.add(child=self.menu_v_box, anchor_x="center_x", anchor_y="center_y")
+
+            self.menu_manager.add(ui_anchor_layout)
+
+        def on_update(self, delta_time: float) -> None:
+            super().on_update(delta_time)
+            scene.update(delta_time)
+            self.characters_texts_manager.update(delta_time)
+            self.settings_manager.on_update(delta_time)
+            self.menu_manager.on_update(delta_time)
+
+        def on_draw(self) -> None:
+            self.clear()
+            scene.draw()
+            arcade.draw_sprite(self.dialog_window)
+            self.characters_texts_manager.draw()
+            self.menu_manager.draw()
+            self.settings_manager.draw()
+            super().on_draw()
+
+        def _lore(self):
+            self.attributes.character_text = ["Что готовить будем?"]
+            self.show_menu(self.menu)
+            yield
             self.window.show_view(self.window.GameView)
 
 

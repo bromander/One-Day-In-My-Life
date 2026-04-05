@@ -5,7 +5,7 @@ import copy
 from arcade import Sprite
 from typing import Optional
 from .files_manager import FilesManager
-from .Exceptions import MainLabelNotFoundError
+from .Exceptions import MainLabelNotFoundError, LabelNotFoundError
 from .audio import AudioManager
 
 
@@ -213,7 +213,11 @@ class Wwl:
             return sprites
 
         if label not in self.fm.loaded_labels:
-            assets = get_assets(self.files[self.now_file]["content"][label])
+            assets = []
+            for e, i in self.files.items():
+                if label in i['content']:
+                    self.now_file = e
+                    assets = get_assets(self.files[self.now_file]["content"][label])
             self.fm.load_assets(assets, label)
 
     def _get_lore(self):

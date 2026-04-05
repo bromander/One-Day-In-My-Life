@@ -2,6 +2,7 @@ import time, datetime
 import re
 from typing import Optional, Literal, Tuple, Union
 import PIL
+import arcade
 from arcade import Sprite, Texture, load_image, get_window, load_animated_gif
 
 from .saves import Saves_manager
@@ -26,7 +27,7 @@ class Namespace:
         self.SavesManager = SavesManager
 
         self.NAMESPACE = {
-            "Data" : self.Data(GameView, ListCharacters, Wwl, AudioManager),
+            "Data" : self.Data(GameView, ListCharacters, Wwl, AudioManager, self),
             "Persistent": self.Persistent(SavesManager),
             "Define": self.Define(),
             "Scene": self.Scene(GameView, ListCharacters, Wwl, Wait_trigger, SavesManager),
@@ -77,10 +78,7 @@ class Namespace:
             if item == 'sm':
                 return object.__getattribute__(self, item)
 
-            try:
-                return self.sm.Persistent.get_persistent(item)
-            except KeyError:
-                raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
+            return self.sm.Persistent.get_persistent(item)
 
         def __delattr__(self, item):
             self.sm.Persistent.del_persistent(item)
@@ -129,16 +127,24 @@ class Namespace:
         Предоставляет доступ к основным классам движка
         '''
 
-        def __init__(self, Game_view, ListCharacters, Wwl, AudioManager):
+        def __init__(self, Game_view, ListCharacters, Wwl, AudioManager, namespace):
             self.session_id = Game_view.session_id
             self.height = Game_view.height
             self.width = Game_view.width
             self.Window = Game_view.window
+            self.namespace = namespace
             self.Game_view = Game_view
             self.ListCharacters = ListCharacters
             self.Wwl = Wwl
             self.AudioManager = AudioManager
             self.PIL = PIL
+
+            self.mix = {
+                "Сладкие блинчики": (frozenset(["milk.png", "eggs.png", "puki.png", "pineapple.png"]), "cooking_bliny"),  # молоко+яйца+мука+ананас
+                "Омлет" : (frozenset(["milk.png", "eggs.png"]), "cooking_omlet"), # Молоко и яица
+                "Салат" : (frozenset(["tomatoes.png"]), "cooking_salad") # Помедорчеки
+                #"Пирог" : (frozenset(["milk.png", "eggs.png", "puki.png"]), "blinyyy") # Яица, молоко  и муки
+            }
 
         def format_time_seconds(self):
             seconds = time.time()
@@ -186,6 +192,16 @@ class Namespace:
                 self.Game_view.show_dialogue_bg_trigger = state
             else:
                 self.Game_view.show_dialogue_bg_trigger = not self.Game_view.show_dialogue_bg_trigger
+
+        def get_food_root(self) -> list[str, str]:
+            chosen = [i for i in self.namespace["Define"].collected_items.keys()]
+            available = []
+            for name, fset in self.mix.items():
+                if set(fset[0]).issubset(set(chosen)):
+                    available.append((name, fset[1]))
+            return available
+
+
 
     class Scene:
         def __init__(self, Game_view, ListCharacters, Wwl, Wait_trigger, sm: Saves_manager) -> None:
@@ -378,7 +394,7 @@ class Namespace:
 
         def show_character(self, character: str,
                         at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
-                        size: Optional[Union[tuple[int, int], int]] = None,
+                        size: Optional[Union[int, float, Tuple[int], Tuple[float]]] = None,
                         effect = None,
                         stream: Literal["consistently", "together"] = "consistently") -> None:
             """
@@ -611,7 +627,7 @@ class Namespace:
         def start_cutscene(self, path):
 
             cutscene = self.Game_view.scene.get_sprite(path)
-            cutscene.size  = get_window().size
+            cutscene.size = get_window().size
             self.Game_view.scene.clear_layer("bg")
             self.Game_view.scene.clear_layer("animated_sprites")
             self.add_sprite(cutscene, layer="animated_sprites", at=(0.5, 0.5))

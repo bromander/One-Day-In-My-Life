@@ -100,23 +100,23 @@ class FilesManager:
                     else:
                         #textures[i] = load_texture(path)
 
-                        #'''
+                        #''' 449.4 Жаклин останавливается и принюхивается
                         im: Image.Image = Image.open(path)  # type: ignore
                         
                         original_size = tuple(im.size)
-                        size_resiz = (int(im.size[0] * 0.7), int(im.size[1] * 0.7))
+                        size_resiz = (int(im.size[0] * 0.8), int(im.size[1] * 0.8))
                         im = im.resize(size_resiz, Image.Resampling.LANCZOS, reducing_gap=5.0)
 
                         if im.mode != "RGBA":
                             im = im.convert("RGBA")
 
-                        im = im.resize(original_size, Image.Resampling.LANCZOS, reducing_gap=5.0)
+                        #im = im.resize(original_size, Image.Resampling.LANCZOS, reducing_gap=5.0)
 
                         tex = Texture(im, hit_box_algorithm=None)
 
                         tex.file_path = Path(path)
 
-                        textures[i] = tex
+                        textures[i] = (tex, original_size)
                         #'''
 
                 elif i in audio_paths and i not in audios:
@@ -141,9 +141,12 @@ class FilesManager:
         :param sprite: Название спрайта
         """
         textures = {}
-        for i in self.textures:
-            if str(i).startswith(sprite):
-                textures[".".join(i.split(".")[:-1])] = self.textures[i]
+        for key, texture_data in self.textures.items():
+            if key.startswith(sprite):
+                texture = texture_data[0]
+                texture.size = texture_data[1]
+                new_key = key.rsplit(".", 1)[0]
+                textures[new_key] = texture
         return textures
 
 '''

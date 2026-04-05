@@ -1,4 +1,5 @@
 import copy
+import sys
 import  json, os
 from .Exceptions import PersistentDoesNotExistError, VolumeDoesNotExistError, SaveDoesNotExistError
 from .files_manager import FilesManager
@@ -9,9 +10,9 @@ class Saves_manager:
         """
         Отвечает за работу с сохранением различных данных.
         """
-
-        if not os.path.exists("game/saves.JSON"):
-            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
+        save_folder = self.get_save_path()
+        if not os.path.exists(os.path.join(save_folder, 'saves.JSON')):
+            with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
                 data = {
                     "saves": {},
                     "persistent" : {},
@@ -32,18 +33,33 @@ class Saves_manager:
         self.Volume = self.Volume()
         self.Save = self.Save()
 
+    @staticmethod
+    def get_save_path():
+        if os.name == 'nt':  # Windows
+            # Используем %APPDATA% (C:\Users\Имя\AppData\Roaming\Название_игры)
+            app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
+            save_dir = os.path.join(app_data, 'OneDay')
+        else:
+            # Linux/Mac
+            save_dir = os.path.join(os.path.expanduser('~'), '.local', 'share', 'OneDay')
+
+        os.makedirs(save_dir, exist_ok=True)
+        return save_dir
+
     class Persistent:
         """
         Отвечает за работу с Persistent-переменными.
         Они отличаются тем, что сохраняются для всей игры и не  привязываются к определённой точке
         """
         def  __init__(self):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
+            save_folder = Saves_manager.get_save_path()
+            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             self.file = file
 
         def _save_data(self) -> None:
-            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
+            save_folder = Saves_manager.get_save_path()
+            with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
                 json.dump(self.file, file)
 
         def get_persistent(self, name: str) -> any:
@@ -52,7 +68,7 @@ class Saves_manager:
             :param name: Название переменной
             """
             if name not in self.file["persistent"]:
-                raise PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
+                raise AttributeError(f"Persistent \"{name}\" does not exist!")
 
             return self.file["persistent"].get(name, None)
 
@@ -63,16 +79,16 @@ class Saves_manager:
             :param data: Данные переменной
             """
             self.file["persistent"][name] = data
+            print(name, data)
             self._save_data()
 
         def del_persistent(self, name: str) -> None:
             """
             Удаляет переменную
             :param name: Название переменной
-            :raises PersistentDoesNotExistError: Если переменная не существует
             """
             if name not in self.file["persistent"]:
-                raise PersistentDoesNotExistError(f"Persistent \"{name}\" does not exist!")
+                raise AttributeError(f"Persistent \"{name}\" does not exist!")
 
             del self.file["persistent"][name]
 
@@ -81,12 +97,14 @@ class Saves_manager:
         Отвечает за работу с различными параметрами и ползунками из файлов сохранения
         """
         def  __init__(self):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
+            save_folder = Saves_manager.get_save_path()
+            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             self.file = file
 
         def _save_data(self) -> None:
-            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
+            save_folder = Saves_manager.get_save_path()
+            with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
                 json.dump(self.file, file)
 
         def set_music(self, value: float) -> None:
@@ -156,12 +174,14 @@ class Saves_manager:
         Отвечает за работу с сохранениями игры
         """
         def  __init__(self):
-            with open("game/saves.JSON", "r", encoding="UTF-8") as file:
+            save_folder = Saves_manager.get_save_path()
+            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             self.file = file
 
         def _save_data(self):
-            with open("game/saves.JSON", "w", encoding="UTF-8") as file:
+            save_folder = Saves_manager.get_save_path()
+            with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
                 json.dump(self.file, file)
 
 
@@ -222,16 +242,14 @@ class Saves_manager:
             files_manager = {
                 "loaded_lables" : copy.copy(fm.loaded_labels),
                 "loaded_textures" : {
-                    filename : str(texture.file_path) for filename, texture in fm.textures.items() if type(texture) is not TextureAnimationSprite
+                    filename : str(texture[0].file_path) for filename, texture in fm.textures.items() if type(texture) is not TextureAnimationSprite
                 },
                 "loaded_audios" : {
                     filename: str(sound.file_name) for filename, sound in fm.audios.items()
                 }
             }
             for filename, texture in fm.textures.items():
-                if type(texture) is not TextureAnimationSprite:
-                    files_manager["loaded_textures"][filename] = str(texture.file_path)
-                else:
+                if type(texture) is TextureAnimationSprite:
                     paths = [str(i.texture.file_path) for i in texture.textures]
                     files_manager["loaded_textures"][filename] = paths
 

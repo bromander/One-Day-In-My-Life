@@ -1,14 +1,11 @@
 import os
-import argparse
 import arcade
 import random
 import json
 import engine
 from engine.main import Views
 import warnings
-import cProfile
-import pstats
-# python -m nuitka --standalone --include-data-dir=./game/=game --windows-console-mode=attach --show-progress --assume-yes-for-downloads --include-module=scipy.io.wavfile --jobs=6 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests --noinclude-data-files=./game/saves.JSON start.py
+#python -m nuitka --standalone --include-data-dir=./game/=game --windows-console-mode=attach --show-progress --assume-yes-for-downloads --jobs=6 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests  --windows-icon-from-ico=Setuper/pineapple.ico --output-filename=OneDay.exe start.py
 WINDOW_TITLE = "ОДИН ДЕНЬ"
 engine.main.GAME_NAME = "ОДИН ДЕНЬ из моей оБыЧнОй ЖиЗнИ с моей женой соседкой которая, возможно, демон или вампир :D"
 

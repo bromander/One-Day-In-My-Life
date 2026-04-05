@@ -35,8 +35,15 @@ class Scene:
         self.characters_slice = value
 
 
-    def get_texture(self, filename: str) -> Optional[Texture]:
-        return self.fm.textures.get(filename, None)
+    def get_texture(self, filename: str) -> Optional[Union[Texture, TextureAnimationSprite]]:
+        texture_data: tuple[Texture, tuple[int, int]] = self.fm.textures.get(filename, None)
+        if texture_data is None:
+            return None
+        if isinstance(texture_data, TextureAnimationSprite):
+            return texture_data
+        texture = texture_data[0]
+        texture.size = texture_data[1]
+        return texture
 
     def has_texture(self, filename: str) -> bool:
         if self.get_texture(filename) is None:
@@ -44,7 +51,7 @@ class Scene:
         return True
 
     def get_sprite(self, filename: str) -> Optional[Sprite]:
-        texture = self.fm.textures.get(filename, None)
+        texture = self.get_texture(filename)
         if isinstance(texture, TextureAnimationSprite):
             return texture
         if texture:
@@ -137,12 +144,16 @@ class Scene:
 
         len_sprites = 0
 
+
         for layer, layer_content in self.data.items():
             if layer == "animated_sprites":
-                for sprite in layer_content.values():
-                    if isinstance(sprite, Sprite):
-                        sprite.update_animation(delta_time)
-                        continue
+                for id, sprite in layer_content.items():
+                    sprite : TextureAnimationSprite = sprite
+                    if sprite._current_keyframe_index == 100:
+                        del self.data[layer][id]
+                        break
+                    sprite.update_animation(delta_time)
+                    continue
 
             if isinstance(layer_content, Sprite):
                 layer_content.update()

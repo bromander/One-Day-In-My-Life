@@ -47,7 +47,7 @@ label start("Пролог", "А всё так хорошо начиналось!
     Scene.hide_character("shak", effect=SpriteEffects.Dissolve(0.5))
     <> "Знаете, как иногда учителей называют «русичка» или «математичка»? Эту за глаза ученики кличут «злюкой». Но не дайте этой кислой роже себя обмануть – за ним скрывается невероятное терпение и ответственный подход к будущему этих спиногрызов."
 
-    Scene.set_scene("shop_outside.png", effect=SpriteEffects.Dissolve(1.0), size=1.8)
+    Scene.set_scene("shop_outside.png", effect=SpriteEffects.Dissolve(1.0), size=1.5)
     <> "По пути Жаклин заглядывает в продуктовый."
     <> "\"Пяточка\"... \n Какое же странное название..."
 
@@ -295,6 +295,7 @@ label bad_ending_hrum_hrum("Плохая концовка", "Ну кто же з
     wait(5)
     <> "лох"
     Scene.fade("fadein", 5)
+    wait(3)
     end()
 
 label food_choice():
@@ -434,15 +435,16 @@ label home_late_continue():
     <oz> "И я тебя тоже, дорогая."
     Audio.stop("music", "fade")
     Scene.fade("fadein", 5)
+    wait(3)
     end()
 
 label home_first("Дом милый дом", "Это что за покемон?", show_splash = True, speed = 2):
     Scene.set_scene("home_hallway.jpg")
-    Scene.show_character("shak usual", at="right")
     Audio.play("music", "ponos_deda_(remix).mp3", effect="fade", volume=0.5)
     Scene.fade("fadeout", 1)
 
-    Scene.show_character("oz meet 1", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz meet 1", at="left", effect=SpriteEffects.Dissolve(0.5), stream = "together")
+    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Dissolve(0.5), stream = "together")
     <> "В прихожую впорхнула леди в вычурном претенциозном наряде со смутными претензиями на готику."
     <> "Было удивительно, как вся эта чопорная одежда, покрывающая чуть ли не всё тело, не заставляла её выглядеть упаренной вусмерть."
     <> "Напротив, обладательница сего гардероба выглядела вполне жизнерадостно."
@@ -463,8 +465,8 @@ label home():
     wait(10.0)
     Scene.set_scene("home_hallway.jpg")
 
-    Scene.show_character("shak angry", at="right")
-    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("shak angry", at="right", effect=SpriteEffects.Dissolve(0.5), stream = "together")
+    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(0.5), stream = "together")
     <shak> "...что это."
     Scene.show_character("oz aww")
     <oz> "Это зайка)"
@@ -492,13 +494,30 @@ label home():
     <oz> "Окей, в этот раз подловила."
     <shak> "Это не то что бы сложно."
 
+    import random
+    items = list(Define.collected_items.keys())
+    if "penis_bread.png" in items:
+        items.remove("penis_bread.png")
+    if "penis.png" in items:
+        items.remove("penis.png")
+
+    if items:
+        Lore.jump("home_continue")
+    else:
+        Lore.jump("home_no_food")
+
+
+label home_no_food():
     ########### Если все опции выбора блюда недоступны:
     <> "Ну, по крайней мере, дом не в разгроме, это уже радует. А пока все будут готовы собраться на поесть, можно и делом заняться..."
     <> "Сегодня предстояло проверить стопку самостоятельных. Что ж, посмотрим, насколько она была успешной…"
     Screen.call_view("MenuView", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
     <> "Итого..."
     Lore.jump("loading_menu")
+
+label home_continue():
     ##########ЕСЛИ ДОСТУПНО ХОТЬ ЧТО-ТО
+
     <shak> "Пошли, расскажешь мне об этой штуке, пока я что-нибудь нам состряпаю."
     Scene.set_scene("home_kitchen.jpg", effect=SpriteEffects.Dissolve(1.0))
 
@@ -506,80 +525,20 @@ label home():
     Scene.show_character("oz sit 1", at="right", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Ну-с, что собираешься устроить?~"
     <shak> "Ну... из того, что сейчас под рукой, можно по-быстрому приготовить..."
-    Scene.set_scene("home_kitchen.jpg")
 
-    if "puki.png" in Define.collected_items and "milk.png" in Define.collected_items and "eggs.png" in Define.collected_items:
-        Lore.jump("sorry")
-    elif "milk.png" in Define.collected_items and "eggs.png" in Define.collected_items:
-        Lore.jump("cooking_omlet")
-    else:
-        Lore.jump("sorry")
+    Screen.call_view("MenuViewFood", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
 
-    Lore.jump("cooking_omlet")
+    match Define.cooking_label:
+        case "cooking_bliny":
+            Lore.jump("cooking_bliny")
+        case "cooking_omlet":
+            Lore.jump("cooking_omlet")
+        case "cooking_salad":
+            Lore.jump("cooking_salad")
+        case "MGRoL":
+            Lore.jump("MGRoL")
 
 
-
-###### > Омлет
-label cooking_omlet():
-    Scene.show_character("lshak usual 1", at="left", effect=SpriteEffects.Dissolve(1.0))
-    Scene.show_character("oz sit 1", at="right", effect=SpriteEffects.Dissolve(0.5))
-    <shak> "О!.."
-    <> "Жаклин начала смешивать смесь яиц и молока в миске."
-    <oz> "Так что готовишь-то?"
-    Scene.show_character("lshak funny", at="left")
-    <shak> "Запечённую курицу."
-    <oz> "А если серьёзно?"
-    <shak> "Тогда блины."
-    Scene.show_character("oz sit 2", at="right")
-    <oz> "Что-то непохоже."
-    Scene.show_character("lshak funny 3", at="left")
-    <shak> "Ты много блинов в своей жизни сделала?"
-    Scene.show_character("oz sit 3", at="right")
-    <oz> "Да не то что бы- стой, не переводи тему!"
-    <shak> "Ну так вот я в этой теме всё-таки немного поопытнее... и я говорю, что это будут блины. Сейчас буду жарить."
-    <oz> "А муку кто добавлять будет?"
-    Scene.show_character("lshak usual 1", at="left")
-    <> "Жаклин сдержала в горле подступивший смешок, напустив на себя серьёзное выражение лица."
-    <shak> "Этот рецепт называется \"панкейки без муки\", Ози."
-    <oz> "Да это же не блины никакие, а клятучий омлет! В блинах обязательно должна быть мука!"
-    <shak> "А панкейки это ещё и оладьи..."
-    Scene.show_character("oz sit 4", at="right")
-    <> "Ms. Ф.ОЗИНАД на секунду остановилась, то ли потеряв дар речи, то ли пытаясь прочитать мысли кулинарного гения местного разлива."
-    Scene.show_character("oz sit 5", at="right")
-    <oz> "В оладьях тоже нужна мука, ты поехавшая!..."
-    Scene.show_character("lshak funny 2", at="left")
-    <shak> "Ну так я повторюсь, это в любом случае рецепт \"панкейки без муки\", он даже называется так, специально для таких, как ты~"
-    <oz> "ПАНКЕЙКИ БЕЗ МУКИ ЭТО СРАНЫЙ ОМЛЕТ-"
-    Scene.show_character("lshak funny 1 mouth", at="left")
-    Scene.show_character("oz sit 6", at="right")
-    <> "УГАШЕННЫЙ ТЫ ОБ ДЕРЕВО"
-    <> "Дамы от души рассмеялись в унисон."
-    Scene.show_character("lshak funny 1", at="left")
-    <shak> "Спасибо, что подыграла~"
-    Scene.show_character("oz sit 1", at="right")
-    <oz> "Буду честна, в начале я действительно подумала, что у тебя начала течь крыша, но потом пришло осознание."
-    Scene.show_character("oz sit 7", at="right")
-    <oz> "И как ты вообще могла так шутить со мной, ах..."
-    <shak> "То есть когда ты меняешь берёзовый сок на уксус, это окей, а когда я меняю местами понятия, это катастрофа?"
-    Scene.show_character("oz sit 6", at="right")
-    <oz> "Твоё лицо того стоило~"
-    Scene.show_character("lshak funny 2", at="left")
-    <shak> "Твоё тоже~"
-    <> "Жаклин тихо хихикнула под нос, накрывая сковороду с омлетом крышкой."
-    <shak> "И, раз уж начистоту, есть что-то особенное в том, чтобы перехитрить такую чертилу, как ты~"
-    Scene.show_character("oz sit 7", at="right")
-    <oz> "Да ты чтооооо! Вот это ты великомученица, страдальчески терпишь такую страшную бесовщина!"
-    Scene.show_character("lshak confused", at="left")
-    <shak> "Хех... Да и не то что бы я особенно страшно страдала с этой \"страшной бесовщиной\"."
-    Scene.show_character("oz sit 1", at="right")
-    <oz> "Почему же?"
-    Scene.show_character("lshak funny 2", at="left")
-    <shak> "Потому что ты моя бесовщина~"
-    Audio.stop("music", "fade")
-    Scene.fade("fadein", 5)
-    end()
-
-    #[[Концовка: Омлет без муки]]
 
 
 label sorry():
@@ -697,4 +656,5 @@ label bad_ending_golubi("Плохая концовка", "Тебя голуби 
     <> "Тебя до смерти заклевали голуби"
     <> "Прими же свою смерть."
     <> "лох"
+    wait(3)
     end()
