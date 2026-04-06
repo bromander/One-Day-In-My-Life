@@ -15,6 +15,7 @@ import os
 import random
 import json
 import uuid
+from typing import Generator
 
 from pyglet.math import Mat4
 from pyglet.resource import scene
@@ -649,7 +650,7 @@ class Views:
 
                     self.text = text
 
-                    file = "./game/images/gui/767e4a851516f55e2471809744295141.jpg"
+                    file = "./game/images/scenes/sorry1.png"
                     self.file = arcade.Sprite(file)
                     self.background_color = arcade.color.BLACK
                     self.lst = arcade.SpriteList()
@@ -672,18 +673,57 @@ class Views:
                     self.last_update = time.time()
                     self.last_update_eye = time.time()
 
+                    self.main_gen: Optional[Generator] = None
+
+                def text_animation(self):
+                    self.text.text = ""
+                    timer = 0
+                    word_index = 0
+                    words = self.text.should_text.split(" ")
+
+                    while word_index < len(words):
+                        dt = yield
+                        if dt is None or dt <= 0:
+                            self.text.text = " ".join(words[:word_index + 1])
+                            word_index += 1
+                            continue
+
+                        timer += dt
+                        words_to_add = int(timer * 20)
+                        if words_to_add > 0:
+                            word_index = min(word_index + words_to_add, len(words))
+                            self.text.text = " ".join(words[:word_index])
+                            timer -= words_to_add / 20
+
+                    self.main_gen = None
+
+
                 def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
                     if button == 1:
-                        self.text.next()
+                        if self.main_gen is None:
+
+                            self.text.next()
+
+                            self.main_gen = None
+                            text_animation = self.text_animation()
+                            next(text_animation)
+                            self.main_gen = text_animation
+
+                        else:
+                            self.text.text = self.text.should_text
+                            self.main_gen = None
 
 
                 def on_update(self, delta_time: float) -> bool | None:
+
+                    if self.main_gen:
+                        try:
+                            self.main_gen.send(delta_time)
+                        except StopIteration:
+                            self.main_gen = None
+
                     if time.time() - self.last_update < 0.1:
                         return None
-
-                    screen_width, screen_height = arcade.get_display_size()
-                    window_width, window_height = self.window.get_framebuffer_size()
-                    self.window.set_location(int((screen_width - window_width) * random.random()), int((screen_height - window_height) * random.random()))
 
                     self.window.width = self.width_const + random.randint(-50, 50)
                     self.window.height = self.height_const + random.randint(-50, 50)
@@ -697,13 +737,17 @@ class Views:
                     self.lst.clear()
 
                     self.talker.position = (
-                    self.center_x + random.randint(-2, 2), self.center_y + random.randint(-2, 2))
+                        self.center_x + random.randint(-1, 1), self.center_y + random.randint(-1, 1)
+                    )
                     self.talker.text = self.text.text
 
                     if time.time() - self.last_update_eye > 0.1:
                         for i in range(10):
                             self.last_update_eye = time.time()
                             file = arcade.Sprite(self.file.texture)
+                            file.color = (
+                                255, 255, 255, 120
+                            )
 
                             file.center_x = random.randint(0, self.window.width)
                             file.center_y = random.randint(0, self.window.height)
@@ -720,7 +764,8 @@ class Views:
 
             def vokhanalia():
                 self.window.set_visible(False)
-                am.play_music("game/music/Lucid Blocks OST： Corner.mp3", streaming=True)
+                am.play_music("game/music/Lucid Blocks OST： Corner.mp3", streaming=True, loop=True)
+
 
                 class VokhanaliaText():
                     def __init__(self):
@@ -728,19 +773,25 @@ class Views:
                             with open("./game/other/thinking.json", "r", encoding="UTF-8") as f:
                                 f = json.load(f)
                             for i in f:
-                                self.text = i
+                                self.should_text = i
                                 yield
-                            arcade.exit()
 
                         self.text = "..."
+                        self.should_text = "..."
                         self.gen = gen()
 
                     def next(self):
-                        next(self.gen)
+                        self.should_text = ""
+                        self.text = ""
+                        try:
+                            next(self.gen)
+                        except StopIteration:
+                            arcade.exit()
 
                 text = VokhanaliaText()
                 self.VokhanaliaText = text
                 self.vokhanalia = True
+                self.main_generator = None
 
                 for  i in range(2):
                     window = arcade.open_window(1000, 600, window_title="Почему?", resizable=False, style="borderless")
@@ -994,6 +1045,9 @@ class Views:
                 am.stop_music()
                 game = Views.GameMenu(False)
                 self.window.show_view(game)
+                self.manager.clear()
+                self.v_box.clear()
+                self.manager.disable()
 
             def open_save(session_id: str, event=None):
                 self.window.set_fullscreen(False)
@@ -1458,8 +1512,6 @@ class Views:
             self.show_menu(self.menu)
             yield
             self.window.show_view(self.window.GameView)
-
-
 
 
 

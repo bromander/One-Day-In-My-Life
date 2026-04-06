@@ -14,13 +14,40 @@ Sprite,
 TextureAnimationSprite,
 TextureKeyframe,
 TextureAnimation,
-SpriteSheet,
-load_animated_gif,
+SpriteSheet#, load_animated_gif
 
-)
+)#731.9 ... Что это
 from PIL import Image, ImageSequence
 from arcade.texture import default_texture_cache
 
+def load_animated_gif(resource_name: str | Path) -> TextureAnimationSprite:
+
+    file_name = Path(resource_name)
+    image_object = Image.open(file_name)
+
+    if not getattr(image_object, "is_animated", False) or not (
+        n_frames := getattr(image_object, "n_frames", 0)
+    ):
+        raise TypeError(f"The file {resource_name} is not an animated gif.")
+
+    sprite = TextureAnimationSprite()
+    keyframes = []
+    for frame in range(n_frames):
+        image_object.seek(frame)
+        frame_duration = image_object.info["duration"]
+        image = image_object.convert("RGBA")
+        size_resiz = (int(image.size[0] * 0.8), int(image.size[1] * 0.8))
+        image = image.resize(size_resiz, Image.Resampling.LANCZOS, reducing_gap=3.0)
+
+        texture = Texture(image)
+        texture.file_path = file_name
+        # sprite.textures.append(texture)
+        keyframes.append(TextureKeyframe(texture, frame_duration))
+    original_size = tuple(image.size)
+
+    animation = TextureAnimation(keyframes=keyframes)
+    sprite.animation = animation
+    return sprite
 
 class FilesManager:
     """
@@ -105,7 +132,7 @@ class FilesManager:
                         
                         original_size = tuple(im.size)
                         size_resiz = (int(im.size[0] * 0.8), int(im.size[1] * 0.8))
-                        im = im.resize(size_resiz, Image.Resampling.LANCZOS, reducing_gap=5.0)
+                        im = im.resize(size_resiz, Image.Resampling.LANCZOS, reducing_gap=3.0)
 
                         if im.mode != "RGBA":
                             im = im.convert("RGBA")
