@@ -139,6 +139,27 @@ class Views:
                 )
             }
 
+        def cleanup_ui(self):
+            if hasattr(self, 'manager'):
+                self.manager.clear()
+                self.manager.disable()
+
+            if hasattr(self, 'menu_manager'):
+                self.menu_manager.clear()
+                self.menu_manager.disable()
+
+            if hasattr(self, 'settings_manager'):
+                if hasattr(self.settings_manager, 'clear'):
+                    self.settings_manager.clear()
+
+            if hasattr(self, 'splash_manager'):
+                self.splash_manager.clear()
+                self.splash_manager.disable()
+
+            if hasattr(self, 'in_game_manager'):
+                if hasattr(self.in_game_manager, 'clear'):
+                    self.in_game_manager.clear()
+
         def on_update(self, delta_time: float) -> None:
             if "x" in self.window.mouse.data and "y" in self.window.mouse.data:
                 mouse_x, mouse_y = self.window.mouse.data["x"], self.window.mouse.data["y"]
@@ -184,12 +205,14 @@ class Views:
 
     class GameView(Main_template):
 
-        def __init__(self, session_id: Optional[str] = None) -> None:
+        def __init__(self, session_id: Optional[str] = None, pon = "pon") -> None:
             """
             Отвечает за основное окно новельной части
             :param session_id: Айди сессии
             """
             super().__init__()
+
+            print(pon)
 
             #self.window.set_vsync(True)
 
@@ -302,8 +325,8 @@ class Views:
 
                     thread = fm.load_assets(assets, "loading_ponn")
 
-                    #while thread.is_alive():
-                    #    continue
+                    while thread.is_alive():
+                        continue
 
                     wwl._preload_assets(wwl.label)
                     if wwl.label in wwl.graf:
@@ -912,12 +935,35 @@ class Views:
                 self._start_vokhanalia()
                 self.is_loading  = True
 
+        def cleanup_ui(self):
+            if hasattr(self, 'manager'):
+                self.manager.clear()
+                self.manager.disable()
+
+            if hasattr(self, 'menu_manager'):
+                self.menu_manager.clear()
+                self.menu_manager.disable()
+
+            if hasattr(self, 'settings_manager'):
+                if hasattr(self.settings_manager, 'clear'):
+                    self.settings_manager.clear()
+
+            if hasattr(self, 'splash_manager'):
+                self.splash_manager.clear()
+                self.splash_manager.disable()
+
+            if hasattr(self, 'in_game_manager'):
+                if hasattr(self.in_game_manager, 'clear'):
+                    self.in_game_manager.clear()
+
         def show_main_windows(self) -> None:
 
             def create_menu_buttons():
                 self.manager.clear()
 
                 def start_game(event=None):
+
+                    self.cleanup_ui()
                     self.window.set_fullscreen(False)
                     self.window.size = (1920, 1080)
                     self.window.set_fullscreen(True)
@@ -927,10 +973,12 @@ class Views:
                     self.window.show_view(game)
 
                 def open_saves(event=None):
+                    self.cleanup_ui()
                     settings = Views.SaveMenu()
                     self.window.show_view(settings)
 
                 def open_settings(event=None):
+                    self.cleanup_ui()
                     settings = Views.SettingsMenu()
                     self.window.show_view(settings)
 
@@ -1037,29 +1085,37 @@ class Views:
 
             self.generate_buttons()
 
+        def cleanup_ui(self):
+            super().cleanup_ui()
+            if hasattr(self, 'slider'):
+                self.slider = None
+            if hasattr(self, 'v_box'):
+                self.v_box.clear()
+            self.manager.disable()
+
         def generate_buttons(self) -> None:
 
             def return_to_main_menu(event=None):
                 am.stop_voice()
                 am.stop_sound()
                 am.stop_music()
+
+                self.cleanup_ui()
+
                 game = Views.GameMenu(False)
                 self.window.show_view(game)
-                self.manager.clear()
-                self.v_box.clear()
-                self.manager.disable()
 
             def open_save(session_id: str, event=None):
                 self.window.set_fullscreen(False)
                 self.window.size = (1920, 1080)
                 self.window.set_fullscreen(True)
 
-                self.manager.disable()
+                self.cleanup_ui()
 
                 print("OPENING!")
                 print("-"*20)
 
-                game = Views.GameView(session_id)
+                game = Views.GameView(session_id, "no")
                 self.window.show_view(game)
 
             return_button = agui.UIFlatButton(
@@ -1106,12 +1162,15 @@ class Views:
             super().on_draw()
 
         def on_update(self, delta_time: float) -> bool | None:
-            self.v_box.center_y = self.center_y - ((self.saves_len - self.slider.value) * 220 + 100) + (220 * 10)
-            self.choise = int(self.slider.value-1)
+            if self.window.current_view is self:
+                if self.slider:
+                    self.v_box.center_y = self.center_y - ((self.saves_len - self.slider.value) * 220 + 100) + (220 * 10)
+                    self.choise = int(self.slider.value-1)
 
-            for i in range(self.saves_len):
-                self.v_box.children[i].disabled = True if i != self.choise else False
-            super().on_update(delta_time)
+                if self.v_box and self.v_box.children:
+                    for i in range(self.saves_len):
+                        self.v_box.children[i].disabled = True if i != self.choise else False
+                super().on_update(delta_time)
 
         def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> bool | None:
             if (self.saves_len - self.slider.value) + scroll_y >= 0 and (self.saves_len - self.slider.value) + scroll_y < self.saves_len:
