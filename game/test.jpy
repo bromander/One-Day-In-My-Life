@@ -346,6 +346,9 @@ label food_choice():
     <oz> "..."
     Scene.show_character("oz mage 3", at="left")
     <shak> "...убирать беспорядок будешь сама."
+    Lore.jump("homework")
+
+label homework():
 
     Scene.set_scene("teacher_homework.png", effect=SpriteEffects.Dissolve(1.0))
     <> "Жаклин устало вздохнула и направилась на кухню, игнорируя протесты сожительницы."
@@ -452,9 +455,10 @@ label home_first("Дом милый дом", "Это что за покемон?
 label home():
 
     <shak> "Я бы больше хотела, чтобы ты мне с пакетами помогла..."
-
+    Data.trig_dialogue_window(False)
     Scene.start_cutscene("strashilka_xodit.gif")
     wait(10.0)
+    Data.trig_dialogue_window(True)
     Scene.set_scene("home_hallway.jpg")
 
     Scene.show_character("shak angry", at="right", effect=SpriteEffects.Dissolve(0.5), stream = "together")
@@ -486,14 +490,9 @@ label home():
     <oz> "Окей, в этот раз подловила."
     <shak> "Это не то что бы сложно."
 
-    import random
-    items = list(Define.collected_items.keys())
-    if "penis_bread.png" in items:
-        items.remove("penis_bread.png")
-    if "penis.png" in items:
-        items.remove("penis.png")
+    aval = Data.get_food_root()
 
-    if items:
+    if aval:
         Lore.jump("home_continue")
     else:
         Lore.jump("home_no_food")
@@ -502,10 +501,7 @@ label home():
 label home_no_food():
     ########### Если все опции выбора блюда недоступны:
     <> "Ну, по крайней мере, дом не в разгроме, это уже радует. А пока все будут готовы собраться на поесть, можно и делом заняться..."
-    <> "Сегодня предстояло проверить стопку самостоятельных. Что ж, посмотрим, насколько она была успешной…"
-    Screen.call_view("MenuView", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
-    <> "Итого..."
-    Lore.jump("loading_menu")
+    Lore.jump("homework")
 
 label home_continue():
     ##########ЕСЛИ ДОСТУПНО ХОТЬ ЧТО-ТО

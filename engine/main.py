@@ -1378,13 +1378,6 @@ class Views:
             self.NAMESPACE = NAMESPACE
             self.fm = fm
 
-            self.bg_image = scene.get_sprite("teacher_homework.png")
-            self.bg_image.center_y = self.center_y
-            self.bg_image.center_x = self.center_x
-            self.bg_image_character = scene.get_sprite("shak book.png")
-            self.bg_image_character.center_y = self.height * 0.65
-            self.bg_image_character.center_x = self.width * 0.75
-
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
             #self.window.set_vsync(True)
@@ -1431,14 +1424,14 @@ class Views:
 
         def on_update(self, delta_time: float) -> None:
             super().on_update(delta_time)
+            scene.update(delta_time)
             self.characters_texts_manager.update(delta_time)
             self.settings_manager.on_update(delta_time)
             self.menu_manager.on_update(delta_time)
 
         def on_draw(self) -> None:
             self.clear()
-            arcade.draw_sprite(self.bg_image)
-            arcade.draw_sprite(self.bg_image_character)
+            scene.draw()
             arcade.draw_sprite(self.dialog_window)
             self.characters_texts_manager.draw()
             self.menu_manager.draw()
