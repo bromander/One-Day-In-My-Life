@@ -419,6 +419,7 @@ class Views:
             gen = self.actions.active_generators.active_generators_consistently
             if gen:
                 if clicked:
+                    self.cursor_texture.alpha = 255
                     if gen[0][0] != 'talk':
                         self.attributes.reset()
                         return
@@ -1470,6 +1471,10 @@ class Views:
             self.NAMESPACE.Define.correct_ans = self.correct_ans
             self.window.show_view(self.window.GameView)
 
+        def on_key_press(self, key: int, modifiers: int) -> bool | None:
+            if key == arcade.key.S or key == arcade.key.ESCAPE:
+                self.settings_manager.turn_visibl()
+
     class MenuViewFood(Main_template):
         def __init__(self, session_id: str, NAMESPACE, actions):
             super().__init__()
@@ -1518,10 +1523,18 @@ class Views:
             self.available_food = self.NAMESPACE["Data"].get_food_root()
             self.menu = {i[0]: i[1] for i in self.available_food}
 
+            self.food = {}
+            for i in self.NAMESPACE["Data"].mix:
+                if i not in self.available_food:
+                    self.food[i] = False
+                else:
+                    self.food[i] = True
+
             if "cooking_omlet" in self.NAMESPACE["Persistent"].collected_foods and \
                     "cooking_bliny" in self.NAMESPACE["Persistent"].collected_foods and \
                     "cooking_salad" in self.NAMESPACE["Persistent"].collected_foods:
                 self.menu["???"] = "MGRoL"
+                self.food["???"] = "MGRoL"
 
             next(self.lore)
 
@@ -1539,9 +1552,20 @@ class Views:
             self.menu_manager.enable()
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
-            for k, v in data.items():
-                button = agui.UIFlatButton(text=k, width=250, height=100, font_name=FONT_NAME, style=STYLE_DEFAULT_BUTTON)
-                button.on_click = lambda event, label=v: self.set_choice(label)
+            for name, state in self.food.items():
+                print(name, state, data)
+                _text = name
+                if name in data:
+                    _label = data[name]
+                    state = True
+                else:
+                    _label = "bad_ending_golubi" # просто заглушка
+                    state = False
+
+                button = agui.UIFlatButton(text=_text, width=250, height=100, font_name=FONT_NAME, style=STYLE_DEFAULT_BUTTON)
+                button.on_click = lambda event, label=_label: self.set_choice(label)
+                if not state:
+                    button.disabled = True
                 self.menu_v_box.add(button)
 
             ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
@@ -1567,9 +1591,13 @@ class Views:
 
         def _lore(self):
             self.attributes.character_text = ["Что готовить будем?"]
-            self.show_menu(self.menu)
+            self.show_menu(self.menu,)
             yield
             self.window.show_view(self.window.GameView)
+
+        def on_key_press(self, key: int, modifiers: int) -> bool | None:
+            if key == arcade.key.S or key == arcade.key.ESCAPE:
+                self.settings_manager.turn_visibl()
 
 
 

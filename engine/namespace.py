@@ -626,6 +626,9 @@ class Namespace:
 
         def start_cutscene(self, path):
             cutscene = self.Game_view.scene.get_sprite(path)
+            while cutscene is None:
+                cutscene = self.Game_view.scene.get_sprite(path)
+
             cutscene.size = get_window().size
             self.Game_view.scene.clear_layer("bg")
             self.Game_view.scene.clear_layer("animated_sprites")
