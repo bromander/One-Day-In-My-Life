@@ -159,7 +159,7 @@ class FilesManager:
             default_texture_cache.flush(True, True, True, True)
 
         textures = list(filenames)
-        n = 5  # во сколько потоков будут загружаться текстуры
+        n = 2  # во сколько потоков будут загружаться текстуры
         length = len(textures)
         part_size = length // n
         remainder = length % n

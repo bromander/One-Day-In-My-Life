@@ -625,8 +625,7 @@ class Namespace:
             self.set_scene(Soorry())
 
         def start_cutscene(self, path):
-
-            cutscene = self.Game_view.scene.get_sprite(path[0])
+            cutscene = self.Game_view.scene.get_sprite(path)
             cutscene.size = get_window().size
             self.Game_view.scene.clear_layer("bg")
             self.Game_view.scene.clear_layer("animated_sprites")

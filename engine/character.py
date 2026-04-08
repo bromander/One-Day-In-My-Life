@@ -1,5 +1,5 @@
 from typing import Optional, Literal, Union
-from arcade import color, load_sound, Sprite
+from arcade import color, load_sound, Sprite, Texture
 from .saves import Saves_manager
 from .audio import AudioManager
 from .waiter import Waiter
@@ -268,11 +268,11 @@ class Character:
         if sprite not in textures:
             raise FileNotFoundError(f"Character sprite \"{sprite}\" was not found in \"./game/images/characters/{self.char_id}/{sprite}\"")
 
-        texture = textures[sprite]
-        size = texture.size
-        texture.size = (size[0] * self.c_scale, size[1] * self.c_scale)
+        texture: Texture = textures[sprite]
+        sprite = Sprite(texture)
+        sprite.scale = self.c_scale
 
-        return Sprite(textures[sprite])
+        return sprite
 
 class ListCharacters:
     def __init__(self,
