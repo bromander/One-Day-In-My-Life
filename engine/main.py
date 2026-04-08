@@ -1936,7 +1936,7 @@ class Views:
             self.draw_sprite = self.sprites[0]
 
             self.clicks = 1
-            self.max_clicks = 30
+            self.max_clicks = 50
 
             self.click_text = arcade.Text(
                 f"0 / {self.max_clicks}", 0, 0, arcade.color.BLACK, 54

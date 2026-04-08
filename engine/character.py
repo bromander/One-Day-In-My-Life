@@ -300,7 +300,7 @@ class ListCharacters:
             "masorubka" : _Character("Кассир", "masorubka", "#E0FFFF", "#7FFFD4"),
             "ed" : _Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
             "oz": _Character("Ms. Ф. ОЗИНАД", "oz", "#12d3da", c_scale=1.5),
-            "del": _Character("Доставщик", "del", "#12d3da"),
+            "del": _Character("Доставщик", "del", "#5f7b99"),
         }
 
     def __getitem__(self, item) -> dict[str : Character]:
