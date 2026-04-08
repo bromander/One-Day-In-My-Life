@@ -214,9 +214,10 @@ class Saves_manager:
             self.file = file
 
 
-        def create_save(self, session_id, am, scene, NAMESPACE, wwl, fm: FilesManager) -> None:
+        def create_save(self, session_data: dict, session_id, am, scene, NAMESPACE, wwl, fm: FilesManager) -> None:
             """
             Создаёт текущее сохранение
+            :param splash_data: Данные последнего сплеша
             :param session_id: Айди сессии
             :param am: Класс AudioManager
             :param scene: Класс Scene
@@ -297,7 +298,8 @@ class Saves_manager:
                 "label": wwl.label,
                 "defines": defines,
                 "scene": scene,
-                "files_manager" : files_manager
+                "files_manager" : files_manager,
+                "session_data" : session_data
             }
             self._save_data()
 
@@ -319,3 +321,8 @@ class Saves_manager:
             """
             self._get_data()
             return [[i, o] for i, o in self.file["saves"].items()]
+
+        def del_save(self, session_id):
+            self._get_data()
+            del self.file["saves"][session_id]
+            self._save_data()

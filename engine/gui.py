@@ -520,7 +520,7 @@ class UISliderSavesUpdater(agui.UISlider):
 class Managers:
 
     class SettingsManager(agui.UIManager):
-        def __init__(self, MainView_self, Am: AudioManager, Sm: Saves_manager, Wwl, session_id: str, FONT_NAME: str, STYLE_DEFAULT_BUTTON: dict, Views):
+        def __init__(self, MainView_self, Am: AudioManager, Sm: Saves_manager, Wwl, session_id: str, FONT_NAME: str, STYLE_DEFAULT_BUTTON: dict, Views, session_data:  dict):
             super().__init__()
             self.MainView_self = MainView_self
             self.Views = Views
@@ -530,6 +530,7 @@ class Managers:
             self.wwl = Wwl
 
             self.session_id  = session_id
+            self.session_data = session_data
 
             self.FONT_NAME = FONT_NAME
             self.STYLE_DEFAULT_BUTTON = STYLE_DEFAULT_BUTTON
@@ -596,7 +597,8 @@ class Managers:
                     width=200,
                     style=self.STYLE_DEFAULT_BUTTON
                 )
-                save_button.on_click = lambda action=None, session_id=self.session_id, am=self.am, scene=self.MainView_self.scene, NAMESPACE=self.MainView_self.NAMESPACE, wwl=self.wwl, fm=self.MainView_self.fm: self.sm.Save.create_save(
+                save_button.on_click = lambda action=None, session_data=self.session_data, session_id=self.session_id, am=self.am, scene=self.MainView_self.scene, NAMESPACE=self.MainView_self.NAMESPACE, wwl=self.wwl, fm=self.MainView_self.fm: self.sm.Save.create_save(
+                    session_data,
                     session_id,
                     am,
                     scene,

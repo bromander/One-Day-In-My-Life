@@ -1,5 +1,6 @@
 import arcade
 from arcade import SpriteList
+from lxml.html.defs import font_style_tags
 from pyglet.event import EVENT_HANDLE_STATE
 import arcade.gui as agui
 import arcade.gui.widgets.layout
@@ -296,6 +297,8 @@ class Views:
 
             self.NAMESPACE = Namespace(self, Views, self.lc, wwl, am, wait_trigger, sm)
 
+            self.session_data = {"name": "", "description": "", "session_start": round(time.time())}
+
             def load_saves(session_id):
                 """
                 Загружает сохранение
@@ -361,6 +364,9 @@ class Views:
                             else:
                                 break
 
+                    self.session_data["name"] = save["session_data"]["name"]
+                    self.session_data["description"] = save["session_data"]["description"]
+
                     self.window.GameView = self
 
             load_saves(session_id)
@@ -369,7 +375,7 @@ class Views:
 
             self.fm = fm
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.session_data)
             self.settings_manager.enable()
 
             self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
@@ -436,8 +442,6 @@ class Views:
             self.attributes.reset()
             now = wwl.get_thing(pos_offset)
             print(now)
-            print(self.actions.active_generators.active_generators_consistently)
-            print(">")
             res = self.talk(now)
 
             if self.start_trigger:
@@ -481,6 +485,10 @@ class Views:
                             self.actions.start_action("show_splash", now["data"], "together")
                         if (now["data"]["name"] != ")" and now["data"]["name"]) or now["data"]["description"] != '':
                             da.update(now["data"]["name"], now["data"]["description"])
+
+                        self.session_data["description"] = str(now["data"]["description"])
+                        self.session_data["name"] = str(now["data"]["name"])
+
                         return "NEXT"
 
                     case _:
@@ -1072,6 +1080,8 @@ class Views:
             self.saves = saves + [[None]]*(20 - len(saves))
             self.saves_len = 20
 
+            self.background_color = (199, 100, 131)
+
             self.slider: Optional[UISliderVertical]  = None
 
             self.manager = agui.UIManager()
@@ -1094,6 +1104,48 @@ class Views:
             self.manager.disable()
 
         def generate_buttons(self) -> None:
+
+            self.manager.clear()
+
+            saves = sm.Save.get_all_saves()
+            self.saves = saves + [[None]] * (20 - len(saves))
+
+            self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
+            self.v_box.center_x = self.window.width / 2 - 300
+            self.manager.add(self.v_box)
+
+            _STYLE_DEFAULT_BUTTON = {
+                "normal": arcade.gui.UIFlatButton.UIStyle(
+                    font_size=20,
+                    font_name=(FONT_NAME,),
+                    font_color=arcade.color.BLACK,
+                    bg=(225, 184, 1, 255),
+                    border=(79, 67, 13, 255),
+                    border_width=5
+                ),
+                "hover": arcade.gui.UIFlatButton.UIStyle(
+                    font_size=20,
+                    font_name=(FONT_NAME,),
+                    font_color=arcade.color.BLACK,
+                    bg=(163, 134, 5, 255),
+                    border=(79, 67, 13, 255),
+                    border_width=5
+                ),
+                "press": arcade.gui.UIFlatButton.UIStyle(
+                    font_size=20,
+                    font_name=(FONT_NAME,),
+                    font_color=arcade.color.BLACK,
+                    bg=(191, 161, 25, 255),
+                    border=(79, 67, 13, 255),
+                    border_width=5
+                ),
+                "disabled": arcade.gui.UIFlatButton.UIStyle(
+                    font_size=20,
+                    font_name=(FONT_NAME,),
+                    font_color=arcade.color.LIGHT_STEEL_BLUE,
+                    bg=(66, 71, 77)
+                )
+            }
 
             def return_to_main_menu(event=None):
                 am.stop_voice()
@@ -1118,20 +1170,54 @@ class Views:
                 game = Views.GameView(session_id, "no")
                 self.window.show_view(game)
 
+            def delete_save(event=None):
+                session_id = self.saves[self.choise][0]
+                if session_id is None:
+                    return None
+                sm.Save.del_save(session_id)
+                self.generate_buttons()
+
+
             return_button = agui.UIFlatButton(
                 text="Назад",
                 width=100,
                 height=50,
                 style=STYLE_DEFAULT_BUTTON,
-                x=10,
-                y=self.window.height-65
+                x=self.window.width * 0.01,
+                y=self.window.height * 0.9
             )
             return_button.on_click = return_to_main_menu
             self.manager.add(return_button)
 
+            return_button = agui.UIFlatButton(
+                text="Удалить сохранение",
+                width=150,
+                height=100,
+                style=STYLE_DEFAULT_BUTTON,
+                x=self.window.width * 0.01,
+                y=self.window.height * 0.5,
+                multiline=True
+            )
+            return_button.on_click = delete_save
+            self.manager.add(return_button)
+
             for i in self.saves:
 
-                button = agui.UIFlatButton(text=f"{i[0]} <", width=700, height=200, style=STYLE_DEFAULT_BUTTON)
+                text = "Пусто"
+                if i[0] is not None:
+                    name = i[1]['session_data']['name']
+                    description = i[1]['session_data']['description']
+                    session_last_time = time.ctime(i[1]['session_data']["session_start"])
+                    text = f"{name} : {description}                 {session_last_time}"
+
+                button = agui.UIFlatButton(
+                    text=text,
+                    width=700,
+                    height=200,
+                    style=_STYLE_DEFAULT_BUTTON,
+                    multiline=True
+                )
+
 
                 if i[0] is not None:
                     button.on_click = lambda event, value=i[0]: open_save(value)
@@ -1151,8 +1237,6 @@ class Views:
             self.slider.center_y = self.window.height / 2
 
             self.manager.add(self.slider)
-
-            #self.v_box.center_y = ((self.v_box.children[0].height + self.v_box._space_between) * 2) - (self.v_box.children[0].height + self.v_box._space_between) * (self.saves_len - self.slider.value)
 
 
         def on_draw(self) -> bool | None:
@@ -1385,7 +1469,7 @@ class Views:
             self.lore = self._lore()
             self.scene = scene
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
             self.settings_manager.enable()
 
             self.attributes = Attributes()
@@ -1496,7 +1580,7 @@ class Views:
             self.lore = self._lore()
             self.scene = scene
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
             self.settings_manager.enable()
 
             self.attributes = Attributes()
@@ -1630,7 +1714,7 @@ class Views:
                 'original_y': self.height // 2
             })
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
             self.settings_manager.enable()
 
             width = self.width
@@ -1830,7 +1914,7 @@ class Views:
             self.NAMESPACE = NAMESPACE
             self.fm = fm
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
             self.settings_manager.enable()
 
             self.sprites = [self.scene.get_sprite("golub.png"), self.scene.get_sprite("golub_click.png")]
@@ -1937,7 +2021,7 @@ class Views:
                 'original_y': self.height * 0.2
             })
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views)
+            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
             self.settings_manager.enable()
 
             self.collecting_zone = (self.width * 0.5, self.width * 0.97, self.height * 0.5, self.height * 0.97)
