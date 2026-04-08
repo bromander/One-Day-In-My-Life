@@ -430,7 +430,7 @@ class Views:
                         self.attributes.reset()
                         return
                     else:
-                        if time.time() - self.last_text_skip < 0.05:
+                        if time.time() - self.last_text_skip < 0.1:
                             return
                         else:
                             self.last_text_skip = time.time()
@@ -476,18 +476,27 @@ class Views:
                 match now['action']:
 
                     case "EXECUTE":
-                        res = self.NAMESPACE.execute(now["data"])
+                        att = 0
+                        while att < 10:
+                            try:
+                                att += 1
+                                res = self.NAMESPACE.execute(now["data"])
+                            except FileNotFoundError:
+                                continue
+                            else:
+                                break
+
                         res = res if res is not None else "NEXT"
                         return res
 
                     case "SHOW_SPLASH":
-                        if now["data"]['show_splash']:
-                            self.actions.start_action("show_splash", now["data"], "together")
                         if (now["data"]["name"] != ")" and now["data"]["name"]) or now["data"]["description"] != '':
+                            if now["data"]['show_splash']:
+                                self.actions.start_action("show_splash", now["data"], "together")
                             da.update(now["data"]["name"], now["data"]["description"])
+                            self.session_data["description"] = str(now["data"]["description"])
+                            self.session_data["name"] = str(now["data"]["name"])
 
-                        self.session_data["description"] = str(now["data"]["description"])
-                        self.session_data["name"] = str(now["data"]["name"])
 
                         return "NEXT"
 
