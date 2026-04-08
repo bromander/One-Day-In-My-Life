@@ -166,8 +166,9 @@ class TestFilesManager(unittest.TestCase):
 
             target = fm.load_assets(os.listdir(paths[i]), person.name())
 
-            while target.is_alive():
-                pass
+            for i in target:
+                while i.is_alive():
+                    pass
 
             if i == "images":
                 self.assertListEqual(list(fm.textures.keys()), os.listdir(paths[i]))
@@ -308,8 +309,9 @@ class TestScene(unittest.TestCase):
 
         target = fm.load_assets(os.listdir(paths["images"]), person.name())
 
-        while target.is_alive():
-            pass
+        for i in target:
+            while i.is_alive():
+                pass
 
         for i in tqdm(os.listdir(paths["images"]), "Adding sprites"):
             texture = scene.get_texture(i)

@@ -100,7 +100,7 @@ class FilesManager:
         self.textures: dict[str : Texture] = {} # Уже загруженные текстуры {Название файла : текстура}
         self.audios: dict[str : Sound] = {} # Уже загруженные звуки {Название файла : Звук}
 
-    def load_assets(self, filenames: list[str], label: str) -> Optional[Thread]:
+    def load_assets(self, filenames: list[str], label: str) -> Optional[list[Thread]]:
         """
         Загружает текстуры пачками в другом потоке
         :param filenames: список названий файлов
@@ -112,15 +112,15 @@ class FilesManager:
 
         self.loaded_labels.append(label)
 
-        textures_paths = self.textures_paths
-        audio_paths = self.audio_paths
-        textures = self.textures
-        audios = self.audios
-
         def load(filenames):
+            textures_paths = self.textures_paths
+            audio_paths = self.audio_paths
+            textures = self.textures
+            audios = self.audios
 
             for i in filenames:
                 if i in textures_paths and i not in textures:
+                    print(str(textures_paths[i]))
                     path = str(textures_paths[i])
                     if path.endswith(".gif"):
                         textures[i] = load_animated_gif(path)
@@ -158,9 +158,24 @@ class FilesManager:
 
             default_texture_cache.flush(True, True, True, True)
 
-        target = Thread(target=load, args=(filenames,))
-        target.start()
-        return target
+        textures = list(filenames)
+        n = 5  # во сколько потоков будут загружаться текстуры
+        length = len(textures)
+        part_size = length // n
+        remainder = length % n
+        threads = []
+
+        for i in range(n):
+            start = i * part_size + min(i, remainder)
+            end = start + part_size + (1 if i < remainder else 0)
+            part = textures[start:end]
+            thread = Thread(target=load, args=(part,))
+            thread.start()
+            threads.append(thread)
+
+        print(threads)
+
+        return threads
 
     def get_character_textures(self, sprite: str) ->  dict[str : Texture]:
         """

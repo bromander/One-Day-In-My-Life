@@ -62,11 +62,18 @@ class Saves_manager:
             with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
                 json.dump(self.file, file)
 
+        def _get_data(self):
+            save_folder = Saves_manager.get_save_path()
+            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
+                file = dict(json.load(file))
+            self.file = file
+
         def get_persistent(self, name: str) -> any:
             """
             Возвращает значение persistent
             :param name: Название переменной
             """
+            self._get_data()
             if name not in self.file["persistent"]:
                 raise AttributeError(f"Persistent \"{name}\" does not exist!")
 
@@ -78,6 +85,7 @@ class Saves_manager:
             :param name: Название переменной
             :param data: Данные переменной
             """
+            self._get_data()
             self.file["persistent"][name] = data
             print(name, data)
             self._save_data()
@@ -87,6 +95,7 @@ class Saves_manager:
             Удаляет переменную
             :param name: Название переменной
             """
+            self._get_data()
             if name not in self.file["persistent"]:
                 raise AttributeError(f"Persistent \"{name}\" does not exist!")
 
@@ -107,11 +116,18 @@ class Saves_manager:
             with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
                 json.dump(self.file, file)
 
+        def _get_data(self):
+            save_folder = Saves_manager.get_save_path()
+            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
+                file = dict(json.load(file))
+            self.file = file
+
         def set_music(self, value: float) -> None:
             """
             Устанавливает значение параметру music
             :param value: Значение
             """
+            self._get_data()
             self.file["options"]["volume"]["music"] = value
 
         def set_sound(self, value: float) -> None:
@@ -119,6 +135,7 @@ class Saves_manager:
             Устанавливает значение параметру sound
             :param value: Значение
             """
+            self._get_data()
             self.file["options"]["volume"]["sound"] = value
 
         def set_voice(self, value: float) -> None:
@@ -126,6 +143,7 @@ class Saves_manager:
             Устанавливает значение параметру voice
             :param value: Значение
             """
+            self._get_data()
             self.file["options"]["volume"]["voice"] = value
 
         def set_other(self, name: str, value: any) -> None:
@@ -135,6 +153,7 @@ class Saves_manager:
             :param value: Значение
             :raises VolumeDoesNotExistError: Если параметр не существует
             """
+            self._get_data()
             if name not in self.file["options"]:
                 raise VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
             self.file["options"][name] = value
@@ -144,18 +163,21 @@ class Saves_manager:
             """
             Возвращает значение параметра music
             """
+            self._get_data()
             return self.file["options"]["volume"].get("music", None)
 
         def get_sound(self) -> float:
             """
             Возвращает значение параметра music
             """
+            self._get_data()
             return self.file["options"]["volume"].get("sound", None)
 
         def get_voice(self) -> float:
             """
             Возвращает значение параметра music
             """
+            self._get_data()
             return self.file["options"]["volume"].get("voice", None)
 
         def get_other(self, name: str) -> any:
@@ -164,6 +186,7 @@ class Saves_manager:
             :param name: название параметра
             :raises VolumeDoesNotExistError: Если параметр не существует
             """
+            self._get_data()
             if name not in self.file["options"]:
                 raise VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
 
@@ -184,6 +207,12 @@ class Saves_manager:
             with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
                 json.dump(self.file, file)
 
+        def _get_data(self):
+            save_folder = Saves_manager.get_save_path()
+            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
+                file = dict(json.load(file))
+            self.file = file
+
 
         def create_save(self, session_id, am, scene, NAMESPACE, wwl, fm: FilesManager) -> None:
             """
@@ -194,6 +223,7 @@ class Saves_manager:
             :param NAMESPACE: Класс Namespace
             :param wwl: Класс WorkWithLore
             """
+            self._get_data()
             if am.music.is_playing():
                 music_file = am.music.now_playing_path
                 music_volume = am.music._local_modifier
@@ -277,7 +307,7 @@ class Saves_manager:
             :param session_id: Айди сохранения
             :raises SaveDoesNotExistError: Если сохранение не  существует
             """
-
+            self._get_data()
             if session_id not in self.file["saves"]:
                 raise SaveDoesNotExistError(f"Save \"{session_id}\" does not exist!")
 
@@ -287,4 +317,5 @@ class Saves_manager:
             """
             Возвращает все игровые сохранения
             """
+            self._get_data()
             return [[i, o] for i, o in self.file["saves"].items()]

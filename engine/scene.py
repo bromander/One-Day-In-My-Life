@@ -174,15 +174,20 @@ class Scene:
         sprite = self.get_sprite(filename)
         sprite.scale_x = float(sprite.scale_x + 0.1 * speed)
         sprite.scale_y = float(sprite.scale_y + 0.1 * speed)
-        self.data["bg_parallax"].append(
-            {
+
+        layer = {
                 'sprite' : sprite,
                 'speed': speed,
                 'original_x': center_x,
                 'original_y': center_y,
                 "scale" : sprite.scale
-            }
-        )
+        }
+        self.data["bg_parallax"].append(layer)
+
+        window = get_window()
+        x, y = window.center_x, window.center_y
+
+        self._move_parallax(self.data["bg_parallax"][-1], x, y)
 
     def _move_parallax(self, layer, x, y):
         window = get_window()

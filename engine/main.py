@@ -1,24 +1,16 @@
-import threading
 import arcade
-from arcade import SpriteList, View
+from arcade import SpriteList
 from pyglet.event import EVENT_HANDLE_STATE
-from pyglet.graphics import Batch
 import arcade.gui as agui
 import arcade.gui.widgets.layout
 from typing import Optional, Literal, Tuple, Union
 import time
-import pyglet
-import ctypes
-from ctypes import wintypes
-import re
 import os
 import random
 import json
 import uuid
 from typing import Generator
-
-from pyglet.math import Mat4
-from pyglet.resource import scene
+from webbrowser import open_new_tab as web_open
 
 from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText, ClickableSprite
 from .scene import Scene
@@ -325,8 +317,8 @@ class Views:
 
                     thread = fm.load_assets(assets, "loading_ponn")
 
-                    while thread.is_alive():
-                        continue
+                    #while thread.is_alive():
+                    #    continue
 
                     wwl._preload_assets(wwl.label)
                     if wwl.label in wwl.graf:
@@ -335,9 +327,6 @@ class Views:
 
                     old_scene = save["scene"]
                     scene.characters_slice = old_scene["characters_slice"]
-
-                    for i in old_scene["bg_parallax"]:
-                        self.scene.add_parallax_bg(i["path"], i["speed"], i["original_x"], i["original_y"])
 
                     for i in old_scene["bg"]:
                         bg_sprite = arcade.Sprite(i["path"])
@@ -362,6 +351,15 @@ class Views:
                     else:
                         am.stop_sound()
                         am.stop_music()
+
+                    for i in old_scene["bg_parallax"]:
+                        while True:
+                            try:
+                                self.scene.add_parallax_bg(i["path"], i["speed"], i["original_x"], i["original_y"])
+                            except AttributeError:
+                                continue
+                            else:
+                                break
 
                     self.window.GameView = self
 
@@ -809,6 +807,7 @@ class Views:
                         try:
                             next(self.gen)
                         except StopIteration:
+                            web_open("https://youtu.be/mn6brnRQPHs")
                             arcade.exit()
 
                 text = VokhanaliaText()
@@ -1752,8 +1751,8 @@ class Views:
         def on_update(self, delta_time: float) -> None:
             super().on_update(delta_time)
             self.scene.update(delta_time)
-            if len(list(self.return_button_manager.get_widgets_at((self.window._mouse_x, self.window._mouse_y)))) == 0:
-                self.items_manager.update(delta_time, self.window.mouse.data)
+            #if len(list(self.return_button_manager.get_widgets_at((self.window._mouse_x, self.window._mouse_y)))) == 0:
+            self.items_manager.update(delta_time, self.window.mouse.data)
             for i in self.notifiers:
                 i.update(delta_time)
 
