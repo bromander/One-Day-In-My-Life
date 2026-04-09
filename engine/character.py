@@ -299,8 +299,8 @@ class ListCharacters:
             "lshak" : _Character("Жаклин", "lshak", "#f5a889", "#f0855b"),
             "masorubka" : _Character("Кассир", "masorubka", "#E0FFFF", "#7FFFD4"),
             "ed" : _Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
-            "oz": _Character("Ms. Ф. ОЗИНАД", "oz", "#12d3da", c_scale=1.5),
-            "del": _Character("Доставщик", "del", "#5f7b99"),
+            "oz": _Character("Ms. Ф. ОЗИНАД", "oz", "#12d3da","#a44aff", c_scale=1.5),
+            "del": _Character("Доставщик", "del", "#7290b0"),
         }
 
     def __getitem__(self, item) -> dict[str : Character]:

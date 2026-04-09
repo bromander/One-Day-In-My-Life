@@ -54,8 +54,9 @@ label cooking_omlet("Омлетик", "Зачем я живу?", show_splash = T
     <oz> "Почему же?"
     Scene.show_character("lshak funny 2", at="left")
     <shak> "Потому что ты моя бесовщина~"
-    Audio.stop("music", "fade")
     Scene.set_scene("omelette_ending.png")
+    <> "КОНЦОВКА ОМЛЕТА: потому что такие приколы - это классика"
+    Audio.stop("music", "fade")
     wait(3)
     Scene.fade("fadein", 5)
     end()
@@ -117,7 +118,7 @@ label cooking_bliny("Сладкие блинчики", "Ой блины, бли�
     Scene.show_character("del paper 3")
     <del> "А вот вы не совпадаете. А мне бы передать из рук в руки…"
     <shak> "Прошу прощения?..."
-    <del> "Слушайте, не подскажете, где тут найти мисс Эф О Зэ И Эн А Дэ? Говорили, типа как фиолетовый парень или фиолетовый парень Майкл Джексон, но не парень, и-"
+    <del> "Слушайте, не подскажете, где тут найти мисс Эф О Зэ И Эн А Дэ? Говорили, типа как сиреневый Майкл Джексон или фиолетовый парень, но не парень, и-"
     <> "Он осёкся, поймав на себе тяжёлый взгляд хозяйки дома."
     Scene.show_character("del paper 2")
     <del> "Звиняйте. Меня особо не просвятили в расшифровке такого скопления букв."
@@ -181,12 +182,14 @@ label cooking_bliny("Сладкие блинчики", "Ой блины, бли�
     <shak> "…что с лицом, я говорю что-то не то?"
     Scene.show_character("oz sit 6")
     <oz> "Вот поэтому мы с тобой отличный дуэт~"
-    Scene.show_character("lshak funny 1")
+    Scene.hide_sprite("lshak", stream = "together")
+    Scene.show_character("shak funny 1", at="left")
     <> "Жаклин демонстративно закатила глаза и отвернулась к сковородке, пряча улыбку."
-    Scene.show_character("lshak funny 2")
+    Scene.show_character("shak funny 2")
     <shak> "Да… дуэт…"
-    Audio.stop("music", "fade")
     Scene.set_scene("blini_ending.png")
+    <> "КОНЦОВКА ФРУКТОВЫХ БЛИНЧИКОВ: и сладость, и шалость"
+    Audio.stop("music", "fade")
     wait(3)
     Scene.fade("fadein", 5)
     end()
@@ -277,8 +280,9 @@ label cooking_salad("Салатик", "Оу, что это? САЛАТИК! Мм
     <> "Ms. Ф. ОЗИНАД хихикнула вполголоса, не сдержав смешинку."
     Scene.show_character("oz sit 6")
     <oz> "Тушé!~ И добавь ванили, как ты это делаешь, всё равно одной приправой больше, одной меньше~"
-    Audio.stop("music", "fade")
     Scene.set_scene("salad_ending.png")
+    <> "КОНЦОВКА САЛАТА: ты не заправка, но жизнь с тобой точно вкуснее"
+    Audio.stop("music", "fade")
     wait(3)
     Scene.fade("fadein", 5)
     end()
@@ -401,6 +405,8 @@ label MGRoL("???", show_splash = True, speed = 2):
     <shak> "Мне не нравится."
     # Ms. Ф. ОЗИНАД, улыбаясь
     <oz> "Мне тоже~"
+    <СЕКРЕТНАЯ КОНЦОВКА: <3 >
+    Data.trig_dialogue_window(False)
     Scene.start_cutscene("MGRoL8.gif")
     wait(1.3)
     #Scene.set_scene("MGRoL8.png")
