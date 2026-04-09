@@ -44,12 +44,14 @@ label main("Пролог", "А всё так хорошо начиналось!"
     <> "\"Пяточка\"... \n Какое же странное название..."
 
     Scene.fade("fadein", 1)
-    Scene.set_scene("magaz.png")
 
     Lore.jump("shop")
 
 
 label shop("Магазин", "Пяточка", show_splash = True, speed = 2)
+
+    Scene.set_scene("magaz.png")
+    Scene.fade("fadeout", 1)
 
     Audio.play("music", "DumpStore.mp3", effect="fade")
 
@@ -218,6 +220,7 @@ label road_to_home_continue():
     Scene.show_character("ed goner", at="left")
     Scene.fade("fadeout", 1)
     <shak> "Эй мистер…!"
+    Scene.show_character("shak usual 1")
     <> "Оборот в ту сторону не дал результата. \"Безымянный сосед\" пропал, будто его на том месте никогда и не было."
     <> "Это cтранно, но, тем не менее, пора домой."
     Scene.fade("fadein", 3)

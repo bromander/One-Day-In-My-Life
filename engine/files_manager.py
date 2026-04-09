@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 import os
 
@@ -127,7 +128,7 @@ class FilesManager:
                     else:
                         #textures[i] = load_texture(path)
 
-                        #''' 449.4 Жаклин останавливается и принюхивается
+                        #'''
                         im: Image.Image = Image.open(path)  # type: ignore
                         
                         original_size = tuple(im.size)
