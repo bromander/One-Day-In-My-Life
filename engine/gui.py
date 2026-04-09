@@ -568,10 +568,6 @@ class Managers:
                 def return_to_main_menu(event=None):
                     self.MainView_self.actions.active_generators.clear()
 
-                    self.am.stop_sound()
-                    self.am.stop_music()
-                    self.am.stop_voice()
-
                     tex_cache = arcade.cache.TextureCache()
                     self.MainView_self.scene.clear_scene()
                     for i in arcade.cache.TextureCache().get_all_textures():

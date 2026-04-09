@@ -649,6 +649,7 @@ class Views:
                 yield
 
                 init_file()
+                am.stop_music()
 
                 for i in range(20, 50):
                     yield
@@ -661,6 +662,7 @@ class Views:
                     self.loading_screen_fade.alpha = 0
                     yield
                 self.is_loading = False
+                am.play_music("game/music/buttercup by jack stauber (but kazoo).mp3")
 
             self.loading_screen.alpha = 255
             self.is_loading = True
@@ -871,6 +873,7 @@ class Views:
                         yield
 
                 last_time = time.time()
+                am.play_music("game/music/Never gonna give you up (a very bad kazoo cover).mp3")
                 while time.time() - last_time < 10:
                     self.window.height = orig_window[0] + random.randint(-10, 10)
                     self.window.width = orig_window[1] + random.randint(-10, 10)
@@ -915,7 +918,7 @@ class Views:
 
         def del_vzlom(self, event=None):
             def dele():
-                am.play_sound("game/sounds/sfx/strashilka.mp3", volume=2.0)
+                am.play_music("game/sounds/sfx/strashilka.mp3", volume=2.0)
                 last_time = time.time()
                 while time.time() - last_time < 35:
                     yield
@@ -1158,9 +1161,6 @@ class Views:
             }
 
             def return_to_main_menu(event=None):
-                am.stop_voice()
-                am.stop_sound()
-                am.stop_music()
 
                 self.cleanup_ui()
 
@@ -1314,9 +1314,6 @@ class Views:
                 volumes = data['options']
 
                 def return_to_main_menu(event=None):
-                    am.stop_voice()
-                    am.stop_sound()
-                    am.stop_music()
                     game = Views.GameMenu(False)
                     self.window.show_view(game)
 
@@ -1797,7 +1794,7 @@ class Views:
                 MovableBlockFalling(scene.get_texture("milk.png"), width * 0.91, height * 0.79)
 
             ]
-            if random.random() > 0.99:
+            if random.random() > 0.95:
                 items.append(MovableBlockFalling(scene.get_texture("penis.png"), width * 0.90, height * 0.30))
             else:
                 items.append(MovableBlockFalling(scene.get_texture("penis_bread.png"), width * 0.93, height * 0.30))
