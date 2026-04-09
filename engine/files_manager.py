@@ -1,7 +1,6 @@
 import time
 from pathlib import Path
 import os
-
 import arcade
 import mutagen
 from typing import Union, Optional, Dict, Literal
@@ -17,7 +16,7 @@ TextureKeyframe,
 TextureAnimation,
 SpriteSheet#, load_animated_gif
 
-)#731.9 ... Что это
+)#
 from PIL import Image, ImageSequence
 from arcade.texture import default_texture_cache
 
@@ -140,11 +139,7 @@ class FilesManager:
 
                         #im = im.resize(original_size, Image.Resampling.LANCZOS, reducing_gap=5.0)
 
-                        tex = Texture(im, hit_box_algorithm=None)
-
-                        tex.file_path = Path(path)
-
-                        textures[i] = (tex, original_size)
+                        textures[i] = (im, original_size, Path(path).absolute())
                         #'''
 
                 elif i in audio_paths and i not in audios:
@@ -186,11 +181,25 @@ class FilesManager:
         textures = {}
         for key, texture_data in self.textures.items():
             if key.startswith(sprite):
-                texture = texture_data[0]
+                texture = texture_data[0].copy()
+                texture = Texture(texture)
                 texture.size = texture_data[1]
+                texture.file_path = texture_data[2]
                 new_key = key.rsplit(".", 1)[0]
                 textures[new_key] = texture
-        return textures
+                return textures
+
+    def get_texture(self, filename: str) -> Optional[Union[Texture, TextureAnimationSprite]]:
+        texture_data = self.textures.get(filename, None)
+        if texture_data is None:
+            return None
+        if isinstance(texture_data, TextureAnimationSprite):
+            return texture_data
+        texture = texture_data[0].copy()
+        texture = Texture(texture)
+        texture.file_path = texture_data[2]
+        texture.size = texture_data[1]
+        return texture
 
 '''
 нет

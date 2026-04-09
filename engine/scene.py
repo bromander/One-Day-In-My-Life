@@ -36,14 +36,7 @@ class Scene:
 
 
     def get_texture(self, filename: str) -> Optional[Union[Texture, TextureAnimationSprite]]:
-        texture_data: tuple[Texture, tuple[int, int]] = self.fm.textures.get(filename, None)
-        if texture_data is None:
-            return None
-        if isinstance(texture_data, TextureAnimationSprite):
-            return texture_data
-        texture = texture_data[0]
-        texture.size = texture_data[1]
-        return texture
+        return self.fm.get_texture(filename)
 
     def has_texture(self, filename: str) -> bool:
         if self.get_texture(filename) is None:

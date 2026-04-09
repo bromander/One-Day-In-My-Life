@@ -273,7 +273,7 @@ class Saves_manager:
             files_manager = {
                 "loaded_lables" : copy.copy(fm.loaded_labels),
                 "loaded_textures" : {
-                    filename : str(texture[0].file_path) for filename, texture in fm.textures.items() if type(texture) is not TextureAnimationSprite
+                    filename : str(texture[2]) for filename, texture in fm.textures.items() if type(texture) is not TextureAnimationSprite
                 },
                 "loaded_audios" : {
                     filename: str(sound.file_name) for filename, sound in fm.audios.items()
