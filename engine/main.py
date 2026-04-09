@@ -477,6 +477,7 @@ class Views:
 
                     case "EXECUTE":
                         att = 0
+                        res = None
                         while att < 10:
                             try:
                                 att += 1
