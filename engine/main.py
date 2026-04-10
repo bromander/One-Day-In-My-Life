@@ -585,6 +585,8 @@ class Views:
             """
             super().__init__()
 
+            self.deleted = 0
+
             self.window.set_vsync(False)
 
             self.bg_sprite = arcade.Sprite("game/images/gui/bg_main_menu.png")
@@ -927,7 +929,15 @@ class Views:
                 yield
                 self.cursor_texture.alpha = 255
                 am.play_sound("game/sounds/sfx/perdezh_YQ5l54B.mp3")
-                self.manager.remove(self.manager.children[0][-2])
+
+                if self.deleted < 1:
+                    self.manager.remove(self.manager.children[0][-2])
+                    self.deleted += 1
+                else:
+                    time.sleep(0.5)
+                    arcade.close_window()
+                    arcade.exit()
+                    self.window.on_close()
                 self.is_loading = False
 
             self.is_loading = True
