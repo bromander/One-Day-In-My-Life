@@ -207,6 +207,9 @@ class Views:
 
             print(pon)
 
+            am.stop_music()
+            am.stop_sound()
+
             #self.window.set_vsync(True)
 
             self.delta_time = 0.0
@@ -1934,7 +1937,7 @@ class Views:
             self.draw_sprite = self.sprites[0]
 
             self.clicks = 1
-            self.max_clicks = 50
+            self.max_clicks = 42
 
             self.click_text = arcade.Text(
                 f"0 / {self.max_clicks}", 0, 0, arcade.color.BLACK, 54
@@ -1967,15 +1970,16 @@ class Views:
                 self.settings_manager.turn_visibl()
             if key == arcade.key.SPACE:
                 self.draw_sprite = self.sprites[1]
-                self.click_text.text = f"{self.clicks} / {self.max_clicks}"
                 self.clicks += 1
+                self.click_text.text = f"{self.clicks} / {self.max_clicks}"
 
         def on_key_release(self, symbol: int, modifiers: int) -> bool | None:
             if symbol == arcade.key.SPACE:
                 self.draw_sprite = self.sprites[0]
 
         def on_update(self, delta_time: float) -> None:
-            if self.clicks >= self.max_clicks:
+            if self.clicks >= self.max_clicks+1:
+                print(self.clicks, self.max_clicks)
                 self.window.show_view(self.window.GameView)
 
             if time.time() - self.timer >= 1:
