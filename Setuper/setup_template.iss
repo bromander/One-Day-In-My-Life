@@ -1,5 +1,5 @@
 #define MyAppName "OneDay"
-#define MyAppVersion "1.0.2"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "piskisiski"
 #define MyAppExeName "OneDaySetup.exe"
 #define OtherFiles "C:\Program Files"

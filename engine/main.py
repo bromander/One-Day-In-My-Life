@@ -884,7 +884,7 @@ class Views:
                     yield
 
                 self.window.height = 1
-                self.window.width = arcade.get_screens()[0].width
+                self.window.width = 1024
                 yield
                 self.window.height = 786
                 self.window.width = 1024
@@ -921,11 +921,13 @@ class Views:
 
         def del_vzlom(self, event=None):
             def dele():
-                am.play_music("game/sounds/sfx/strashilka.mp3", volume=2.0)
+                am.play_music("game/sounds/sfx/strashilka.mp3", volume=10.0)
                 last_time = time.time()
                 while time.time() - last_time < 35:
+                    self.cursor_texture.alpha = 0 if random.random() > 0.95 else 255
                     yield
                 yield
+                self.cursor_texture.alpha = 255
                 am.play_sound("game/sounds/sfx/perdezh_YQ5l54B.mp3")
                 self.manager.remove(self.manager.children[0][-2])
                 self.is_loading = False
