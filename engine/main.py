@@ -770,8 +770,7 @@ class Views:
                     if time.time() - self.last_update < 0.1:
                         return None
 
-                    self.window.width = self.width_const + random.randint(-50, 50)
-                    self.window.height = self.height_const + random.randint(-50, 50)
+                    self.window.set_size(self.width_const + random.randint(-50, 50), self.height_const + random.randint(-50, 50))
 
                     self.last_update = time.time()
 
@@ -866,8 +865,8 @@ class Views:
                                 i.center_x = i.center_x + random.randint(-100, 100)
                                 i.center_y = i.center_x + random.randint(-100, 100)
                         oth_manager.on_update(1/60)
-                        self.window.height = orig_window[0] + random.randint(-100, 100)
-                        self.window.width = orig_window[1] + random.randint(-100, 100)
+                        self.window.set_size(orig_window[1] + random.randint(-100, 100),
+                                             orig_window[0] + random.randint(-100, 100))
                         self.window.center_window()
                         if random.random() > 0.9:
                             self.background_color = arcade.color.BLACK
@@ -878,16 +877,13 @@ class Views:
                 last_time = time.time()
                 am.play_music("game/music/Never gonna give you up (a very bad kazoo cover).mp3")
                 while time.time() - last_time < 10:
-                    self.window.height = orig_window[0] + random.randint(-10, 10)
-                    self.window.width = orig_window[1] + random.randint(-10, 10)
+                    self.window.set_size(orig_window[1] + random.randint(-10, 10), orig_window[0] + random.randint(-10, 10))
                     self.window.center_window()
                     yield
 
-                self.window.height = 1
-                self.window.width = 1024
+                self.window.set_size(1024, 1)
                 yield
-                self.window.height = 786
-                self.window.width = 1024
+                self.window.set_size(1024, 786)
                 self.manager.remove(self.manager.children[0][-1])
                 with open(rf"C:\Users\{os.getlogin()}\Desktop\JopaJam{uuid.uuid4()}.txt", "w", encoding="UTF-8") as file:
                     file.write("https://youtu.be/mn6brnRQPHs?si=nGHy9Eq1ci-wJg0z\n")
@@ -921,10 +917,12 @@ class Views:
 
         def del_vzlom(self, event=None):
             def dele():
-                am.play_music("game/sounds/sfx/strashilka.mp3", volume=10.0)
+                am.play_music("game/sounds/sfx/strashilka.mp3", volume=20.0)
                 last_time = time.time()
-                while time.time() - last_time < 35:
+                while time.time() - last_time < 29:
                     self.cursor_texture.alpha = 0 if random.random() > 0.95 else 255
+                    yield
+                while time.time() - last_time < random.randint(2, 10):
                     yield
                 yield
                 self.cursor_texture.alpha = 255
