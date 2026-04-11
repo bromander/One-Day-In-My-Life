@@ -5,6 +5,7 @@ import arcade
 import mutagen
 from typing import Union, Optional, Dict, Literal
 from threading import Thread
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from arcade import (
 load_sound,
 load_texture,
@@ -47,7 +48,7 @@ def load_animated_gif(resource_name: str | Path) -> TextureAnimationSprite:
 
     animation = TextureAnimation(keyframes=keyframes)
     sprite.animation = animation
-    return sprite
+    return sprite, original_size
 
 class FilesManager:
     """
@@ -112,6 +113,10 @@ class FilesManager:
 
         self.loaded_labels.append(label)
 
+        RESAMPLING = Image.Resampling.BILINEAR
+        SIZE_MODIF = 0.8
+        REDUCING_GAP = 3.0
+
         def load(filenames):
             textures_paths = self.textures_paths
             audio_paths = self.audio_paths
@@ -125,22 +130,17 @@ class FilesManager:
                     if path.endswith(".gif"):
                         textures[i] = load_animated_gif(path)
                     else:
-                        #textures[i] = load_texture(path)
 
-                        #'''
-                        im: Image.Image = Image.open(path)  # type: ignore
-                        
-                        original_size = tuple(im.size)
-                        size_resiz = (int(im.size[0] * 0.8), int(im.size[1] * 0.8))
-                        im = im.resize(size_resiz, Image.Resampling.LANCZOS, reducing_gap=3.0)
+                        with Image.open(path) as im:
+                            original_size = tuple(im.size)
+                            size_resiz = (int(im.size[0] * SIZE_MODIF), int(im.size[1] * SIZE_MODIF))
+                            im = im.resize(size_resiz, RESAMPLING, reducing_gap=REDUCING_GAP)
 
-                        if im.mode != "RGBA":
-                            im = im.convert("RGBA")
+                            if im.mode != "RGBA":
+                                im = im.convert("RGBA")
 
-                        #im = im.resize(original_size, Image.Resampling.LANCZOS, reducing_gap=5.0)
 
-                        textures[i] = (im, original_size, Path(path).absolute())
-                        #'''
+                            textures[i] = (im, original_size, Path(path).absolute())
 
                 elif i in audio_paths and i not in audios:
                     path = str(audio_paths[i])
@@ -178,10 +178,12 @@ class FilesManager:
         Возвращает текстуру персонажа
         :param sprite: Название спрайта
         """
+        RESAMPLING = Image.Resampling.BILINEAR
+        REDUCING_GAP = 3.0
         textures = {}
         for key, texture_data in self.textures.items():
             if key.startswith(sprite):
-                texture = texture_data[0].copy()
+                texture: Image.Image = texture_data[0].copy()
                 texture = Texture(texture)
                 texture.size = texture_data[1]
                 texture.file_path = texture_data[2]
