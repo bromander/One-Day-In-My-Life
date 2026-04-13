@@ -57,6 +57,16 @@ class Character:
         :param lps: Letters per frame: Скорость появления букв в секунду.
         """
 
+        def find_sounds():
+            sounds = []
+            if char_id is not None:
+                if os.path.isfile((f"./game/sounds/voice/{char_id}")):
+                    for f in os.listdir(f"./game/sounds/voice/{char_id}"):
+                        if os.path.isfile(os.path.join(f"./game/sounds/voice/{char_id}", f)):
+                            sounds.append(load_sound(f"./game/sounds/voice/{char_id}/{f}"))
+            self.talk_sounds = sounds
+            return sounds
+
         def hex_to_rgb(hex_color: str):
             if hex_color:
                 hex_color = hex_color.lstrip("#")
@@ -92,7 +102,7 @@ class Character:
         self.last_text = " "
 
         self.talk_sounds = []
-        #find_sounds()
+        find_sounds()
 
         self.char_id = char_id
 

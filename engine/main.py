@@ -1715,7 +1715,6 @@ class Views:
             self.fm = fm
 
             self.layers = []
-            self.layers_sprite_list = SpriteList()
             self.layers.append({
                 'sprite': scene.get_sprite("shop_shelf_bg_1.png"),
                 'speed': 0.0,
@@ -1825,9 +1824,6 @@ class Views:
                     }
                 )
                 self.items_manager.append(i)
-            for i in self.layers:
-                self.layers_sprite_list.append(i['sprite'])
-
 
             self.on_mouse_motion(self.window._mouse_x, self.window._mouse_y, 0, 0)
 
@@ -1861,7 +1857,8 @@ class Views:
         def on_draw(self) -> None:
             self.clear()
             self.scene.draw()
-            self.layers_sprite_list.draw()
+            for layer in self.layers:
+                arcade.draw_sprite(layer['sprite'])
             for i in self.notifiers:
                 if i.visible:
                     i.draw()

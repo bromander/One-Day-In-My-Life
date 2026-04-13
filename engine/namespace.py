@@ -533,7 +533,7 @@ class Namespace:
 
         def set_scene_parallax(self,
                       files: [tuple[str, float]],
-                      stream: Literal["consistently", "together"] = "together") -> None:
+                      stream: Literal["consistently", "together"] = "consistently") -> None:
 
             self.Game_view.scene.clear_layer("bg_parallax")
 

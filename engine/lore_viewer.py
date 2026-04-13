@@ -75,8 +75,6 @@ class Wwl:
         self.label = "main" # Текущий лейбл
         self.graf: dict[str: list[str]] = build_graf() # Граф сея сюжета
 
-        self.last_lore_data: Optional[str] = None
-
         self.now_file = ""
         for e, i in self.files.items():
             if self.label in i['content']:
@@ -111,22 +109,6 @@ class Wwl:
             for o in self.files[i]["content"]:
                 self.files[i]["content"][o] = replace_lines_starting_with_tag(self.files[i]["content"][o])
 
-    def _get_assets(self, string: str):
-        sprites = []
-        for i in string.split("\n"):
-            i = i.strip(" ")
-            potential_assets = re.findall(r'["\']([^"\']*)["\']', i)
-            for i in potential_assets:
-                i = str(i)
-                if len(i.split(".")) > 1:
-                    if i in self.fm.textures_paths or i in self.fm.audio_paths:
-                        sprites.append(i)
-                else:
-                    for o in [".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"]:
-                        i = i + o
-                        if i in self.fm.textures_paths or i in self.fm.audio_paths:
-                            sprites.append(i)
-        return sprites
 
     def parse_label_string(self, label_str, default_values, param_names):
 
@@ -213,34 +195,48 @@ class Wwl:
 
     def _preload_assets(self, label):
 
+        def get_assets(string: str):
+            sprites = []
+            for i in string.split("\n"):
+                i = i.strip(" ")
+                potential_assets = re.findall(r'["\']([^"\']*)["\']', i)
+                for i in potential_assets:
+                    i = str(i)
+                    if len(i.split(".")) > 1:
+                        if i in self.fm.textures_paths or i in self.fm.audio_paths:
+                            sprites.append(i)
+                    else:
+                        for o in [".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"]:
+                            i = i + o
+                            if i in self.fm.textures_paths or i in self.fm.audio_paths:
+                                sprites.append(i)
+            return sprites
+
         if label not in self.fm.loaded_labels:
             assets = []
             for e, i in self.files.items():
                 if label in i['content']:
                     self.now_file = e
-                    assets = self._get_assets(self.files[self.now_file]["content"][label])
+                    assets = get_assets(self.files[self.now_file]["content"][label])
             self.fm.load_assets(assets, label)
 
     def _get_lore(self):
-
-        if self.label not in self.files[self.now_file]["content"]:
-            for e, i in self.files.items():
-                if self.label in i['content']:
-                    self.now_file = e
+        for e, i in self.files.items():
+            if self.label in i['content']:
+                self.now_file = e
 
         label = []
         index = 0
-
-        self.last_lore_data = self.files[self.now_file]["content"][self.label].split("\n")
+        files = self.files[self.now_file]["content"][self.label].strip().split("\n")
 
         self._preload_assets(self.label)
         if self.label in self.graf:
             for i in self.graf[self.label]:
                 self._preload_assets(i)
 
-        while len(self.last_lore_data) > index:
+        while len(files) > index:
             index += 1
-            i = self.last_lore_data[index-1].strip()
+            i = files[index-1].strip()
             match i:
 
                 case n if i.strip().startswith("label"):
@@ -262,8 +258,8 @@ class Wwl:
                     if not i.strip().startswith("label"):
                         data = i + "\n"
 
-                        while index < len(self.last_lore_data):
-                            next_line = self.last_lore_data[index].strip()
+                        while index < len(files):
+                            next_line = files[index].strip()
 
                             if (next_line.startswith("<") or
                                     next_line.startswith("$") or
@@ -271,7 +267,7 @@ class Wwl:
                                     next_line.startswith("label")):
                                 break
 
-                            data += self.last_lore_data[index][4:] + "\n"
+                            data += files[index][4:] + "\n"
                             index += 1
 
                         code_blocks = self._split_python_code(data)
