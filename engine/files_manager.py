@@ -5,6 +5,7 @@ import arcade
 import mutagen
 from typing import Union, Optional, Dict, Literal
 from threading import Thread
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from arcade import (
 load_sound,
 load_texture,
@@ -20,7 +21,7 @@ SpriteSheet#, load_animated_gif
 from PIL import Image, ImageSequence
 from arcade.texture import default_texture_cache
 
-def load_animated_gif(resource_name: str | Path) -> TextureAnimationSprite:
+def load_animated_gif(resource_name: str | Path) -> tuple[TextureAnimationSprite, (int, int)]:
 
     file_name = Path(resource_name)
     image_object = Image.open(file_name)
@@ -47,7 +48,7 @@ def load_animated_gif(resource_name: str | Path) -> TextureAnimationSprite:
 
     animation = TextureAnimation(keyframes=keyframes)
     sprite.animation = animation
-    return sprite
+    return sprite, file_name
 
 class FilesManager:
     """
@@ -112,6 +113,10 @@ class FilesManager:
 
         self.loaded_labels.append(label)
 
+        RESAMPLING = Image.Resampling.BILINEAR
+        SIZE_MODIF = 0.8
+        REDUCING_GAP = 3.0
+
         def load(filenames):
             textures_paths = self.textures_paths
             audio_paths = self.audio_paths
@@ -125,22 +130,15 @@ class FilesManager:
                     if path.endswith(".gif"):
                         textures[i] = load_animated_gif(path)
                     else:
-                        #textures[i] = load_texture(path)
+                        with Image.open(path) as im:
+                            original_size = tuple(im.size)
+                            size_resiz = (int(im.size[0] * SIZE_MODIF), int(im.size[1] * SIZE_MODIF))
+                            im = im.resize(size_resiz, RESAMPLING, reducing_gap=REDUCING_GAP)
 
-                        #'''
-                        im: Image.Image = Image.open(path)  # type: ignore
-                        
-                        original_size = tuple(im.size)
-                        size_resiz = (int(im.size[0] * 0.8), int(im.size[1] * 0.8))
-                        im = im.resize(size_resiz, Image.Resampling.LANCZOS, reducing_gap=3.0)
+                            if im.mode != "RGBA":
+                                im = im.convert("RGBA")
 
-                        if im.mode != "RGBA":
-                            im = im.convert("RGBA")
-
-                        #im = im.resize(original_size, Image.Resampling.LANCZOS, reducing_gap=5.0)
-
-                        textures[i] = (im, original_size, Path(path).absolute())
-                        #'''
+                            textures[i] = (im, original_size, Path(path).absolute())
 
                 elif i in audio_paths and i not in audios:
                     path = str(audio_paths[i])
@@ -155,7 +153,7 @@ class FilesManager:
             default_texture_cache.flush(True, True, True, True)
 
         textures = list(filenames)
-        n = 2  # во сколько потоков будут загружаться текстуры
+        n = min(32, (os.cpu_count() * 4) + 1)  # во сколько потоков будут загружаться текстуры
         length = len(textures)
         part_size = length // n
         remainder = length % n
@@ -193,8 +191,14 @@ class FilesManager:
         texture_data = self.textures.get(filename, None)
         if texture_data is None:
             return None
-        if isinstance(texture_data, TextureAnimationSprite):
-            return texture_data
+        else:
+            if texture_data[0] is None:
+                return None
+        if isinstance(texture_data[0], TextureAnimationSprite):
+            texture = texture_data[0]
+            texture.file_path = texture_data[1]
+            return texture
+
         texture = texture_data[0].copy()
         texture = Texture(texture)
         texture.file_path = texture_data[2]

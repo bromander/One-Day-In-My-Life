@@ -12,6 +12,8 @@ import json
 import uuid
 from typing import Generator
 from webbrowser import open_new_tab as web_open
+from pyglet.gl.lib import GLException
+import math
 
 from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText, ClickableSprite
 from .scene import Scene
@@ -185,7 +187,18 @@ class Views:
 
 
         def on_draw(self) -> None:
-            arcade.draw_sprite(self.cursor_texture)
+
+            try:
+                if self.cursor_texture:
+                    arcade.draw_sprite(self.cursor_texture)
+            except (GLException, AttributeError):
+                # Если возникла ошибка OpenGL, пробуем пересоздать курсор
+                try:
+                    self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
+                    arcade.draw_sprite(self.cursor_texture)
+                except:
+                    pass
+
             if Saves_manager().Volume.get_other("show_fps"):
                 arcade.draw_lrbt_rectangle_filled(
                     left=5,
@@ -656,6 +669,12 @@ class Views:
                 init_file()
                 am.stop_music()
 
+                try:
+                    sm.Persistent.get_persistent("bossfight")
+                except AttributeError:
+                    sm.Persistent.set_persistent("bossfight", False)
+
+
                 for i in range(20, 50):
                     yield
                 self.loading_screen_fade.alpha = 0
@@ -690,141 +709,142 @@ class Views:
 
         def _start_vokhanalia(self):
 
-            class Vokhanalia_view(arcade.View):
+            def gen(text):
+                with open("./game/other/thinking.json", "r", encoding="UTF-8") as f:
+                    f = json.load(f)
 
-                def __init__(self, text):
-                    super().__init__()
+                for i in f:
+                    text.should_text = i
+                    yield
 
-                    self.text = text
-
-                    file = "./game/images/scenes/sorry1.png"
-                    self.file = arcade.Sprite(file)
-                    self.background_color = arcade.color.BLACK
-                    self.lst = arcade.SpriteList()
-                    self.window.center_window()
-
-                    self.width_const, self.height_const =  self.width, self.height
-
-                    self.talker = arcade.Text(
-                        text.text,
-                        self.window.width / 2, self.window.height / 2,
-                        color=arcade.color.WHITE,
-                        multiline=True,
-                        width=self.window.width-100,
-                        font_size=30,
-                        anchor_x="center",
-                        anchor_y="center",
-                        align="center"
-                    )
-                    self.window.center_window()
-                    self.last_update = time.time()
-                    self.last_update_eye = time.time()
-
-                    self.main_gen: Optional[Generator] = None
-
-                def text_animation(self):
-                    self.text.text = ""
-                    timer = 0
-                    word_index = 0
-                    words = self.text.should_text.split(" ")
-
-                    while word_index < len(words):
-                        dt = yield
-                        if dt is None or dt <= 0:
-                            self.text.text = " ".join(words[:word_index + 1])
-                            word_index += 1
-                            continue
-
-                        timer += dt
-                        words_to_add = int(timer * 20)
-                        if words_to_add > 0:
-                            word_index = min(word_index + words_to_add, len(words))
-                            self.text.text = " ".join(words[:word_index])
-                            timer -= words_to_add / 20
-
-                    self.main_gen = None
-
-
-                def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
-                    if button == 1:
-                        if self.main_gen is None:
-
-                            self.text.next()
-
-                            self.main_gen = None
-                            text_animation = self.text_animation()
-                            next(text_animation)
-                            self.main_gen = text_animation
-
-                        else:
-                            self.text.text = self.text.should_text
-                            self.main_gen = None
-
-
-                def on_update(self, delta_time: float) -> bool | None:
-
-                    if self.main_gen:
-                        try:
-                            self.main_gen.send(delta_time)
-                        except StopIteration:
-                            self.main_gen = None
-
-                    if time.time() - self.last_update < 0.1:
-                        return None
-
-                    self.window.set_size(self.width_const + random.randint(-50, 50), self.height_const + random.randint(-50, 50))
-
-                    self.last_update = time.time()
-
-                    self.window.center_window()
-
-                def on_draw(self) -> bool | None:
-                    self.clear()
-                    self.lst.clear()
-
-                    self.talker.position = (
-                        self.center_x + random.randint(-1, 1), self.center_y + random.randint(-1, 1)
-                    )
-                    self.talker.text = self.text.text
-
-                    if time.time() - self.last_update_eye > 0.1:
-                        for i in range(10):
-                            self.last_update_eye = time.time()
-                            file = arcade.Sprite(self.file.texture)
-                            file.color = (
-                                255, 255, 255, 120
-                            )
-
-                            file.center_x = random.randint(0, self.window.width)
-                            file.center_y = random.randint(0, self.window.height)
-                            if random.random() >= 0.5:
-                                file.scale_x = random.random() * random.randint(1, 30)/10
-                            else:
-                                file.scale_y = random.random() * random.randint(1, 30)/10
-                            self.lst.append(file)
-
-
-
-                    self.lst.draw()
-                    self.talker.draw()
+                text.should_text = "Секретный боссфайт разблокирован в главном меню!"
+                sm.Persistent.set_persistent("bossfight", True)
 
             def vokhanalia():
                 self.window.set_visible(False)
                 am.play_music("game/music/Lucid Blocks OST： Corner.mp3", streaming=True, loop=True)
 
+                class Vokhanalia_view(arcade.View):
+
+                    def __init__(self, text):
+                        super().__init__()
+
+                        self.text = text
+
+                        file = "./game/images/scenes/sorry1.png"
+                        self.file = arcade.Sprite(file)
+                        self.background_color = arcade.color.BLACK
+                        self.lst = arcade.SpriteList()
+                        self.window.center_window()
+
+                        self.width_const, self.height_const = self.width, self.height
+
+                        self.talker = arcade.Text(
+                            text.text,
+                            self.window.width / 2, self.window.height / 2,
+                            color=arcade.color.WHITE,
+                            multiline=True,
+                            width=self.window.width - 100,
+                            font_size=30,
+                            anchor_x="center",
+                            anchor_y="center",
+                            align="center"
+                        )
+                        self.window.center_window()
+                        self.last_update = time.time()
+                        self.last_update_eye = time.time()
+
+                        self.main_gen: Optional[Generator] = None
+
+                    def text_animation(self):
+                        self.text.text = ""
+                        timer = 0
+                        word_index = 0
+                        words = self.text.should_text.split(" ")
+
+                        while word_index < len(words):
+                            dt = yield
+                            if dt is None or dt <= 0:
+                                self.text.text = " ".join(words[:word_index + 1])
+                                word_index += 1
+                                continue
+
+                            timer += dt
+                            words_to_add = int(timer * 20)
+                            if words_to_add > 0:
+                                word_index = min(word_index + words_to_add, len(words))
+                                self.text.text = " ".join(words[:word_index])
+                                timer -= words_to_add / 20
+
+                        self.main_gen = None
+
+                    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
+                        if button == 1:
+                            if self.main_gen is None:
+
+                                self.text.next()
+
+                                self.main_gen = None
+                                text_animation = self.text_animation()
+                                next(text_animation)
+                                self.main_gen = text_animation
+
+                            else:
+                                self.text.text = self.text.should_text
+                                self.main_gen = None
+
+                    def on_update(self, delta_time: float) -> bool | None:
+
+                        if self.main_gen:
+                            try:
+                                self.main_gen.send(delta_time)
+                            except StopIteration:
+                                self.main_gen = None
+
+                        if time.time() - self.last_update < 0.1:
+                            return None
+
+                        self.window.set_size(self.width_const + random.randint(-50, 50),
+                                             self.height_const + random.randint(-50, 50))
+
+                        self.last_update = time.time()
+
+                        self.window.center_window()
+
+                    def on_draw(self) -> bool | None:
+                        self.clear()
+                        self.lst.clear()
+
+                        self.talker.position = (
+                            self.center_x + random.randint(-1, 1), self.center_y + random.randint(-1, 1)
+                        )
+                        self.talker.text = self.text.text
+
+                        if time.time() - self.last_update_eye > 0.1:
+                            for i in range(10):
+                                self.last_update_eye = time.time()
+                                file = arcade.Sprite(self.file.texture)
+                                file.color = (
+                                    255, 255, 255, 120
+                                )
+
+                                file.center_x = random.randint(0, self.window.width)
+                                file.center_y = random.randint(0, self.window.height)
+                                if random.random() >= 0.5:
+                                    file.scale_x = random.random() * random.randint(1, 30) / 10
+                                else:
+                                    file.scale_y = random.random() * random.randint(1, 30) / 10
+                                self.lst.append(file)
+
+                        self.lst.draw()
+                        self.talker.draw()
 
                 class VokhanaliaText():
                     def __init__(self):
-                        def gen():
-                            with open("./game/other/thinking.json", "r", encoding="UTF-8") as f:
-                                f = json.load(f)
-                            for i in f:
-                                self.should_text = i
-                                yield
 
                         self.text = "..."
                         self.should_text = "..."
-                        self.gen = gen()
+                        self.gen = gen(self)
 
                     def next(self):
                         self.should_text = ""
@@ -832,7 +852,7 @@ class Views:
                         try:
                             next(self.gen)
                         except StopIteration:
-                            web_open("https://youtu.be/mn6brnRQPHs")
+                            #web_open("https://youtu.be/mn6brnRQPHs")
                             arcade.exit()
 
                 text = VokhanaliaText()
@@ -840,7 +860,7 @@ class Views:
                 self.vokhanalia = True
                 self.main_generator = None
 
-                for  i in range(2):
+                for i in range(2):
                     window = arcade.open_window(1000, 600, window_title="Почему?", resizable=False, style="borderless")
                     window.center_window()
                     view = Vokhanalia_view(text)
@@ -1016,6 +1036,16 @@ class Views:
                     settings = Views.SettingsMenu()
                     self.window.show_view(settings)
 
+                def open_BOSSFIGHT(event=None):
+                    self.cleanup_ui()
+                    self.window.set_fullscreen(False)
+                    self.window.size = (1920, 1080)
+                    self.window.set_fullscreen(True)
+                    self.manager.disable()
+                    game = Views.BossFight()
+                    self.window.GameView = game
+                    self.window.show_view(game)
+
                 self.main_lebel = agui.UILabel(
                     "",
                     text_color=arcade.color.MIDNIGHT_BLUE,
@@ -1092,6 +1122,29 @@ class Views:
                 )
                 dataminer.on_click = self.del_vzlom
                 self.manager.add(dataminer)
+
+                oth_style = STYLE_DEFAULT_BUTTON.copy()
+                oth_style["hover"] = arcade.gui.UIFlatButton.UIStyle(
+                    font_size=16,
+                    font_name=(FONT_NAME, ),
+                    font_color=arcade.color.BLACK,
+                    bg=(0, 77, 255, 255),
+                    border=(79, 67, 13, 255),
+                    border_width=5
+                )
+
+                bossfight_button = agui.UIFlatButton(  # сасите письку
+                    text="Боссфайт",
+                    width=300,
+                    height=60,
+                    style=oth_style,
+                    x=self.window.width * 0.70,
+                    y=self.window.height * 0.10,
+                    multiline=False,
+                    align="center"
+                )
+                bossfight_button.on_click = open_BOSSFIGHT
+                self.manager.add(bossfight_button)
 
             create_menu_buttons()
 
@@ -1500,7 +1553,7 @@ class Views:
             self.characters_texts_manager.enable()
 
             self.correct_ans = 0
-            NAMESPACE.Define.correct_ans = 0
+            NAMESPACE["Define"].correct_ans = 0
             next(self.lore)
 
         def plus(self, do:  bool):
@@ -1565,7 +1618,7 @@ class Views:
                 "ТворОг": True
             })
             yield
-            self.NAMESPACE.Define.correct_ans = self.correct_ans
+            self.NAMESPACE["Define"].correct_ans = self.correct_ans
             self.window.show_view(self.window.GameView)
 
         def on_key_press(self, key: int, modifiers: int) -> bool | None:
@@ -1636,7 +1689,7 @@ class Views:
             next(self.lore)
 
         def set_choice(self, label):
-            self.NAMESPACE.Define.cooking_label = label
+            self.NAMESPACE["Define"].cooking_label = label
             self.NAMESPACE["Persistent"].collected_foods = self.NAMESPACE["Persistent"].collected_foods + [label]
 
             try:
@@ -1697,16 +1750,28 @@ class Views:
                 self.settings_manager.turn_visibl()
 
 
+    class BossFight(Main_template):
+
+        def __init__(self):
+            super().__init__()
+            self.background_color = arcade.color.BLACK
+
+        def on_draw(self) -> None:
+            self.clear()
+            super().on_draw()
+
+        def on_update(self, delta_time: float) -> None:
+            super().on_update(delta_time)
 
     class ShopCollecting(Main_template):
         def __init__(self, session_id: str, NAMESPACE, actions):
             super().__init__()
 
             def return_back(event=None):
-                if len(NAMESPACE.Define.collected_items) > 0:
+                if len(NAMESPACE["Define"].collected_items) > 0:
                     self.window.show_view(self.window.GameView)
 
-            NAMESPACE.Define.collected_items = {}
+            NAMESPACE["Define"].collected_items = {}
 
             #self.window.set_vsync(True)
             self.scene = scene
@@ -1715,6 +1780,7 @@ class Views:
             self.fm = fm
 
             self.layers = []
+            self.layers_sprite_list = SpriteList()
             self.layers.append({
                 'sprite': scene.get_sprite("shop_shelf_bg_1.png"),
                 'speed': 0.0,
@@ -1824,6 +1890,9 @@ class Views:
                     }
                 )
                 self.items_manager.append(i)
+            for i in self.layers:
+                self.layers_sprite_list.append(i['sprite'])
+
 
             self.on_mouse_motion(self.window._mouse_x, self.window._mouse_y, 0, 0)
 
@@ -1857,8 +1926,7 @@ class Views:
         def on_draw(self) -> None:
             self.clear()
             self.scene.draw()
-            for layer in self.layers:
-                arcade.draw_sprite(layer['sprite'])
+            self.layers_sprite_list.draw()
             for i in self.notifiers:
                 if i.visible:
                     i.draw()
@@ -1868,10 +1936,10 @@ class Views:
             super().on_draw()
 
         def plus_item(self, name):
-            if name in self.NAMESPACE.Define.collected_items:
-                self.NAMESPACE.Define.collected_items[name] += 1
+            if name in self.NAMESPACE["Define"].collected_items:
+                self.NAMESPACE["Define"].collected_items[name] += 1
             else:
-                self.NAMESPACE.Define.collected_items[name] = 1
+                self.NAMESPACE["Define"].collected_items[name] = 1
 
         def on_update(self, delta_time: float) -> None:
             super().on_update(delta_time)
@@ -1887,7 +1955,7 @@ class Views:
 
                 if i.center_y < -30:
                     self.plus_item(i.texture.file_path.name)
-                    print(self.NAMESPACE.Define.collected_items)
+                    print(self.NAMESPACE["Define"].collected_items)
                     text_data = self.table[i.texture.file_path.name]
                     text: arcade.Text = ItemsNotifText(text_data[0], i.center_x, i.center_y, text_data[1], FONT_NAME)
                     self.notifiers.append(text)
@@ -1917,7 +1985,6 @@ class Views:
                         self._move_parallax(layer, x, y)
                     else:
                         self.layers.append(self.layers.pop(e))
-
                 else:
                     self._move_parallax(layer, x, y)
 
@@ -2102,8 +2169,8 @@ class Views:
 
             self.on_mouse_motion(self.window._mouse_x, self.window._mouse_y, 0, 0)
 
-            self.NAMESPACE.Define.should_money = random.choice(self.find_reachable_sums(coins))
-            self.NAMESPACE.Define.got_money = 0
+            self.NAMESPACE["Define"].should_money = random.choice(self.find_reachable_sums(coins))
+            self.NAMESPACE["Define"].got_money = 0
 
             self.return_button = agui.UIFlatButton(text="Продолжить", x=self.width*0.90, y=self.height*0.05, style=STYLE_DEFAULT_BUTTON, width=200)
             self.return_button.on_click = return_back
@@ -2114,10 +2181,10 @@ class Views:
             self.should_money_manager = agui.UIManager()
             self.should_money_text = agui.UILabel(f"Внешний долг ЖАКЛИН:", font_name=FONT_NAME, font_size=40, bold=True, text_color=arcade.color.BLACK)
 
-            if str(self.NAMESPACE.Define.should_money)[-1] == "1" and  str(self.NAMESPACE.Define.should_money)[-2:] != "11":
-                text = f"{self.NAMESPACE.Define.should_money} Кувейтский динар"
+            if str(self.NAMESPACE["Define"].should_money)[-1] == "1" and  str(self.NAMESPACE.Define.should_money)[-2:] != "11":
+                text = f"{self.NAMESPACE["Define"].should_money} Кувейтский динар"
             else:
-                text = f"{self.NAMESPACE.Define.should_money} Кувейтских динаров"
+                text = f"{self.NAMESPACE["Define"].should_money} Кувейтских динаров"
 
             self.should_money_counter = agui.UILabel(text, font_name=FONT_NAME, font_size=40, text_color=arcade.color.SCARLET)
             self.should_money_box = agui.UIBoxLayout(align="left", x=self.width*0.01, y=self.height*0.8)
@@ -2192,12 +2259,12 @@ class Views:
                     if hasattr(layer['sprite'], "freezed"):
                         if layer['sprite'].freezed:
                             if not self.layers[e]["collected"]:
-                                self.NAMESPACE.Define.got_money += self.table[layer['sprite'].texture.file_path.name]
+                                self.NAMESPACE["Define"].got_money += self.table[layer['sprite'].texture.file_path.name]
 
                             self.layers[e]["collected"] = True
                         else:
                             if self.layers[e]["collected"]:
-                                self.NAMESPACE.Define.got_money -= self.table[layer['sprite'].texture.file_path.name]
+                                self.NAMESPACE["Define"].got_money -= self.table[layer['sprite'].texture.file_path.name]
                             self.layers[e]["collected"] = False
 
 

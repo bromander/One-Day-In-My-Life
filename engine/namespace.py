@@ -3,7 +3,7 @@ import re
 from typing import Optional, Literal, Tuple, Union
 import PIL
 import arcade
-from arcade import Sprite, Texture, load_image, get_window, load_animated_gif
+from arcade import Sprite, Texture, load_image, get_window, load_animated_gif, TextureAnimationSprite
 
 from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
@@ -121,6 +121,18 @@ class Namespace:
                         super().__delattr__(name)
                     except AttributeError:
                         pass
+
+        def get_all_variables(self):
+            """Возвращает все пользовательские переменные"""
+            return self.defines.copy()  # Возвращаем копию, чтобы избежать случайных изменений
+
+        def get_variable_names(self):
+            """Возвращает список имен всех переменных"""
+            return list(self.defines.keys())
+
+        def get_variable_values(self):
+            """Возвращает список значений всех переменных"""
+            return list(self.defines.values())
 
     class Data:
         '''
@@ -533,7 +545,7 @@ class Namespace:
 
         def set_scene_parallax(self,
                       files: [tuple[str, float]],
-                      stream: Literal["consistently", "together"] = "consistently") -> None:
+                      stream: Literal["consistently", "together"] = "together") -> None:
 
             self.Game_view.scene.clear_layer("bg_parallax")
 
@@ -625,10 +637,14 @@ class Namespace:
             self.set_scene(Soorry())
 
         def start_cutscene(self, path):
-            cutscene = self.Game_view.scene.get_sprite(path)
+            print(path)
+            print(self.Game_view.scene.fm.textures)
+            cutscene: TextureAnimationSprite = self.Game_view.scene.get_sprite(path)
             while cutscene is None:
                 cutscene = self.Game_view.scene.get_sprite(path)
 
+            print(cutscene)
+            print(str(cutscene.texture.file_path.name))
             cutscene.size = get_window().size
             self.Game_view.scene.clear_layer("bg")
             self.Game_view.scene.clear_layer("animated_sprites")

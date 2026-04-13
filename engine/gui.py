@@ -1022,18 +1022,19 @@ class Managers:
             image.putalpha(alpha)
             return image
 
-
         def do_render_base(self, surface: Surface):
             surface.limit(LBWH(self.rect.left - 25, self.rect.bottom, self.rect.width + 50, self.rect.height))
 
-            if self.attributes != self.last_text:
+            if self.attributes.character_name != self.last_text:
                 try:
-                    self.last_text = str(self.attributes)
-                    self.img = self.img.resize((int(self.rect.size[0]+50), int(self.rect.size[1])))
-                    img = self._alpha_smooth_img(self.img, self.width/2, self.img.width/2)
+                    self.last_text = str(self.attributes.character_name)
+                    self.fit_content()
+
+                    self.img = self.img.resize((int(self.rect.size[0] + 50), int(self.rect.size[1])))
+                    img = self._alpha_smooth_img(self.img, self.width / 2, self.img.width / 2)
                     self._bg_tex = Texture(img)
                 except ValueError:
-                    self.last_text = str(self.attributes)
+                    self.last_text = str(self.attributes.character_name)
 
             if self._bg_tex:
                 surface.draw_texture(x=0, y=0, width=self.width + 50, height=self.height, tex=self._bg_tex)
@@ -1099,7 +1100,8 @@ class MovableBlock(Sprite):
                 self.angle = self.start_angle
                 self.freezed=False
         else:
-            self.freezed = False
+            if self.freezed:
+                self.freezed = False
 
 class MovableBlockFalling(Sprite):
     def __init__(self, texture, center_x = 0, center_y = 0, scale=1.0):

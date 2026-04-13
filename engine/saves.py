@@ -244,7 +244,7 @@ class Saves_manager:
             ]
 
             defines = {}
-            for name, value in NAMESPACE.Define.__dict__.items():
+            for name, value in NAMESPACE["Define"].get_all_variables().items():
                 if not name.startswith("__") and not name.endswith("__"):
                     defines[name] = copy.deepcopy(value)
 
@@ -273,15 +273,15 @@ class Saves_manager:
             files_manager = {
                 "loaded_lables" : copy.copy(fm.loaded_labels),
                 "loaded_textures" : {
-                    filename : str(texture[2]) for filename, texture in fm.textures.items() if type(texture) is not TextureAnimationSprite
+                    filename : str(texture[2]) for filename, texture in fm.textures.items() if type(texture[0]) is not TextureAnimationSprite
                 },
                 "loaded_audios" : {
                     filename: str(sound.file_name) for filename, sound in fm.audios.items()
                 }
             }
             for filename, texture in fm.textures.items():
-                if type(texture) is TextureAnimationSprite:
-                    paths = [str(i.texture.file_path) for i in texture.textures]
+                if type(texture[0]) is TextureAnimationSprite:
+                    paths = [str(i.texture.file_path) for i in texture[0].textures]
                     files_manager["loaded_textures"][filename] = paths
 
 

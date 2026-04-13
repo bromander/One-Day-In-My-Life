@@ -212,38 +212,42 @@ class Scene:
                 self._move_parallax(layer, x, y)
 
     def draw(self) -> None:
-        """
-        Рисует спрайты со всей сцены
-        """
+        """Рисует спрайты со всей сцены"""
         data = self.data
 
-        bg_items = data.get('bg')
-        if bg_items:
-            layers = sorted(bg_items.keys(), reverse=True)
-            for layer in layers:
+        # Фон
+        if bg_items := data.get('bg'):
+            for layer in sorted(bg_items, reverse=True):
                 draw_sprite(bg_items[layer])
-        #print(self.characters_slice)
-        bg_items = data.get('bg_parallax')
-        for layer in bg_items[:self.characters_slice]:
+
+        # Параллакс
+        bg_parallax = data.get('bg_parallax', [])
+        slice_idx = self.characters_slice
+
+        # Функция для слоя (избегаем дублирования кода)
+        def draw_layer(layer):
             sprite = layer["sprite"]
             if "scale" in layer:
                 sprite.scale = layer["scale"]
             draw_sprite(sprite)
 
+        # Задние слои
+        for layer in bg_parallax[:slice_idx]:
+            draw_layer(layer)
 
-        for sprite in data["sprites"].values():
+        # Спрайты
+        for sprite in data.get("sprites", {}).values():
             draw_sprite(sprite)
 
-        for layer in bg_items[self.characters_slice-1:]:
-            sprite = layer["sprite"]
-            if "scale" in layer:
-                sprite.scale = layer["scale"]
-            draw_sprite(sprite)
+        # Передние слои
+        for layer in bg_parallax[slice_idx - 1:]:
+            draw_layer(layer)
 
+        # Остальное
+        skip_keys = {'bg', 'bg_parallax', 'sprites'}
         for key, value in data.items():
-            if key == 'bg' or key == "bg_parallax" or key == "sprites":
+            if key in skip_keys:
                 continue
-
             if isinstance(value, Sprite):
                 draw_sprite(value)
             elif isinstance(value, dict):
