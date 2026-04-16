@@ -717,9 +717,6 @@ class Views:
                     text.should_text = i
                     yield
 
-                text.should_text = "Секретный боссфайт разблокирован в главном меню!"
-                sm.Persistent.set_persistent("bossfight", True)
-
             def vokhanalia():
                 self.window.set_visible(False)
                 am.play_music("game/music/Lucid Blocks OST： Corner.mp3", streaming=True, loop=True)
@@ -852,7 +849,7 @@ class Views:
                         try:
                             next(self.gen)
                         except StopIteration:
-                            #web_open("https://youtu.be/mn6brnRQPHs")
+                            web_open("https://youtu.be/mn6brnRQPHs")
                             arcade.exit()
 
                 text = VokhanaliaText()
@@ -1036,16 +1033,6 @@ class Views:
                     settings = Views.SettingsMenu()
                     self.window.show_view(settings)
 
-                def open_BOSSFIGHT(event=None):
-                    self.cleanup_ui()
-                    self.window.set_fullscreen(False)
-                    self.window.size = (1920, 1080)
-                    self.window.set_fullscreen(True)
-                    self.manager.disable()
-                    game = Views.BossFight()
-                    self.window.GameView = game
-                    self.window.show_view(game)
-
                 self.main_lebel = agui.UILabel(
                     "",
                     text_color=arcade.color.MIDNIGHT_BLUE,
@@ -1132,19 +1119,6 @@ class Views:
                     border=(79, 67, 13, 255),
                     border_width=5
                 )
-
-                bossfight_button = agui.UIFlatButton(  # сасите письку
-                    text="Боссфайт",
-                    width=300,
-                    height=60,
-                    style=oth_style,
-                    x=self.window.width * 0.70,
-                    y=self.window.height * 0.10,
-                    multiline=False,
-                    align="center"
-                )
-                bossfight_button.on_click = open_BOSSFIGHT
-                self.manager.add(bossfight_button)
 
             create_menu_buttons()
 
@@ -1748,20 +1722,6 @@ class Views:
         def on_key_press(self, key: int, modifiers: int) -> bool | None:
             if key == arcade.key.S or key == arcade.key.ESCAPE:
                 self.settings_manager.turn_visibl()
-
-
-    class BossFight(Main_template):
-
-        def __init__(self):
-            super().__init__()
-            self.background_color = arcade.color.BLACK
-
-        def on_draw(self) -> None:
-            self.clear()
-            super().on_draw()
-
-        def on_update(self, delta_time: float) -> None:
-            super().on_update(delta_time)
 
     class ShopCollecting(Main_template):
         def __init__(self, session_id: str, NAMESPACE, actions):
