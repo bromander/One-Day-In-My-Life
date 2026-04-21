@@ -295,8 +295,8 @@ label cooking_salad("Салатик", "Оу, что это? САЛАТИК! Мм
 
 ###### > Если все остальные опции потрогали: ОПЦИЯ ???
 label MGRoL("???", show_splash = True, speed = 2):
-    Scene.show_character("lshak angry")
-    Scene.show_character("oz meet 1")
+    Scene.show_character("lshak angry", at="left")
+    Scene.show_character("oz meet 1", at="right")
 
     <shak> "…впрочем, знаешь… может, сегодня просто доставку? Я прикинула, как оно будет, и у меня просто нет сил."
     Scene.show_character("oz meet 2")

@@ -513,9 +513,9 @@ label home_continue():
     <shak> "Пошли, расскажешь мне об этой штуке, пока я что-нибудь нам состряпаю."
     Scene.set_scene("home_kitchen.jpg", effect=SpriteEffects.Dissolve(1.0))
 
-    Scene.show_character("lshak funny 1", at="left", effect=SpriteEffects.Dissolve(1.0))
     Scene.show_character("oz sit 1", at="right", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Ну-с, что собираешься устроить?~"
+    Scene.show_character("lshak funny 1", at="left", effect=SpriteEffects.Dissolve(0.5))
     <shak> "Ну... из того, что сейчас под рукой, можно по-быстрому приготовить..."
 
     Screen.call_view("MenuViewFood", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
