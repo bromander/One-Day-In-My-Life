@@ -861,6 +861,7 @@ class Managers:
             if self.attributes.character_name != self.last_character_name:
                 self.cname_text.text = self.attributes.character_name
                 self.cname_text.update_font(font_color=self.attributes.character_name_colour)
+                self.cname_text.update_pos()
 
             if repr(self.attributes.character_name).strip("'") in [" ", "", "\t", "\n", " "]:
                 self.cname_text.visible = None
@@ -986,7 +987,7 @@ class Managers:
             super().__init__(
                 attributes.character_name,
                 x=window.width * 0.19,
-                y=window.height * 0.27,
+                y=window.height * 0.32,
                 font_size=40,
                 text_color=attributes.character_name_colour,
                 font_name=FONT_NAME
@@ -994,6 +995,11 @@ class Managers:
             self.attributes = attributes
             self.img = Image.open("./game/images/gui/name_window.png")
             self.last_text = attributes.character_name
+
+        def update_pos(self):
+            window = get_window()
+            self.center_x = window.width * 0.19
+            self.center_y = window.height * 0.32
 
         def _alpha_smooth_img(self, image, r_start, r_end):
             image = image.convert("RGBA")
