@@ -138,7 +138,7 @@ class FilesManager:
                             if im.mode != "RGBA":
                                 im = im.convert("RGBA")
 
-                            textures[i] = (im, original_size, Path(path).absolute())
+                        textures[i] = (im, original_size, Path(path).absolute())
 
                 elif i in audio_paths and i not in audios:
                     path = str(audio_paths[i])
@@ -153,7 +153,11 @@ class FilesManager:
             default_texture_cache.flush(True, True, True, True)
 
         textures = list(filenames)
-        n = min(32, (os.cpu_count() * 4) + 1)  # во сколько потоков будут загружаться текстуры
+        n = min(32, len(textures), (os.cpu_count() * 4) + 1)  # во сколько потоков будут загружаться текстуры
+
+        if n == 0:
+            return None
+
         length = len(textures)
         part_size = length // n
         remainder = length % n

@@ -762,7 +762,7 @@ class Managers:
             self.window = window
             self.FONT_NAME = FONT_NAME
 
-            self.cname_text = agui.UILabel()
+            self.cname_text: Optional[Managers.UiLabelCNameText] = None
 
             self.texts_widget = UIWidget()
             self.add(self.texts_widget)
@@ -859,9 +859,8 @@ class Managers:
                 self.add(self.texts_widget)
 
             if self.attributes.character_name != self.last_character_name:
-                self.cname_text.text = self.attributes.character_name
+                self.cname_text.update_text(self.attributes.character_name)
                 self.cname_text.update_font(font_color=self.attributes.character_name_colour)
-                self.cname_text.update_pos()
 
             if repr(self.attributes.character_name).strip("'") in [" ", "", "\t", "\n", " "]:
                 self.cname_text.visible = None
@@ -995,6 +994,12 @@ class Managers:
             self.attributes = attributes
             self.img = Image.open("./game/images/gui/name_window.png")
             self.last_text = attributes.character_name
+
+            self.update_pos()
+
+        def update_text(self, text):
+            self.text = text
+            self.update_pos()
 
         def update_pos(self):
             window = get_window()

@@ -483,7 +483,7 @@ class Namespace:
             self.Game_view.actions.active_generators.add_generator(stream, target(self.Game_view.scene), "hide_sprite")
 
         def set_scene(self,
-                      file_name: Union[str, Sprite],
+                      file_name: Optional[Union[str, Sprite]],
                       size: Optional[Union[tuple[int, int], int]] = None,
                       layer: int = 0,
                       effect = None,
@@ -504,6 +504,23 @@ class Namespace:
             if layer < 0:
                 raise ValueError("Layer must be greater than zero.")
 
+            bg_id = int(layer)
+            if effect is not None:
+                bg_id = -1
+
+            if file_name is None:
+                def del_layer():
+                    self.Game_view.scene.clear_layer("sprites")
+                    self.Game_view.scene.clear_layer("bg_parallax")
+                    self.Game_view.scene.clear_layer("animated_sprites")
+                    self.Game_view.scene.clear_layer("bg")
+                    yield
+
+                self.Game_view.actions.active_generators.add_generator(stream, del_layer(), "set_scene")
+
+                return None
+
+
             if isinstance(file_name, str):
 
                 sprite = self.Game_view.scene.get_sprite(file_name)
@@ -517,10 +534,8 @@ class Namespace:
             #sprite.scale_y = self.Game_view.height
             sprite.center_x, sprite.center_y, sprite.size = self.Game_view.width * 0.5, self.Game_view.height * 0.5, self._get_size(size, sprite.size)
 
-            bg_id = int(layer)
             if effect is not None:
                 sprite.alpha = 0
-                bg_id = -1
 
             def target(bg_id, hide_scene: bool):
                 self.Game_view.scene.clear_layer("sprites")
@@ -530,6 +545,7 @@ class Namespace:
                     self.Game_view.scene.clear_layer("bg")
                 self.Game_view.scene.add_sprite(f"bg", bg_id, sprite)
                 yield
+
 
             def edit_layer_name_and_del_old(bg_id, layer):
                 old_bg = self.Game_view.scene["bg"][bg_id]
@@ -589,19 +605,6 @@ class Namespace:
                     self.Game_view.actions.start_action("fadeout", {"time": duration}, stream=stream)
                 case _:
                     raise ActionNotFoundError(f"Action \"{type}\" now found!")
-
-        def show_menu(self, buttons: dict[str : str]) -> None:
-            '''
-            Показывает меню выбора для переключения между лейблами
-            Пример параметра buttons:
-            {
-                "Кнопка1" : "Лейбл1",
-                "Кнопка2" : "Лейбл3",
-                "Сдохнуть" : "Лейбл_сдохнуть"
-            }
-            '''
-
-            self.Game_view.show_menu(buttons)
 
         def add_sorry_sprite(self):
 

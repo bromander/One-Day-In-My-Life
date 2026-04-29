@@ -54,6 +54,7 @@ label cooking_omlet("Омлетик", "Зачем я живу?", show_splash = T
     <oz> "Почему же?"
     Scene.show_character("lshak funny 2", at="left")
     <shak> "Потому что ты моя бесовщина~"
+    Scene.set_scene(None)
     Scene.set_scene("omelette_ending.png", effect=SpriteEffects.Dissolve(1.0))
     wait(2)
     Scene.fade("fadein", 3, stream = "together")
@@ -188,6 +189,7 @@ label cooking_bliny("Сладкие блинчики", "Ой блины, бли�
     <> "Жаклин демонстративно закатила глаза и отвернулась к сковородке, пряча улыбку."
     Scene.show_character("shak funny 2")
     <shak> "Да… дуэт…"
+    Scene.set_scene(None)
     Scene.set_scene("blini_ending.png", effect=SpriteEffects.Dissolve(1.0))
     wait(2)
     Scene.fade("fadein", 3, stream = "together")
@@ -282,6 +284,7 @@ label cooking_salad("Салатик", "Оу, что это? САЛАТИК! Мм
     <> "Ms. Ф. ОЗИНАД хихикнула вполголоса, не сдержав смешинку."
     Scene.show_character("oz sit 6")
     <oz> "Тушé!~ И добавь ванили, как ты это делаешь, всё равно одной приправой больше, одной меньше~"
+    Scene.set_scene(None)
     Scene.set_scene("salad_ending.png", effect=SpriteEffects.Dissolve(1.0))
     wait(2)
     Scene.fade("fadein", 3, stream = "together")
