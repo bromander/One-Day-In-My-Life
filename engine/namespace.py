@@ -64,14 +64,19 @@ class Namespace:
             """
             Отвечает за работу с переменными, которые сохраняются между сессиями
             """
-            object.__setattr__(self, 'sm', g.sm)
+            super().__setattr__('sm', g.sm)
 
         def __setattr__(self, name, value):
-            self.sm.Persistent.set_persistent(name, value)
-            object.__setattr__(self, name, value)
+            if 'sm' not in self.__dict__:
+                super().__setattr__(name, value)
+            elif name == 'sm':
+                super().__setattr__(name, value)
+            else:
+                self.sm.Persistent.set_persistent(name, value)
+                super().__setattr__(name, value)
 
         def __getattribute__(self, item):
-            if item == 'sm':
+            if item.startswith('__') and item.endswith('__') or item == 'sm':
                 return object.__getattribute__(self, item)
 
             return self.sm.Persistent.get_persistent(item)
@@ -121,14 +126,6 @@ class Namespace:
         def get_all_variables(self):
             """Возвращает все пользовательские переменные"""
             return self.defines.copy()  # Возвращаем копию, чтобы избежать случайных изменений
-
-        def get_variable_names(self):
-            """Возвращает список имен всех переменных"""
-            return list(self.defines.keys())
-
-        def get_variable_values(self):
-            """Возвращает список значений всех переменных"""
-            return list(self.defines.values())
 
     class Data:
         '''

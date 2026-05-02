@@ -81,6 +81,15 @@ class Saves_manager:
 
             return self.file["persistent"].get(name, None)
 
+        def get_all_persistents(self) -> dict[str : any]:
+            """
+            Возвращает все persistent переменные, что есть
+            :return: Словарь переменных со значениями {Название переменной : Значение}
+            """
+            self._get_data()
+            params = {name : value for name, value in self.file["persistent"].items()}
+            return params
+
         def set_persistent(self, name: str, data: any) -> None:
             """
             Устанавливает переменной значение
@@ -89,7 +98,6 @@ class Saves_manager:
             """
             self._get_data()
             self.file["persistent"][name] = data
-            print(name, data)
             self._save_data()
 
         def del_persistent(self, name: str) -> None:

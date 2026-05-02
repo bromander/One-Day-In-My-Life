@@ -407,7 +407,8 @@ class LoreLogger:
         variables = {}
         functions = {}
         classes = {}
-
+        defines = {}
+        persistents = {}
 
         find_last_unnecessary_object = False # (copyright)
 
@@ -419,6 +420,8 @@ class LoreLogger:
             else:
                 find_last_unnecessary_object = True
 
+            print(name, value)
+
 
             if name.startswith('__') and name.endswith('__'):
                 continue
@@ -429,17 +432,42 @@ class LoreLogger:
             else:
                 variables[name] = copy.copy(value)
 
+        for name, value in g.main.NAMESPACE["Define"].get_all_variables().items():
+            defines[name] = copy.copy(value)
 
-        return {"variables" : variables, "functions" : functions, "classes" : classes}
+        for name, value in g.sm.Persistent.get_all_persistents().items():
+            persistents[name] = copy.copy(value)
+
+        return_data = {
+            "variables": variables,
+            "functions": functions,
+            "classes": classes,
+            "defines": defines,
+            "persistents" : persistents
+        }
+
+        return return_data
 
     def _restore_namespace(self, data: dict[str : dict]):
 
         new_namespace = Namespace()
         g.main.NAMESPACE = new_namespace
 
-        for snapshot_data in data.values():
-            for name, value in snapshot_data.items():
-                new_namespace.NAMESPACE[name] = value
+        for name, value in data["variables"].items():
+            new_namespace.NAMESPACE[name] = value
+
+        for name, value in data["functions"].items():
+            new_namespace.NAMESPACE[name] = value
+
+        for name, value in data["classes"].items():
+            new_namespace.NAMESPACE[name] = value
+
+
+        for name, value in data["defines"].items():
+            new_namespace["Define"].__setattr__(name, value)
+
+        for name, value in data["persistents"].items():
+            new_namespace["Persistent"].__setattr__(name, value)
 
     def _snapshot_generators(self):
         gens = g.main.actions.active_generators
