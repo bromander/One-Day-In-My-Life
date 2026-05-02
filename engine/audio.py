@@ -7,6 +7,8 @@ import pyglet.media.player
 from .saves import Saves_manager
 from .files_manager import FilesManager
 
+from .globals import globals as g
+
 
 class AudioChannel:
     def __init__(self, sm: Saves_manager, default_volume: float=1.0, modifier: float = 1.0, volume_type: Optional[str] = None):
@@ -131,14 +133,14 @@ class AudioChannel:
         return False
 
 class AudioManager:
-    def __init__(self, sm: Saves_manager, fm: FilesManager):
+    def __init__(self):
         """
         Управляет 3 основными каналами: music, sound, voice
         """
-        self.fm: FilesManager = fm
-        self.music = AudioChannel(sm, modifier=sm.Volume.get_music(), volume_type="music")
-        self.sound = AudioChannel(sm, modifier=sm.Volume.get_sound(), volume_type="sound")
-        self.voice = AudioChannel(sm, modifier=sm.Volume.get_voice(), volume_type="voice", default_volume=2.0)
+        self.fm: FilesManager = g.fm
+        self.music = AudioChannel(g.sm, modifier=g.sm.Volume.get_music(), volume_type="music")
+        self.sound = AudioChannel(g.sm, modifier=g.sm.Volume.get_sound(), volume_type="sound")
+        self.voice = AudioChannel(g.sm, modifier=g.sm.Volume.get_voice(), volume_type="voice", default_volume=2.0)
 
     def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None, streaming: bool = True):
         """

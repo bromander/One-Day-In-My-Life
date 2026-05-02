@@ -5,6 +5,8 @@ from .Exceptions import PersistentDoesNotExistError, VolumeDoesNotExistError, Sa
 from .files_manager import FilesManager
 from arcade import Sprite, TextureAnimationSprite
 
+from .globals import globals as g
+
 class Saves_manager:
     def  __init__(self):
         """
@@ -214,20 +216,14 @@ class Saves_manager:
             self.file = file
 
 
-        def create_save(self, session_data: dict, session_id, am, scene, NAMESPACE, wwl, fm: FilesManager) -> None:
+        def create_save(self) -> None:
             """
-            Создаёт текущее сохранение
-            :param splash_data: Данные последнего сплеша
-            :param session_id: Айди сессии
-            :param am: Класс AudioManager
-            :param scene: Класс Scene
-            :param NAMESPACE: Класс Namespace
-            :param wwl: Класс WorkWithLore
+            Создаёт сохранение
             """
             self._get_data()
-            if am.music.is_playing():
-                music_file = am.music.now_playing_path
-                music_volume = am.music._local_modifier
+            if g.am.music.is_playing():
+                music_file = g.am.music.now_playing_path
+                music_volume = g.am.music._local_modifier
             else:
                 music_file =  None
                 music_volume = 1.0
@@ -240,11 +236,11 @@ class Saves_manager:
                     "size": o.size,
                     "pos": o.position
                 }
-                for i, o in scene["sprites"].items()
+                for i, o in g.scene["sprites"].items()
             ]
 
             defines = {}
-            for name, value in NAMESPACE["Define"].get_all_variables().items():
+            for name, value in g.main.NAMESPACE["Define"].get_all_variables().items():
                 if not name.startswith("__") and not name.endswith("__"):
                     defines[name] = copy.deepcopy(value)
 
@@ -256,7 +252,7 @@ class Saves_manager:
                     "size": i.size,
                     "pos": i.position
                 }
-                for i in scene["bg"].values()
+                for i in g.scene["bg"].values()
             ]
 
             bg_parallax = [
@@ -267,19 +263,19 @@ class Saves_manager:
                     'original_y': i["original_y"],
                     "scale": i["scale"]
                 }
-                for i in scene["bg_parallax"]
+                for i in g.scene["bg_parallax"]
             ]
 
             files_manager = {
-                "loaded_lables" : copy.copy(fm.loaded_labels),
+                "loaded_lables" : copy.copy(g.fm.loaded_labels),
                 "loaded_textures" : {
-                    filename : str(texture[2]) for filename, texture in fm.textures.items() if type(texture[0]) is not TextureAnimationSprite
+                    filename : str(texture[2]) for filename, texture in g.fm.textures.items() if type(texture[0]) is not TextureAnimationSprite
                 },
                 "loaded_audios" : {
-                    filename: str(sound.file_name) for filename, sound in fm.audios.items()
+                    filename: str(sound.file_name) for filename, sound in g.fm.audios.items()
                 }
             }
-            for filename, texture in fm.textures.items():
+            for filename, texture in g.fm.textures.items():
                 if type(texture[0]) is TextureAnimationSprite:
                     paths = [str(i.texture.file_path) for i in texture[0].textures]
                     files_manager["loaded_textures"][filename] = paths
@@ -290,16 +286,16 @@ class Saves_manager:
                 "bg_parallax" : bg_parallax,
                 "sprites": sprites,
                 "music": {"volume" : music_volume, "path" : music_file},
-                "characters_slice": scene.characters_slice
+                "characters_slice": g.scene.characters_slice
             }
 
-            self.file["saves"][session_id] = {
-                "position": wwl.pose - 1,
-                "label": wwl.label,
+            self.file["saves"][g.main.session_id] = {
+                "position": g.wwl.pose - 1,
+                "label": g.wwl.label,
                 "defines": defines,
                 "scene": scene,
                 "files_manager" : files_manager,
-                "session_data" : session_data
+                "session_data" : g.main.session_data
             }
             self._save_data()
 

@@ -8,15 +8,16 @@ from .files_manager import FilesManager
 from .Exceptions import MainLabelNotFoundError, LabelNotFoundError
 from .audio import AudioManager
 
+from .namespace import Namespace
+
+from .globals import globals as g
 
 class Wwl:
 
-    def __init__(self, fm: FilesManager, find_files_path: str = "./game"):
+    def __init__(self, find_files_path: str = "./game"):
         """
         Отвечает за обработку сценариев
         """
-
-        self.fm: FilesManager = fm
 
         def find_files(extension: str, find_files_path: str = "./game"):
             results = {}
@@ -112,6 +113,8 @@ class Wwl:
                 self.files[i]["content"][o] = replace_lines_starting_with_tag(self.files[i]["content"][o])
 
     def _get_assets(self, string: str):
+        fm = g.fm
+
         sprites = []
         for i in string.split("\n"):
             i = i.strip(" ")
@@ -119,12 +122,12 @@ class Wwl:
             for i in potential_assets:
                 i = str(i)
                 if len(i.split(".")) > 1:
-                    if i in self.fm.textures_paths or i in self.fm.audio_paths:
+                    if i in fm.textures_paths or i in fm.audio_paths:
                         sprites.append(i)
                 else:
                     for o in [".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"]:
                         i = i + o
-                        if i in self.fm.textures_paths or i in self.fm.audio_paths:
+                        if i in fm.textures_paths or i in fm.audio_paths:
                             sprites.append(i)
         return sprites
 
@@ -212,14 +215,15 @@ class Wwl:
         return result
 
     def _preload_assets(self, label):
+        fm = g.fm
 
-        if label not in self.fm.loaded_labels:
+        if label not in fm.loaded_labels:
             assets = []
             for e, i in self.files.items():
                 if label in i['content']:
                     self.now_file = e
                     assets = self._get_assets(self.files[self.now_file]["content"][label])
-            self.fm.load_assets(assets, label)
+            fm.load_assets(assets, label)
 
     def _get_lore(self):
 
@@ -256,7 +260,6 @@ class Wwl:
                     label.append({"action": "SHOW_SPLASH", "data": data})
 
                     continue
-
 
                 case _:
                     if not i.strip().startswith("label"):
@@ -321,68 +324,104 @@ class Wwl:
             return lore
 
 class LoreLogger:
-    def __init__(self, main_self, wwl: Wwl, am: AudioManager):
-        self.main_self =  main_self
-        self.wwl = wwl
-        self.am = am
-        self.logs = []
+    def __init__(self):
+        self.logs: list[dict] = []
 
     def _snapshot_scene(self):
+        main = g.main
         snapshot = []
-        for layer, layer_data in self.main_self.scene.data.items():
-            if layer == "fade" or layer == "gui":
+
+        for layer, layer_data in main.scene.data.items():
+            if layer in ("fade", "gui"):
                 continue
 
-            try:
-                if isinstance(self.main_self.scene[layer], dict):
-                    for name, sprite in self.main_self.scene[layer].items():
-                        sprite: Sprite = sprite
+            container = main.scene[layer]
 
-                        data = {
-                            "name" : name,
-                            "layer" : layer,
-                            "pos" : sprite.position,
-                            "size" : sprite.size,
-                            "angle" : sprite.angle,
-                            "alpha" : sprite.alpha,
-                            "texture_name" : sprite.texture.file_path.name,
-                            "visible" : sprite.visible,
+            # --- dict слои ---
+            if isinstance(container, dict):
+                for name, sprite in container.items():
+                    snapshot.append({
+                        "type": "sprite",
+                        "layer": layer,
+                        "name": name,
+                        "data": {
+                            "texture": sprite.texture.file_path,
+                            "center_x": sprite.center_x,
+                            "center_y": sprite.center_y,
+                            "width": sprite.width,
+                            "height": sprite.height,
+                            "angle": sprite.angle,
+                            "alpha": sprite.alpha,
+                            "visible": sprite.visible,
                         }
-                        snapshot.append(data)
+                    })
 
-                elif isinstance(self.main_self.scene[layer], list):
-                    for attributes in self.main_self.scene[layer]:
-                        data = {
-                            "layer": layer,
-                            "texture_name" : attributes['sprite'].texture.file_path.name,
-                            'speed': attributes["speed"],
-                            'original_x': attributes["original_x"],
-                            'original_y': attributes['original_y']
+            elif isinstance(container, list):
+                for item in container:
+                    snapshot.append({
+                        "type": "parallax",
+                        "layer": layer,
+                        "data": {
+                            "texture": item["sprite"].texture.file_path,
+                            "speed": item["speed"],
+                            "original_x": item["original_x"],
+                            "original_y": item["original_y"],
                         }
+                    })
 
-                        snapshot.append(data)
-            except AttributeError:
-                pass
         return snapshot
 
-    def _load_snapshot_scene(self, snapshot: list[dict]):
-        for i in snapshot:
-            if i["layer"] != "bg_parallax":
-                sprite = self.main_self.scene.get_sprite(i["texture_name"])
-                sprite.size, sprite.angle, sprite.visible, sprite.position, sprite.alpha = i["size"], i["angle"], i["visible"], i["pos"], i["alpha"]
-                self.main_self.scene.add_sprite(i["layer"], i["name"], sprite)
-            else:
-                self.main_self.scene.add_parallax_bg(i["texture_name"], i["speed"], i["original_x"], i["original_y"])
+    def _restore_scene(self, snapshot):
+        main = g.main
+
+        main.scene.clear_scene()
+
+        for entry in snapshot:
+            t = entry["type"]
+
+            if t == "sprite":
+                d = entry["data"]
+
+                sprite = Sprite(d["texture"])
+                sprite.center_x = d["center_x"]
+                sprite.center_y = d["center_y"]
+                sprite.width = d["width"]
+                sprite.height = d["height"]
+                sprite.angle = d["angle"]
+                sprite.alpha = d["alpha"]
+                sprite.visible = d["visible"]
+
+                main.scene.add_sprite(entry["layer"], entry["name"], sprite)
+
+            elif t == "parallax":
+                d = entry["data"]
+
+                main.scene.add_parallax_bg(
+                    d["texture"],
+                    d["speed"],
+                    d["original_x"],
+                    d["original_y"]
+                )
 
     def _snapshot_namespace(self):
-        for name, value in self.main_self.NAMESPACE.NAMESPACE.items():
-            variables = {}
-            functions = {}
-            classes = {}
+        variables = {}
+        functions = {}
+        classes = {}
+
+
+        find_last_unnecessary_object = False # (copyright)
+
+        for name, value in g.main.NAMESPACE.NAMESPACE.items():
+
+            if not find_last_unnecessary_object and name != "copyright":
+                # Скипаем все стартовые функции т.к. они нам не нужны. copyright - всегда самая последняя
+                continue
+            else:
+                find_last_unnecessary_object = True
+
 
             if name.startswith('__') and name.endswith('__'):
                 continue
-
             if isinstance(value, type):
                 classes[name] = copy.copy(value)
             elif callable(value):
@@ -390,67 +429,96 @@ class LoreLogger:
             else:
                 variables[name] = copy.copy(value)
 
-            return variables, functions, classes
 
+        return {"variables" : variables, "functions" : functions, "classes" : classes}
 
+    def _restore_namespace(self, data: dict[str : dict]):
 
+        new_namespace = Namespace()
+        g.main.NAMESPACE = new_namespace
 
-    def create_log(self):
+        for snapshot_data in data.values():
+            for name, value in snapshot_data.items():
+                new_namespace.NAMESPACE[name] = value
 
-        scene_snapshot = list(self._snapshot_scene())
-        namespace = copy.copy(self.main_self.NAMESPACE.NAMESPACE)
+    def _snapshot_generators(self):
+        gens = g.main.actions.active_generators
+        return {
+            "consistently": [
+                g for g in gens.active_generators_consistently
+                if g[0] != "talk"
+            ],
+            "together": copy.copy(gens.active_generators_together)
+        }
 
-        gens = copy.copy(self.main_self.actions.active_generators.active_generators_consistently)
-        for i in self.main_self.actions.active_generators.active_generators_consistently:
-            if i[0] == 'talk':
-                gens.remove(i)
+    def _restore_generators(self, data):
+        gens = g.main.actions.active_generators
+        gens.clear()
 
-        active_generators = copy.copy(self.main_self.actions.active_generators)
-        attributes = copy.copy(self.main_self.attributes)
-        lore_pos = copy.deepcopy(self.wwl.pose)
-        lore_label = copy.deepcopy(self.wwl.label)
-        lore_file = copy.deepcopy(self.wwl.now_file)
+        gens.active_generators_consistently = copy.copy(data["consistently"])
+        gens.active_generators_together = copy.copy(data["together"])
 
-        self.logs.append({
-            "scene_snapshot" : scene_snapshot,
-            "namespace": namespace,
-            "active_generators" : active_generators,
-            "attributes" : {
-                "character_name" : copy.copy(attributes.character_name),
-                "character_text" : copy.copy(attributes.character_text),
-                "character_name_colour" : copy.copy(attributes.character_name_colour),
-                "character_text_colour" : copy.copy(attributes.character_text_colour),
-                "text_anchor" : copy.copy(attributes.text_anchor)
-            },
-            "lore_pos" : lore_pos, "lore_label" : lore_label, "lore_file" : lore_file
+        while gens.active_generators_consistently or gens.active_generators_together:
+            gens.update(1 / 1000)
+
+    def _snapshot_attributes(self):
+        a = g.attributes
+        return copy.deepcopy({
+            "character_name": a.character_name,
+            "character_text": a.character_text,
+            "character_name_colour": a.character_name_colour,
+            "character_text_colour": a.character_text_colour,
+            "text_anchor": a.text_anchor
         })
 
+    def _restore_attributes(self, data):
+        a = g.attributes
+
+        a.character_name = data["character_name"]
+        a.character_text = data["character_text"]
+        a.character_name_colour = data["character_name_colour"]
+        a.character_text_colour = data["character_text_colour"]
+        a.text_anchor = data["text_anchor"]
+
+    def _snapshot_lore(self):
+        wwl = g.wwl
+        return copy.deepcopy({
+            "pose": wwl.pose,
+            "label": wwl.label,
+            "file": wwl.now_file
+        })
+
+    def _restore_lore(self, data):
+        wwl = g.wwl
+        wwl.pose = data["pose"]
+        wwl.label = data["label"]
+        wwl.now_file = data["file"]
+
+    def create_log(self):
+        snapshot = {
+            "scene": self._snapshot_scene(),
+            "namespace": self._snapshot_namespace(),
+            "generators": self._snapshot_generators(),
+            "attributes": self._snapshot_attributes(),
+            "lore": self._snapshot_lore()
+        }
+
+        self.logs.append(snapshot)
+
     def return_back(self, event=None):
-        try:
-            data = dict(self.logs[-2])
-            self.main_self.actions.active_generators.clear()
-            del self.logs[-1]
-            self.wwl._get_lore()
-            self._load_snapshot_scene(data["scene_snapshot"])
-            self.main_self.NAMESPACE.NAMESPACE = data["namespace"]
+        if len(self.logs) < 2:
+            return
 
-            self.main_self.actions.active_generators = copy.copy(data["active_generators"])
+        # удаляем текущий
+        self.logs.pop()
 
-            gens = self.main_self.actions.active_generators
-            while gens.active_generators_consistently or gens.active_generators_together:
-                gens.update(1 / 1000)
+        data = self.logs[-1]
 
-            self.wwl.pose, self.wwl.label, self.wwl.now_file = data["lore_pos"], data["lore_label"], data["lore_file"]
+        # восстановление
+        self._restore_scene(data["scene"])
+        self._restore_namespace(data["namespace"])
+        self._restore_generators(data["generators"])
+        self._restore_attributes(data["attributes"])
+        self._restore_lore(data["lore"])
 
-            self.main_self.attributes.text_anchor = data["attributes"]["text_anchor"]
-            self.main_self.attributes.character_name = data["attributes"]["character_name"]
-            self.main_self.attributes.character_text = data["attributes"]["character_text"]
-            self.main_self.attributes.character_name_colour = data["attributes"]["character_name_colour"]
-            self.main_self.attributes.character_text_colour = data["attributes"]["character_text_colour"]
-
-            self.main_self.talk_manager(-1, clicked=True)
-        except IndexError:
-            pass
-
-
-
+        g.main.talk_manager(-1, clicked=True, do_snapshot=False)

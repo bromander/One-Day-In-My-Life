@@ -41,6 +41,8 @@ from .waiter import Waiter
 from .character import Attributes
 from .files_manager import FilesManager
 
+from .globals import globals as g
+
 class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
     """A simple vertical slider.
 
@@ -520,32 +522,26 @@ class UISliderSavesUpdater(agui.UISlider):
 class Managers:
 
     class SettingsManager(agui.UIManager):
-        def __init__(self, MainView_self, Am: AudioManager, Sm: Saves_manager, Wwl, session_id: str, FONT_NAME: str, STYLE_DEFAULT_BUTTON: dict, Views, session_data:  dict):
+        def __init__(self, Views):
             super().__init__()
-            self.MainView_self = MainView_self
             self.Views = Views
-
-            self.am = Am
-            self.sm = Sm
-            self.wwl = Wwl
-
-            self.session_id  = session_id
-            self.session_data = session_data
-
-            self.FONT_NAME = FONT_NAME
-            self.STYLE_DEFAULT_BUTTON = STYLE_DEFAULT_BUTTON
 
             self.settings_scene = Scene()
 
             self.waiting_settings = Waiter()
 
-            self.settings_v_box = agui.widgets.layout.UIBoxLayout(space_between=10)
-            self.settings_v_box_1 = agui.widgets.layout.UIBoxLayout(space_between=10)
-            self.settings_v_box_1 = agui.widgets.layout.UIBoxLayout(space_between=10)
-            self.settings_h_box = agui.widgets.layout.UIBoxLayout(vertical=False, space_between=20)
+            self.settings_v_box = agui.UIBoxLayout(space_between=10)
+            self.settings_v_box_1 = agui.UIBoxLayout(space_between=10)
+            self.settings_v_box_1 = agui.UIBoxLayout(space_between=10)
+            self.settings_h_box = agui.UIBoxLayout(vertical=False, space_between=20)
             self.settings_h_box.visible = False
 
+            self.ui_anchor_layout = agui.UIAnchorLayout()
+
             self._create_settings()
+
+        def update_size(self, width, height):
+            self.ui_anchor_layout.default_anchor_x = height*0.05
 
         def _create_settings(self):
             texture = load_texture("game/images/gui/in_game_settings.png")
@@ -560,18 +556,18 @@ class Managers:
             self.settings_scene["in_game_settings"].alpha = 0
 
             def create_settings_buttons():
-                save_folder = self.sm.get_save_path()
+                save_folder = g.sm.get_save_path()
                 with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as data:
                     data = json.load(data)
                 volumes = data['options']
 
                 def return_to_main_menu(event=None):
-                    self.MainView_self.actions.active_generators.clear()
-                    self.am.stop_music()
-                    self.am.stop_sound()
+                    g.main.actions.active_generators.clear()
+                    g.am.stop_music()
+                    g.am.stop_sound()
 
                     tex_cache = arcade.cache.TextureCache()
-                    self.MainView_self.scene.clear_scene()
+                    g.main.scene.clear_scene()
                     for i in arcade.cache.TextureCache().get_all_textures():
                         tex_cache.delete(i)
 
@@ -585,7 +581,7 @@ class Managers:
                     text="Главное меню",
                     width=300,
                     height=50,
-                    style=self.STYLE_DEFAULT_BUTTON
+                    style=g.STYLE_DEFAULT_BUTTON
                 )
                 return_button.on_click = return_to_main_menu
                 self.settings_v_box.add(return_button)
@@ -593,17 +589,9 @@ class Managers:
                 save_button = agui.UIFlatButton(
                     text="Сохранить",
                     width=200,
-                    style=self.STYLE_DEFAULT_BUTTON
+                    style=g.STYLE_DEFAULT_BUTTON
                 )
-                save_button.on_click = lambda action=None, session_data=self.session_data, session_id=self.session_id, am=self.am, scene=self.MainView_self.scene, NAMESPACE=self.MainView_self.NAMESPACE, wwl=self.wwl, fm=self.MainView_self.fm: self.sm.Save.create_save(
-                    session_data,
-                    session_id,
-                    am,
-                    scene,
-                    NAMESPACE,
-                    wwl,
-                    fm
-                )
+                save_button.on_click = lambda action=None: g.sm.Save.create_save()
 
                 self.settings_v_box.add(save_button)
 
@@ -613,14 +601,14 @@ class Managers:
                     "Музыка",
                     text_color=color.WHITE,
                     font_size=20,
-                    font_name=self.FONT_NAME
+                    font_name=g.FONT_NAME
                 )
                 self.settings_v_box.add(music_volume_label)
 
                 music_volume_slider = UISliderSavesUpdater(
                     "music",
-                    self.sm,
-                    self.am,
+                    g.sm,
+                    g.am,
                     value=volumes['volume']["music"] * 100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -634,14 +622,14 @@ class Managers:
                     "Звуки",
                     text_color=color.WHITE,
                     font_size=20,
-                    font_name=self.FONT_NAME
+                    font_name=g.FONT_NAME
                 )
                 self.settings_v_box.add(sound_volume_label)
 
                 sound_volume_slider = UISliderSavesUpdater(
                     "sound",
-                    self.sm,
-                    self.am,
+                    g.sm,
+                    g.am,
                     value=volumes['volume']["sound"] * 100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -655,14 +643,14 @@ class Managers:
                     "Голос",
                     text_color=color.WHITE,
                     font_size=20,
-                    font_name=self.FONT_NAME
+                    font_name=g.FONT_NAME
                 )
                 self.settings_v_box.add(voice_volume_label)
 
                 voice_volume_slider = UISliderSavesUpdater(
                     "voice",
-                    self.sm,
-                    self.am,
+                    g.sm,
+                    g.am,
                     value=volumes['volume']["voice"] * 100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -675,13 +663,13 @@ class Managers:
                     "Скорость появления букв",
                     text_color=color.WHITE,
                     font_size=20,
-                    font_name=self.FONT_NAME
+                    font_name=g.FONT_NAME
                 )
                 self.settings_v_box_1.add(lps_label)
                 self.lps_slider = UISliderSavesUpdater(
                     "lps",
-                    self.sm,
-                    self.am,
+                    g.sm,
+                    g.am,
                     value=volumes["lps"],  # начальное значение
                     min_value=20,
                     max_value=110,
@@ -695,13 +683,13 @@ class Managers:
                     "Скорость переходов",
                     text_color=color.WHITE,
                     font_size=20,
-                    font_name=self.FONT_NAME
+                    font_name=g.FONT_NAME
                 )
                 self.settings_v_box_1.add(fade_speed_label)
                 self.fade_speed_slider = UISliderSavesUpdater(
                     "fade_speed",
-                    self.sm,
-                    self.am,
+                    g.sm,
+                    g.am,
                     value=volumes["fade_speed"],  # начальное значение
                     min_value=-10,
                     max_value=10,
@@ -713,10 +701,10 @@ class Managers:
                 self.settings_h_box.add(self.settings_v_box_1)
                 self.settings_h_box.add(self.settings_v_box)
 
-                ui_anchor_layout = agui.widgets.layout.UIAnchorLayout()
-                ui_anchor_layout.add(child=self.settings_h_box, anchor_x="left", align_x=80)
+                window = get_window()
+                self.ui_anchor_layout.add(child=self.settings_h_box, anchor_x="left", align_x=window.height*0.05)
 
-                self.add(ui_anchor_layout)
+                self.add(self.ui_anchor_layout)
 
             create_settings_buttons()
 
@@ -754,13 +742,11 @@ class Managers:
 
     class CharactersTextManager(agui.UIManager):
 
+        def __init__(self):
+            super().__init__()
 
-        def __init__(self, attributes: Attributes, window: Window, FONT_NAME: str):
-            super().__init__(window)
-
-            self.attributes = attributes
-            self.window = window
-            self.FONT_NAME = FONT_NAME
+            self.attributes = g.attributes
+            self.FONT_NAME = g.FONT_NAME
 
             self.cname_text: Optional[Managers.UiLabelCNameText] = None
 
@@ -773,90 +759,100 @@ class Managers:
             self._create_texts()
 
         def _create_texts(self):
-
-            self.cname_text = Managers.UiLabelCNameText(self.attributes, self.window, self.FONT_NAME)
+            self.cname_text = Managers.UiLabelCNameText(self.attributes, self.FONT_NAME)
             self.add(self.cname_text)
 
+        def update_pos(self, width, height):
+            self.cname_text.update_pos(width, height)
+            self.update_character_text(width, height)
+
+        def update_character_text(self, width: Optional[int] = None, height: Optional[int] = None):
+
+            if not (width and height):
+                window = get_window()
+                width = window.width
+                height = window.height
+
+            self.remove(self.texts_widget)
+
+            self.texts_widget = UIWidget()
+
+            self.last_character_text = self.attributes.character_text.copy()
+
+            line_counter = 0
+
+            if isinstance(self.attributes.text_anchor, str):
+                match self.attributes.text_anchor:
+                    case "left":
+                        x_pos = width * 0.18
+                    case "center":
+                        x_pos = width * 0
+                    case "right":
+                        x_pos = width * 0.82
+                    case _:
+                        x_pos = width * 0.18
+            elif isinstance(self.attributes.text_anchor, (int, float)):
+                x_pos = width * self.attributes.text_anchor
+            else:
+                x_pos = width * 0.18
+
+            for i, line in enumerate(self.attributes.character_text):
+                split_lines = self._split_by_length(line, 60)
+
+                for sline in split_lines:
+                    y_pos = (self.window.height * 0.2) - line_counter * 40
+
+                    t = agui.UILabel(
+                        text=sline,
+                        x=x_pos,
+                        y=y_pos,
+                        font_size=30,
+                        text_color=self.attributes.character_text_colour,
+                        font_name=self.FONT_NAME,
+                        width=width,
+                        align=self.attributes.text_anchor
+                    )
+                    line_counter += 1
+
+                    self.texts_widget.add(t)
+
+            self.add(self.texts_widget)
+
+        def _split_by_length(self, text, max_length):
+            if len(text) <= max_length:
+                return [text]
+
+            parts = []
+            words = text.split(" ")
+            current_line = []
+
+            for word in words:
+                if len(word) > max_length:
+                    if current_line:
+                        parts.append(" ".join(current_line))
+                        current_line = []
+
+                    for i in range(0, len(word), max_length):
+                        parts.append(word[i:i + max_length])
+                else:
+                    test_line = " ".join(current_line + [word])
+                    if len(test_line) <= max_length:
+                        current_line.append(word)
+                    else:
+                        if current_line:
+                            parts.append(" ".join(current_line))
+                        current_line = [word]
+
+            if current_line:
+                parts.append(" ".join(current_line))
+
+            return parts
 
         def update(self, time_delta):
             super().on_update(time_delta)
 
-            def split_by_length(text, max_length):
-                if len(text) <= max_length:
-                    return [text]
-
-                parts = []
-                words = text.split(" ")
-                current_line = []
-
-                for word in words:
-                    if len(word) > max_length:
-                        if current_line:
-                            parts.append(" ".join(current_line))
-                            current_line = []
-
-                        for i in range(0, len(word), max_length):
-                            parts.append(word[i:i + max_length])
-                    else:
-                        test_line = " ".join(current_line + [word])
-                        if len(test_line) <= max_length:
-                            current_line.append(word)
-                        else:
-                            if current_line:
-                                parts.append(" ".join(current_line))
-                            current_line = [word]
-
-                if current_line:
-                    parts.append(" ".join(current_line))
-
-                return parts
-
             if self.attributes.character_text != self.last_character_text:
-
-                self.remove(self.texts_widget)
-
-                self.texts_widget = UIWidget()
-
-                self.last_character_text = self.attributes.character_text.copy()
-
-                line_counter = 0
-
-                if isinstance(self.attributes.text_anchor, str):
-                    match self.attributes.text_anchor:
-                        case "left":
-                            x_pos = self.window.width * 0.18
-                        case "center":
-                            x_pos = self.window.width * 0
-                        case "right":
-                            x_pos = self.window.width * 0.82
-                        case _:
-                            x_pos = self.window.width * 0.18
-                elif isinstance(self.attributes.text_anchor, (int, float)):
-                    x_pos = self.window.width * self.attributes.text_anchor
-                else:
-                    x_pos = self.window.width * 0.18
-
-                for i, line in enumerate(self.attributes.character_text):
-                    split_lines = split_by_length(line, 60)
-
-                    for sline in split_lines:
-                        y_pos = (self.window.height * 0.2) - line_counter * 40
-
-                        t = agui.UILabel(
-                            text=sline,
-                            x=x_pos,
-                            y=y_pos,
-                            font_size=30,
-                            text_color=self.attributes.character_text_colour,
-                            font_name=self.FONT_NAME,
-                            width=self.window.width,
-                            align=self.attributes.text_anchor
-                        )
-                        line_counter += 1
-
-                        self.texts_widget.add(t)
-
-                self.add(self.texts_widget)
+                self.update_character_text()
 
             if self.attributes.character_name != self.last_character_name:
                 self.cname_text.update_text(self.attributes.character_name)
@@ -865,19 +861,19 @@ class Managers:
             if repr(self.attributes.character_name).strip("'") in [" ", "", "\t", "\n", " "]:
                 self.cname_text.visible = None
             else:
+                self.cname_text.update_pos()
                 self.cname_text.visible = True
 
     class InGameManager(agui.UIManager):
-        def __init__(self, FONT_NAME, window: Window, autoskip_waiter):
-            super().__init__(window)
-            self.window = window
-            self.autoskip_waiter = autoskip_waiter
+        def __init__(self):
+            super().__init__()
+            self.autoskip_waiter = g.main.waiting_autoskip
             self.last_autoskip_waiter_data = None
             self.BUTTONS_STYLE = {
                 "normal": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
                     font_color=(255, 255, 255, 200),
-                    font_name=FONT_NAME,
+                    font_name = g.FONT_NAME,
                     border=(0, 0, 0, 0),
                     border_width=0,
                     font_size=20
@@ -887,7 +883,7 @@ class Managers:
                     font_color=(128, 128, 128, 200),
                     border=(0, 0, 0, 0),
                     border_width=0,
-                    font_name = FONT_NAME,
+                    font_name = g.FONT_NAME,
                     font_size=20
                 ),
                 "press": agui.UIFlatButton.UIStyle(
@@ -895,7 +891,7 @@ class Managers:
                     font_color=(210, 210, 210, 200),
                     border=(0, 0, 0, 0),
                     border_width=0,
-                    font_name = FONT_NAME,
+                    font_name = g.FONT_NAME,
                     font_size=20
                 ),
                 "disabled": agui.UIFlatButton.UIStyle(font_color=(90, 90, 90, 180)),
@@ -904,7 +900,7 @@ class Managers:
                 "normal": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
                     font_color=(191, 161, 27, 255),
-                    font_name=FONT_NAME,
+                    font_name = g.FONT_NAME,
                     border=(255, 255, 255, 0),
                     border_width=0,
                     font_size=20
@@ -914,7 +910,7 @@ class Managers:
                     font_color=(128, 128, 128, 255),
                     border=(255, 255, 255, 0),
                     border_width=0,
-                    font_name=FONT_NAME,
+                    font_name = g.FONT_NAME,
                     font_size=20
                 ),
                 "press": agui.UIFlatButton.UIStyle(
@@ -922,7 +918,7 @@ class Managers:
                     font_color=(210, 210, 210, 255),
                     border=(255, 255, 255, 0),
                     border_width=0,
-                    font_name=FONT_NAME,
+                    font_name = g.FONT_NAME,
                     font_size=20
                 ),
                 "disabled": agui.UIFlatButton.UIStyle(font_color=(90, 90, 90, 180)),
@@ -932,15 +928,17 @@ class Managers:
             self._create_buttons()
 
         def _create_buttons(self):
+            window = get_window()
+
             hbox = agui.UIBoxLayout(
                 align="center",
                 justify="center",
-                y=self.window.height * 0.02,
-                width=self.window.width,
+                y=window.height * 0.02,
+                width=window.width,
                 vertical=False,
                 spacing=50
             )
-            hbox.width = self.window.width
+            hbox.width = window.width
 
             button_width = 60
 
@@ -982,7 +980,8 @@ class Managers:
                 self.last_autoskip_waiter_data = self.autoskip_waiter.state
 
     class UiLabelCNameText(agui.UILabel):
-        def __init__(self, attributes, window, FONT_NAME):
+        def __init__(self, attributes, FONT_NAME):
+            window = get_window()
             super().__init__(
                 attributes.character_name,
                 x=window.width * 0.19,
@@ -995,16 +994,18 @@ class Managers:
             self.img = Image.open("./game/images/gui/name_window.png")
             self.last_text = attributes.character_name
 
-            self.update_pos()
-
         def update_text(self, text):
-            self.text = text
             self.update_pos()
+            self.text = text
 
-        def update_pos(self):
-            window = get_window()
-            self.center_x = window.width * 0.19
-            self.center_y = window.height * 0.32
+        def update_pos(self, height: Optional[int] = None, width: Optional[int] = None):
+            if not (height and width):
+                window = get_window()
+                width = window.width
+                height = window.height
+
+            self.center_x = width * 0.19
+            self.center_y = height * 0.32
 
         def _alpha_smooth_img(self, image, r_start, r_end):
             image = image.convert("RGBA")

@@ -7,8 +7,10 @@ from typing import Optional, List, Union, Literal
 from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError
 from .files_manager import FilesManager
 
+from .globals import globals as g
+
 class Scene:
-    def  __init__(self, fm: FilesManager) -> None:
+    def  __init__(self) -> None:
         """
         Отвечает за работу со спрайтами со всей сцены
         """
@@ -25,7 +27,7 @@ class Scene:
 
         self.characters_slice = -1
 
-        self.fm: FilesManager = fm
+        self.fm: FilesManager = g.fm
 
         self.len_loaded_textures = 0
 
@@ -33,7 +35,6 @@ class Scene:
 
     def set_characters_slice(self, value):
         self.characters_slice = value
-
 
     def get_texture(self, filename: str) -> Optional[Union[Texture, TextureAnimationSprite]]:
         return self.fm.get_texture(filename)

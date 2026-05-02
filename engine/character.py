@@ -9,6 +9,8 @@ import os
 import random
 import re
 
+from .globals import globals as g
+
 class Attributes:
     def __init__(self):
         self.character_name = ""
@@ -31,11 +33,6 @@ class Attributes:
 class Character:
 
     def __init__(self,
-                 sm : Saves_manager,
-                 am : AudioManager,
-                 fm : FilesManager,
-                 attributes: Attributes,
-                 wait_trigger : Waiter,
                  text_anchor,
                  name: str,
                  char_id: Optional[str] = None,
@@ -73,15 +70,13 @@ class Character:
             else:
                 return color.WHITE
 
-        self.attributes = attributes
+        self.attributes = g.attributes
 
         self.text_anchor = text_anchor
 
-        self.sm = sm
-        self.am = am
-        self.fm = fm
-
-        self.wait_trigger = wait_trigger
+        self.sm = g.sm
+        self.am = g.am
+        self.fm = g.fm
 
         self.c_name = name
         self.colour = hex_to_rgb(colour)
@@ -159,83 +154,71 @@ class Character:
                 self.attributes.character_name = self.c_name
 
                 i = -1
-                if not self.wait_trigger:
-                    self.last_text = text
+                self.last_text = text
 
-                    _text = []
-                    index = 0
-                    for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', repr(text).strip(r"'")):
-                        i += 1
-                        char = str(char)
+                _text = []
+                index = 0
+                for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', repr(text).strip(r"'")):
+                    i += 1
+                    char = str(char)
 
-                        if char == r"\n ":
-                            string_index += 1
-                            i = -1
-                            _text = []
-                            continue
+                    if char == r"\n ":
+                        string_index += 1
+                        i = -1
+                        _text = []
+                        continue
 
-                        self.attributes.character_name = self.c_name
+                    self.attributes.character_name = self.c_name
 
-                        if not char.startswith("{") and not str(char).endswith("}"):
-                            if char != r"\n ":
-                                _text.append(char)
-                                self.attributes.character_text[string_index] = replace_char_by_index(self.attributes.character_text[string_index], i, char)
+                    if not char.startswith("{") and not str(char).endswith("}"):
+                        if char != r"\n ":
+                            _text.append(char)
+                            self.attributes.character_text[string_index] = replace_char_by_index(self.attributes.character_text[string_index], i, char)
 
-                        index += 1
+                    index += 1
 
-                        if ((index % 4 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
-                            if os.path.isfile(f"./game/sounds/voice/{self.char_id}"):
-                                self.am.play_voice(random.choice(self.talk_sounds))
+                    if ((index % 4 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
+                        if os.path.isfile(f"./game/sounds/voice/{self.char_id}"):
+                            self.am.play_voice(random.choice(self.talk_sounds))
 
-                        if char == ".":
-                            if not fast:
-                                remaining_time = 0.1
-                                while remaining_time > 0:
-                                    dt = yield
-
-                                    if dt is None or dt <= 0:
-                                        continue
-
-                                    remaining_time -= dt
-
-                        elif char == ",":
-                            if not fast:
-                                remaining_time = 0.05
-                                while remaining_time > 0:
-                                    dt = yield
-                                    if dt is None or dt <= 0:
-                                        continue
-                                    remaining_time -= dt
-
-                        elif char.startswith("{") and str(char).endswith("}"):
-                            char = char[1:][:-1]
-
-                            if char.startswith("w"):
-                                i -= 1
-
-                                remaining_time = float(char.split("=")[-1])
-                                while remaining_time > 0:
-                                    dt = yield
-                                    if dt is None or dt <= 0:
-                                        continue
-                                    remaining_time -= dt
-
-                            dt = yield
-                            if char.startswith("f"):
-                                i -= 1
-                                fast = True
-
+                    if char == ".":
                         if not fast:
-                            remaining_time = 1 / now_lps
+                            remaining_time = 0.1
+                            while remaining_time > 0:
+                                dt = yield
+
+                                if dt is None or dt <= 0:
+                                    continue
+
+                                remaining_time -= dt
+
+                    elif char == ",":
+                        if not fast:
+                            remaining_time = 0.05
                             while remaining_time > 0:
                                 dt = yield
                                 if dt is None or dt <= 0:
                                     continue
                                 remaining_time -= dt
 
-                    self.action = None
-                    return None
-                else:
+                    elif char.startswith("{") and str(char).endswith("}"):
+                        char = char[1:][:-1]
+
+                        if char.startswith("w"):
+                            i -= 1
+
+                            remaining_time = float(char.split("=")[-1])
+                            while remaining_time > 0:
+                                dt = yield
+                                if dt is None or dt <= 0:
+                                    continue
+                                remaining_time -= dt
+
+                        dt = yield
+                        if char.startswith("f"):
+                            i -= 1
+                            fast = True
+
                     if not fast:
                         remaining_time = 1 / now_lps
                         while remaining_time > 0:
@@ -243,7 +226,9 @@ class Character:
                             if dt is None or dt <= 0:
                                 continue
                             remaining_time -= dt
-                    dt = yield
+
+                self.action = None
+                return None
 
         return _talk(now_lps)
 
@@ -265,19 +250,12 @@ class Character:
         return sprite
 
 class ListCharacters:
-    def __init__(self,
-                 sm : Saves_manager,
-                 am : AudioManager,
-                 fm : FilesManager,
-                 wait_trigger: Waiter) -> None:
+    def __init__(self) -> None:
         """
         Хранит в себе список всех персонажей
         """
 
-        self.attributes = Attributes()
-
         _Character = lambda name, char_id = None, colour = "", name_colour = "", c_scale = 1.0, text_anch= "left", lps = 60: Character(
-            sm, am, fm, self.attributes, wait_trigger,
             name=name, char_id=char_id, colour=colour, name_colour=name_colour, c_scale=c_scale, text_anchor=text_anch, lps=lps
         )
 

@@ -77,7 +77,7 @@ label shop_box_office()
 
     <> "У каждого есть минуты слабости."
 
-    Screen.call_view("ShopCollecting", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
+    Screen.call_view("ShopCollecting")
 
     Scene.set_scene_parallax([("box_office_0.png", 0.0), ("box_office_0.png", 0.2), ("box_office_1.png", 0.4),  ("box_office_2.png", 0.6),  ("box_office_3.png", 0.7)])
     Scene.character_slice = -2
@@ -133,7 +133,7 @@ label shop_box_money_continue():
 label shop_box_office_much_prod():
 
     Scene.fade("fadein", 2)
-    Screen.call_view("ShopGetting", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
+    Screen.call_view("ShopGetting")
 
     Scene.show_character(character="masorubka netural", at="center")
     Scene.fade("fadeout", 2)
@@ -179,7 +179,7 @@ label bread():
     <> "И тут внезапно!"
     <> "Почуяв свежую буханку хлеба, на Жаклин накинулась стая голубей!"
     <> "Кликай на пробел чтобы сбежать!"
-    Screen.call_view("CTW", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
+    Screen.call_view("CTW")
     Scene.fade("fadeout", 1)
     <shak> "Сволочи. Я так до дома вовремя не успею."
     <> "иииии у нас украли хлеб!"
@@ -359,7 +359,7 @@ label homework():
     Scene.show_character("shak book", at=(0.75, 0.65), effect=SpriteEffects.Dissolve(1.0))
     <> "Сегодня предстояло проверить стопку листочков по самостоятельной. Что ж, посмотрим, насколько она была успешной…"
 
-    Screen.call_view("MenuView", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
+    Screen.call_view("MenuView")
     <> "Итого..."
     Lore.jump("loading_menu")
 
@@ -518,7 +518,7 @@ label home_continue():
     Scene.show_character("lshak funny 1", at="left", effect=SpriteEffects.Dissolve(0.5))
     <shak> "Ну... из того, что сейчас под рукой, можно по-быстрому приготовить..."
 
-    Screen.call_view("MenuViewFood", Data.session_id, Data.Game_view.NAMESPACE, Data.Game_view.actions)
+    Screen.call_view("MenuViewFood")
 
     match Define.cooking_label:
         case "cooking_bliny":

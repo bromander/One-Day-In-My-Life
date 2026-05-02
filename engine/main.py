@@ -1,6 +1,5 @@
 import arcade
 from arcade import SpriteList
-from lxml.html.defs import font_style_tags
 from pyglet.event import EVENT_HANDLE_STATE
 import arcade.gui as agui
 import arcade.gui.widgets.layout
@@ -13,7 +12,8 @@ import uuid
 from typing import Generator
 from webbrowser import open_new_tab as web_open
 from pyglet.gl.lib import GLException
-import math
+from PIL import Image
+from collections import Counter
 
 from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText, ClickableSprite
 from .scene import Scene
@@ -27,42 +27,9 @@ from .presence import Discord_act
 from .files_manager import FilesManager
 from .character import ListCharacters, Attributes
 
+from .globals import globals as g
+
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
-
-FONT_NAME = "Kurale"
-STYLE_DEFAULT_BUTTON = {
-    "normal": arcade.gui.UIFlatButton.UIStyle(
-        font_size=16,
-        font_name=(FONT_NAME, ),
-        font_color=arcade.color.BLACK,
-        bg=(225, 184, 1, 255),
-        border=(79, 67, 13, 255),
-        border_width=5
-    ),
-    "hover": arcade.gui.UIFlatButton.UIStyle(
-        font_size=16,
-        font_name=(FONT_NAME, ),
-        font_color=arcade.color.BLACK,
-        bg=(163, 134, 5, 255),
-        border=(79, 67, 13, 255),
-        border_width=5
-    ),
-    "press": arcade.gui.UIFlatButton.UIStyle(
-        font_size=16,
-        font_name=(FONT_NAME, ),
-        font_color=arcade.color.BLACK,
-        bg=(191, 161, 25, 255),
-        border=(79, 67, 13, 255),
-        border_width=5
-    ),
-    "disabled" : arcade.gui.UIFlatButton.UIStyle(
-        font_size=16,
-        font_name=(FONT_NAME, ),
-        font_color=arcade.color.LIGHT_STEEL_BLUE,
-        bg=(66, 71, 77)
-    )
-}
-
 
 wait_trigger = Waiter()
 
@@ -71,37 +38,43 @@ GAME_NAME = ""
 class Views:
 
     class MainWindow(arcade.Window):
-        def __init__(self, width, height, title, resizable):
-            super().__init__(width=width, height=height, title=title, resizable=resizable)
+        def __init__(self, width, height, title):
+            super().__init__(width=width, height=height, title=title, resizable=False)
             self.GameView: Optional[Views.GameView] = None
+
+            g.All_views = Views
 
         def on_close(self) -> None:
             try:
-                da.stop_thread_flag = True
+                g.da.stop_thread_flag = True
             except NameError:
                 pass
 
             arcade.close_window()
 
         def on_activate(self) -> EVENT_HANDLE_STATE:
-            try:
-                if am.music.paused:
-                    am.music.resume()
-                if am.sound.paused:
-                    am.sound.resume()
-                am.voice.fade_modifier = 1.0
-            except NameError:
-                pass
+            am = g.am
+            if am:
+                try:
+                    if am.music.paused:
+                        am.music.resume()
+                    if am.sound.paused:
+                        am.sound.resume()
+                    am.voice.fade_modifier = 1.0
+                except NameError:
+                    pass
 
         def on_deactivate(self) -> EVENT_HANDLE_STATE:
-            try:
-                if not am.music.paused:
-                    am.music.pause()
-                if not am.sound.paused:
-                    am.sound.pause()
-                am.voice.fade_modifier = 0.0
-            except NameError:
-                pass
+            am = g.am
+            if am:
+                try:
+                    if not am.music.paused:
+                        am.music.pause()
+                    if not am.sound.paused:
+                        am.sound.pause()
+                    am.voice.fade_modifier = 0.0
+                except NameError:
+                    pass
 
     class Main_template(arcade.View):
         def __init__(self) -> None:
@@ -154,6 +127,32 @@ class Views:
             if hasattr(self, 'in_game_manager'):
                 if hasattr(self.in_game_manager, 'clear'):
                     self.in_game_manager.clear()
+
+        def _get_most_frequent_color(self, num_colors=10):
+
+            if not list(g.am.scene["bg"].values()):
+                return None
+
+            sprite: arcade.Sprite = list(g.scene["bg"].values())[-1]
+            img = sprite.texture.image
+            img = img.resize((150, 150))
+            img = img.quantize(num_colors)
+            img = img.convert('RGB')
+
+            pixels = list(img.getdata())
+
+            counter = Counter(pixels)
+            most_common = counter.most_common(1)[0][0]
+
+            return most_common
+
+        def set_bg_by_scene_bg(self):
+            try:
+                color = self._get_most_frequent_color()
+                if color:
+                    self.background_color = color
+            except NameError:
+                raise NameError("Сцена ещё не инициализирована!")
 
         def on_update(self, delta_time: float) -> None:
             if "x" in self.window.mouse.data and "y" in self.window.mouse.data:
@@ -218,10 +217,12 @@ class Views:
             """
             super().__init__()
 
+            g.main = self
+
             print(pon)
 
-            am.stop_music()
-            am.stop_sound()
+            g.am.stop_music()
+            g.am.stop_sound()
 
             #self.window.set_vsync(True)
 
@@ -231,7 +232,7 @@ class Views:
 
             self.show_dialogue_bg_trigger = True
 
-            self.scene = scene
+            self.scene = g.scene
 
             self.menu_manager = agui.UIManager()
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
@@ -245,9 +246,6 @@ class Views:
             self.last_text_skip = time.time()
 
             self.last_text = " "
-
-            self.lc = ListCharacters(sm, am, fm, wait_trigger)
-            self.attributes = self.lc.attributes
 
             def create_widgets():
                 # dialog window
@@ -288,7 +286,7 @@ class Views:
                     y=self.height * 0.82,
                     align="center",
                     width=self.width,
-                    font_name=FONT_NAME,
+                    font_name=g.FONT_NAME,
                     text_color=(255, 255, 255, 0),
                     font_size=72
                 )
@@ -297,7 +295,7 @@ class Views:
                     y=self.height * 0.77,
                     align="center",
                     width=self.width,
-                    font_name=FONT_NAME,
+                    font_name=g.FONT_NAME,
                     text_color=(255, 255, 255, 0),
                     font_size=28
                 )
@@ -311,7 +309,7 @@ class Views:
 
             self.session_id = ""
 
-            self.NAMESPACE = Namespace(self, Views, self.lc, wwl, am, wait_trigger, sm)
+            self.NAMESPACE = Namespace()
 
             self.session_data = {"name": "", "description": "", "session_start": round(time.time())}
 
@@ -322,8 +320,9 @@ class Views:
                 if session_id is None:
                     self.session_id = str(uuid.uuid4())
                 else:
+                    wwl = g.wwl
                     self.session_id = str(uuid.uuid4())
-                    save = sm.Save.get_save(session_id)
+                    save = g.sm.Save.get_save(session_id)
                     wwl.label = save["label"]
                     wwl.pose = save["position"]
 
@@ -334,7 +333,7 @@ class Views:
 
                     assets = list(_files_manager["loaded_textures"].keys()) + list(_files_manager["loaded_audios"].keys())
 
-                    thread = fm.load_assets(assets, "loading_ponn")
+                    thread = g.fm.load_assets(assets, "loading_ponn")
 
                     #while thread.is_alive():
                     #    continue
@@ -345,7 +344,7 @@ class Views:
                             wwl._preload_assets(i)
 
                     old_scene = save["scene"]
-                    scene.characters_slice = old_scene["characters_slice"]
+                    g.scene.characters_slice = old_scene["characters_slice"]
 
                     for i in old_scene["bg"]:
                         bg_sprite = arcade.Sprite(i["path"])
@@ -357,7 +356,7 @@ class Views:
                         if isinstance(i["path"], str):
                             sprite = arcade.Sprite(i["path"])
                         elif isinstance(i["path"], list):
-                            anim = arcade.TextureAnimation([arcade.TextureKeyframe(scene.get_texture(i)) for i in i["path"]])
+                            anim = arcade.TextureAnimation([arcade.TextureKeyframe(g.scene.get_texture(i)) for i in i["path"]])
                             sprite = arcade.TextureAnimationSprite(animation=anim)
 
                         sprite.size = tuple(i["size"])
@@ -366,10 +365,10 @@ class Views:
 
 
                     if old_scene["music"]["path"] is not None:
-                        am.play_music(old_scene["music"]["path"], volume=old_scene["music"]["volume"])
+                        g.am.play_music(old_scene["music"]["path"], volume=old_scene["music"]["volume"])
                     else:
-                        am.stop_sound()
-                        am.stop_music()
+                        g.am.stop_sound()
+                        g.am.stop_music()
 
                     for i in old_scene["bg_parallax"]:
                         while True:
@@ -387,19 +386,17 @@ class Views:
 
             load_saves(session_id)
 
-            self.actions = Actions(self, sm)
+            self.actions = Actions()
 
-            self.fm = fm
-
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, self.session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.session_data)
+            self.settings_manager = Managers.SettingsManager(Views)
             self.settings_manager.enable()
 
-            self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
+            self.characters_texts_manager = Managers.CharactersTextManager()
             self.characters_texts_manager.enable()
 
-            self.LoreLogger = LoreLogger(self, wwl, am)
+            self.LoreLogger = LoreLogger()
 
-            self.in_game_manager = Managers.InGameManager(FONT_NAME, self.window, autoskip_waiter = self.waiting_autoskip)
+            self.in_game_manager = Managers.InGameManager()
             self.in_game_manager.settings_button.on_click = self.settings_manager.turn_visibl
             self.in_game_manager.return_button.on_click = self.LoreLogger.return_back
             self.in_game_manager.skip_button.on_click = lambda event=None: self.waiting_autoskip.switch()
@@ -408,22 +405,34 @@ class Views:
 
             self.talk_manager(clicked=False)
 
+            self.on_resize(int(self.width), int(self.height))
+
+        def _update_dialog_window(self, width, height):
+            self.dialog_window.width = width
+            self.dialog_window.center_x = width * 0.5
+            self.dialog_window.bottom = 0
+
+        def on_resize(self, width: int, height: int) -> bool | None:
+            self.settings_manager.update_size(width, height)
+            self.characters_texts_manager.update_pos(width, height)
+            self._update_dialog_window(width, height)
+
         def chanel(self):
-            da.stop_thread_flag = True
+            g.da.stop_thread_flag = True
             time.sleep(0.05)
 
             self.actions.active_generators.clear()
 
-            am.stop_sound()
-            am.stop_music()
-            am.stop_voice()
+            g.am.stop_sound()
+            g.am.stop_music()
+            g.am.stop_voice()
 
             self.window.set_fullscreen(False)
             self.window.size = (1024, 786)
             game = Views.GameMenu(show_lc=True)
             self.window.show_view(game)
 
-        def talk_manager(self, pos_offset: Optional[int] = None, clicked: bool = True) -> None:
+        def talk_manager(self, pos_offset: Optional[int] = None, clicked: bool = True, do_snapshot: bool = True) -> None:
             """
             Получает инструкции сценария и запускает функцию talk(), обрабатывая её результаты
             """
@@ -437,13 +446,12 @@ class Views:
                             break
                     return
 
-
             gen = self.actions.active_generators.active_generators_consistently
             if gen:
                 if clicked:
                     self.cursor_texture.alpha = 255
                     if gen[0][0] != 'talk':
-                        self.attributes.reset()
+                        g.attributes.reset()
                         return
                     else:
                         if time.time() - self.last_text_skip < 0.1:
@@ -455,8 +463,8 @@ class Views:
                 self.waiting_talk.on()
                 return
 
-            self.attributes.reset()
-            now = wwl.get_thing(pos_offset)
+            g.attributes.reset()
+            now = g.wwl.get_thing(pos_offset)
             print(now)
             res = self.talk(now)
 
@@ -474,7 +482,8 @@ class Views:
                 case "END":
                     return None
                 case "END_text":
-                    self.LoreLogger.create_log()
+                    if do_snapshot:
+                        self.LoreLogger.create_log()
                     return None
 
         def talk(self, now) -> str:
@@ -510,7 +519,7 @@ class Views:
                         if (now["data"]["name"] != ")" and now["data"]["name"]) or now["data"]["description"] != '':
                             if now["data"]['show_splash']:
                                 self.actions.start_action("show_splash", now["data"], "together")
-                            da.update(now["data"]["name"], now["data"]["description"])
+                            g.da.update(now["data"]["name"], now["data"]["description"])
                             self.session_data["description"] = str(now["data"]["description"])
                             self.session_data["name"] = str(now["data"]["name"])
 
@@ -561,6 +570,9 @@ class Views:
             if key == arcade.key.S or key == arcade.key.ESCAPE:
                 self.settings_manager.turn_visibl()
             if key == arcade.key.B:
+                wwl = g.wwl
+                fm = g.fm
+
                 text = f"""
                 \n
                 Данные на текущий момент игры:
@@ -624,9 +636,6 @@ class Views:
 
             self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
-            self.why = arcade.Sprite("game/images/gui/what_are_you_so_afraid_of.png", center_x=self.window.width / 2, center_y=self.window.height / 2)
-            self.why.alpha = 0
-
             self.show_main_windows()
             self.is_loading = False
             self.is_mouse_pressed = False
@@ -634,7 +643,7 @@ class Views:
             self.other_text = agui.UILabel(
                     " ",
                     text_color=arcade.color.MIDNIGHT_BLUE,
-                    font_name=FONT_NAME,
+                    font_name=g.FONT_NAME,
                     align="center",
                     width=self.window.width*0.9,
                     multiline=True,
@@ -654,6 +663,7 @@ class Views:
             """
             Отображает загрузочный экран
             """
+
             def loading(self):
                 self.loading_screen_fade.alpha = 255
                 for i in range(0, int(250 / 2)):
@@ -667,12 +677,12 @@ class Views:
                 yield
 
                 init_file()
-                am.stop_music()
+                g.am.stop_music()
 
                 try:
-                    sm.Persistent.get_persistent("bossfight")
+                    g.sm.Persistent.get_persistent("bossfight")
                 except AttributeError:
-                    sm.Persistent.set_persistent("bossfight", False)
+                    g.sm.Persistent.set_persistent("bossfight", False)
 
 
                 for i in range(20, 50):
@@ -686,7 +696,7 @@ class Views:
                     self.loading_screen_fade.alpha = 0
                     yield
                 self.is_loading = False
-                am.play_music("game/music/buttercup by jack stauber (but kazoo).mp3")
+                g.am.play_music("game/music/buttercup by jack stauber (but kazoo).mp3")
 
             self.loading_screen.alpha = 255
             self.is_loading = True
@@ -700,7 +710,6 @@ class Views:
             self.other_manager.draw()
             arcade.draw_sprite(self.loading_screen)
             arcade.draw_sprite(self.loading_screen_fade)
-            arcade.draw_sprite(self.why)
             if self.is_loading:
                 self.background_color = (0, 69, 255)
             else:
@@ -719,7 +728,7 @@ class Views:
 
             def vokhanalia():
                 self.window.set_visible(False)
-                am.play_music("game/music/Lucid Blocks OST： Corner.mp3", streaming=True, loop=True)
+                g.am.play_music("game/music/Lucid Blocks OST： Corner.mp3", streaming=True, loop=True)
 
                 class Vokhanalia_view(arcade.View):
 
@@ -871,7 +880,7 @@ class Views:
             self.window.on_close = lambda : print("No")
             self.window.on_deactivate = lambda : self.window.activate()
             def vslom():
-                am.play_music("game/music/ambience-reactor.mp3")
+                g.am.play_music("game/music/ambience-reactor.mp3")
                 oth_manager = agui.UIManager()
                 oth_manager.add(self.main_lebel)
                 for i in range(10):
@@ -894,7 +903,7 @@ class Views:
                         yield
 
                 last_time = time.time()
-                am.play_music("game/music/Never gonna give you up (a very bad kazoo cover).mp3")
+                g.am.play_music("game/music/Never gonna give you up (a very bad kazoo cover).mp3")
                 while time.time() - last_time < 10:
                     self.window.set_size(orig_window[1] + random.randint(-10, 10), orig_window[0] + random.randint(-10, 10))
                     self.window.center_window()
@@ -927,7 +936,7 @@ class Views:
 
                 self.manager.clear()
                 self.show_main_windows()
-                am.stop_music()
+                g.am.stop_music()
                 self.is_loading = False
                 self.window.on_deactivate = lambda: arcade.close_window()
 
@@ -936,7 +945,7 @@ class Views:
 
         def del_vzlom(self, event=None):
             def dele():
-                am.play_music("game/sounds/sfx/strashilka.mp3", volume=20.0)
+                g.am.play_music("game/sounds/sfx/strashilka.mp3", volume=20.0)
                 last_time = time.time()
                 while time.time() - last_time < 29:
                     self.cursor_texture.alpha = 0 if random.random() > 0.95 else 255
@@ -945,7 +954,7 @@ class Views:
                     yield
                 yield
                 self.cursor_texture.alpha = 255
-                am.play_sound("game/sounds/sfx/perdezh_YQ5l54B.mp3")
+                g.am.play_sound("game/sounds/sfx/perdezh_YQ5l54B.mp3")
 
                 if self.deleted < 1:
                     self.manager.remove(self.manager.children[0][-2])
@@ -1032,6 +1041,9 @@ class Views:
                     self.cleanup_ui()
                     settings = Views.SettingsMenu()
                     self.window.show_view(settings)
+
+                FONT_NAME = g.FONT_NAME
+                STYLE_DEFAULT_BUTTON = g.STYLE_DEFAULT_BUTTON
 
                 self.main_lebel = agui.UILabel(
                     "",
@@ -1129,7 +1141,7 @@ class Views:
             """
             super().__init__()
 
-            saves = sm.Save.get_all_saves()
+            saves = g.sm.Save.get_all_saves()
             self.saves = saves + [[None]]*(20 - len(saves))
             self.saves_len = 20
 
@@ -1160,12 +1172,14 @@ class Views:
 
             self.manager.clear()
 
-            saves = sm.Save.get_all_saves()
+            saves = g.sm.Save.get_all_saves()
             self.saves = saves + [[None]] * (20 - len(saves))
 
             self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
             self.v_box.center_x = self.window.width / 2 - 300
             self.manager.add(self.v_box)
+
+            FONT_NAME = g.FONT_NAME
 
             _STYLE_DEFAULT_BUTTON = {
                 "normal": arcade.gui.UIFlatButton.UIStyle(
@@ -1224,9 +1238,10 @@ class Views:
                 session_id = self.saves[self.choise][0]
                 if session_id is None:
                     return None
-                sm.Save.del_save(session_id)
+                g.sm.Save.del_save(session_id)
                 self.generate_buttons()
 
+            STYLE_DEFAULT_BUTTON = g.STYLE_DEFAULT_BUTTON
 
             return_button = agui.UIFlatButton(
                 text="Назад",
@@ -1347,6 +1362,9 @@ class Views:
 
         def show_main_windows(self) -> None:
 
+            sm = g.sm
+            am = g.am
+
             def create_menu_buttons():
                 save_folder = sm.get_save_path()
                 with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as data:
@@ -1358,9 +1376,11 @@ class Views:
                     self.window.show_view(game)
 
                 def show_fps(event=None):
-                    sm.Volume.set_other("show_fps", not sm.Volume.get_other("show_fps"))
-                    sm.Volume._save_data()
+                    g.sm.Volume.set_other("show_fps", not g.sm.Volume.get_other("show_fps"))
+                    g.sm.Volume._save_data()
 
+                STYLE_DEFAULT_BUTTON = g.STYLE_DEFAULT_BUTTON
+                FONT_NAME = g.FONT_NAME
 
                 return_button = agui.UIFlatButton(
                     text="Назад",
@@ -1493,7 +1513,7 @@ class Views:
             create_menu_buttons()
 
     class MenuView(Main_template):
-        def __init__(self, session_id: str, NAMESPACE, actions):
+        def __init__(self):
             super().__init__()
 
             texture = arcade.load_texture("game/images/gui/dialog_window.png")
@@ -1505,29 +1525,29 @@ class Views:
                 center_y=self.height * 0.13
             )
 
-            self.actions = actions
-            self.NAMESPACE = NAMESPACE
-            self.fm = fm
+            self.actions = g.main.actions
+            self.NAMESPACE = g.main.NAMESPACE
+            self.fm = g.fm
 
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
             #self.window.set_vsync(True)
             self.menu_manager = agui.UIManager()
             self.lore = self._lore()
-            self.scene = scene
+            self.scene = g.scene
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
+            self.settings_manager = Managers.SettingsManager(Views)
             self.settings_manager.enable()
 
             self.attributes = Attributes()
             self.attributes.character_text_colour = arcade.color.WHITE
             self.attributes.text_anchor = "center"
 
-            self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
+            self.characters_texts_manager = Managers.CharactersTextManager()
             self.characters_texts_manager.enable()
 
             self.correct_ans = 0
-            NAMESPACE["Define"].correct_ans = 0
+            self.NAMESPACE["Define"].correct_ans = 0
             next(self.lore)
 
         def plus(self, do:  bool):
@@ -1544,7 +1564,7 @@ class Views:
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
             for k, v in data.items():
-                button = agui.UIFlatButton(text=k, width=250, height=100, font_name=FONT_NAME, style=STYLE_DEFAULT_BUTTON)
+                button = agui.UIFlatButton(text=k, width=250, height=100, font_name=g.FONT_NAME, style=g.STYLE_DEFAULT_BUTTON)
                 button.on_click = lambda event, do=v: self.plus(do)
                 self.menu_v_box.add(button)
 
@@ -1555,14 +1575,14 @@ class Views:
 
         def on_update(self, delta_time: float) -> None:
             super().on_update(delta_time)
-            scene.update(delta_time)
+            g.scene.update(delta_time)
             self.characters_texts_manager.update(delta_time)
             self.settings_manager.on_update(delta_time)
             self.menu_manager.on_update(delta_time)
 
         def on_draw(self) -> None:
             self.clear()
-            scene.draw()
+            g.scene.draw()
             arcade.draw_sprite(self.dialog_window)
             self.characters_texts_manager.draw()
             self.menu_manager.draw()
@@ -1600,7 +1620,7 @@ class Views:
                 self.settings_manager.turn_visibl()
 
     class MenuViewFood(Main_template):
-        def __init__(self, session_id: str, NAMESPACE, actions):
+        def __init__(self):
             super().__init__()
 
             texture = arcade.load_texture("game/images/gui/dialog_window.png")
@@ -1612,11 +1632,11 @@ class Views:
                 center_y=self.height * 0.13
             )
 
-            self.actions = actions
-            self.NAMESPACE = NAMESPACE
-            self.fm = fm
+            self.actions = g.main.actions
+            self.NAMESPACE = g.main.NAMESPACE
+            self.fm = g.fm
 
-            self.bg_image = scene.get_sprite("home_kitchen.jpg")
+            self.bg_image = g.scene.get_sprite("home_kitchen.jpg")
             self.bg_image.center_y = self.center_y
             self.bg_image.center_x = self.center_x
 
@@ -1625,16 +1645,16 @@ class Views:
             #self.window.set_vsync(True)
             self.menu_manager = agui.UIManager()
             self.lore = self._lore()
-            self.scene = scene
+            self.scene = g.scene
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
+            self.settings_manager = Managers.SettingsManager(Views)
             self.settings_manager.enable()
 
             self.attributes = Attributes()
             self.attributes.character_text_colour = arcade.color.WHITE
             self.attributes.text_anchor = "center"
 
-            self.characters_texts_manager = Managers.CharactersTextManager(self.attributes, self.window, FONT_NAME)
+            self.characters_texts_manager = Managers.CharactersTextManager()
             self.characters_texts_manager.enable()
 
             if not hasattr(self.NAMESPACE["Persistent"], "collected_foods"):
@@ -1686,7 +1706,7 @@ class Views:
                     _label = "bad_ending_golubi" # просто заглушка
                     state = False
 
-                button = agui.UIFlatButton(text=_text, width=250, height=100, font_name=FONT_NAME, style=STYLE_DEFAULT_BUTTON)
+                button = agui.UIFlatButton(text=_text, width=250, height=100, font_name=g.FONT_NAME, style=g.STYLE_DEFAULT_BUTTON)
                 button.on_click = lambda event, label=_label: self.set_choice(label)
                 if not state:
                     button.disabled = True
@@ -1699,14 +1719,14 @@ class Views:
 
         def on_update(self, delta_time: float) -> None:
             super().on_update(delta_time)
-            scene.update(delta_time)
+            g.scene.update(delta_time)
             self.characters_texts_manager.update(delta_time)
             self.settings_manager.on_update(delta_time)
             self.menu_manager.on_update(delta_time)
 
         def on_draw(self) -> None:
             self.clear()
-            scene.draw()
+            g.scene.draw()
             arcade.draw_sprite(self.dialog_window)
             self.characters_texts_manager.draw()
             self.menu_manager.draw()
@@ -1724,47 +1744,48 @@ class Views:
                 self.settings_manager.turn_visibl()
 
     class ShopCollecting(Main_template):
-        def __init__(self, session_id: str, NAMESPACE, actions):
+        def __init__(self):
             super().__init__()
 
             def return_back(event=None):
-                if len(NAMESPACE["Define"].collected_items) > 0:
+                if len(g.main.NAMESPACE["Define"].collected_items) > 0:
                     self.window.show_view(self.window.GameView)
 
-            NAMESPACE["Define"].collected_items = {}
+            g.main.NAMESPACE["Define"].collected_items = {}
 
             #self.window.set_vsync(True)
-            self.scene = scene
-            self.actions = actions
-            self.NAMESPACE = NAMESPACE
-            self.fm = fm
+            self.scene = g.scene
+            self.actions = g.main.actions
+            self.NAMESPACE = g.main.NAMESPACE
+            self.fm = g.fm
 
             self.layers = []
             self.layers_sprite_list = SpriteList()
             self.layers.append({
-                'sprite': scene.get_sprite("shop_shelf_bg_1.png"),
+                'sprite': g.scene.get_sprite("shop_shelf_bg_1.png"),
                 'speed': 0.0,
                 'original_x': self.width // 2,
                 'original_y': self.height // 2
             })
             self.layers.append({
-                'sprite': scene.get_sprite("shop_shelf_bg_1.png"),
+                'sprite': g.scene.get_sprite("shop_shelf_bg_1.png"),
                 'speed': 0.15,
                 'original_x': self.width // 2,
                 'original_y': self.height // 2
             })
             self.layers.append({
-                'sprite': scene.get_sprite("shop_shelf_bg_2.png"),
+                'sprite': g.scene.get_sprite("shop_shelf_bg_2.png"),
                 'speed': 0.3,
                 'original_x': self.width // 2,
                 'original_y': self.height // 2
             })
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
+            self.settings_manager = Managers.SettingsManager(Views)
             self.settings_manager.enable()
 
             width = self.width
             height = self.height
+            scene = g.scene
             items = [
                 MovableBlockFalling(scene.get_texture("puki.png"), width * 0.1, height * 0.33),
                 MovableBlockFalling(scene.get_texture("puki.png"), width * 0.12, height * 0.33),
@@ -1876,7 +1897,7 @@ class Views:
             self.notifiers = []
 
 
-            self.return_button = agui.UIFlatButton(text="Продолжить", x=self.width*0.90, y=self.height*0.05, style=STYLE_DEFAULT_BUTTON, width=200)
+            self.return_button = agui.UIFlatButton(text="Продолжить", x=self.width*0.90, y=self.height*0.05, style=g.STYLE_DEFAULT_BUTTON, width=200)
             self.return_button.on_click = return_back
             self.return_button_manager = agui.UIManager()
             self.return_button_manager.add(self.return_button)
@@ -1917,7 +1938,7 @@ class Views:
                     self.plus_item(i.texture.file_path.name)
                     print(self.NAMESPACE["Define"].collected_items)
                     text_data = self.table[i.texture.file_path.name]
-                    text: arcade.Text = ItemsNotifText(text_data[0], i.center_x, i.center_y, text_data[1], FONT_NAME)
+                    text: arcade.Text = ItemsNotifText(text_data[0], i.center_x, i.center_y, text_data[1], g.FONT_NAME)
                     self.notifiers.append(text)
                     self.items_manager.remove(i)
                     i.kill()
@@ -1952,16 +1973,16 @@ class Views:
                     self.layers.remove(layer)
 
     class CTW(Main_template):
-        def __init__(self, session_id: str, NAMESPACE, actions):
+        def __init__(self):
             super().__init__()
 
             #self.window.set_vsync(True)
-            self.scene = scene
-            self.actions = actions
-            self.NAMESPACE = NAMESPACE
-            self.fm = fm
+            self.scene = g.scene
+            self.actions = g.main.actions
+            self.NAMESPACE = g.main.NAMESPACE
+            self.fm = g.fm
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
+            self.settings_manager = Managers.SettingsManager(Views)
             self.settings_manager.enable()
 
             self.sprites = [self.scene.get_sprite("golub.png"), self.scene.get_sprite("golub_click.png")]
@@ -2028,7 +2049,7 @@ class Views:
                 self.window.show_view(self.window.GameView)
 
     class ShopGetting(Main_template):
-        def __init__(self, session_id: str, NAMESPACE, actions):
+        def __init__(self):
             super().__init__()
 
 
@@ -2036,12 +2057,13 @@ class Views:
                 self.window.show_view(self.window.GameView)
 
             #self.window.set_vsync(True)
-            self.scene = scene
-            self.actions = actions
-            self.NAMESPACE = NAMESPACE
-            self.fm = fm
+            self.scene = g.scene
+            self.actions = g.main.actions
+            self.NAMESPACE = g.main.NAMESPACE
+            self.fm = g.fm
 
             self.layers = []
+            scene = g.scene
             self.layers.append({
                 'sprite': scene.get_sprite("background_ponn.png"),
                 'speed': 0.0,
@@ -2069,7 +2091,7 @@ class Views:
                 'original_y': self.height * 0.2
             })
 
-            self.settings_manager = Managers.SettingsManager(self, am, sm, wwl, session_id, FONT_NAME, STYLE_DEFAULT_BUTTON, Views, self.window.GameView.session_data)
+            self.settings_manager = Managers.SettingsManager(Views)
             self.settings_manager.enable()
 
             self.collecting_zone = (self.width * 0.5, self.width * 0.97, self.height * 0.5, self.height * 0.97)
@@ -2132,21 +2154,21 @@ class Views:
             self.NAMESPACE["Define"].should_money = random.choice(self.find_reachable_sums(coins))
             self.NAMESPACE["Define"].got_money = 0
 
-            self.return_button = agui.UIFlatButton(text="Продолжить", x=self.width*0.90, y=self.height*0.05, style=STYLE_DEFAULT_BUTTON, width=200)
+            self.return_button = agui.UIFlatButton(text="Продолжить", x=self.width*0.90, y=self.height*0.05, style=g.STYLE_DEFAULT_BUTTON, width=200)
             self.return_button.on_click = return_back
             self.return_button_manager = agui.UIManager()
             self.return_button_manager.add(self.return_button)
             self.return_button_manager.enable()
 
             self.should_money_manager = agui.UIManager()
-            self.should_money_text = agui.UILabel(f"Внешний долг ЖАКЛИН:", font_name=FONT_NAME, font_size=40, bold=True, text_color=arcade.color.BLACK)
+            self.should_money_text = agui.UILabel(f"Внешний долг ЖАКЛИН:", font_name=g.FONT_NAME, font_size=40, bold=True, text_color=arcade.color.BLACK)
 
             if str(self.NAMESPACE["Define"].should_money)[-1] == "1" and  str(self.NAMESPACE.Define.should_money)[-2:] != "11":
                 text = f"{self.NAMESPACE["Define"].should_money} Кувейтский динар"
             else:
                 text = f"{self.NAMESPACE["Define"].should_money} Кувейтских динаров"
 
-            self.should_money_counter = agui.UILabel(text, font_name=FONT_NAME, font_size=40, text_color=arcade.color.SCARLET)
+            self.should_money_counter = agui.UILabel(text, font_name=g.FONT_NAME, font_size=40, text_color=arcade.color.SCARLET)
             self.should_money_box = agui.UIBoxLayout(align="left", x=self.width*0.01, y=self.height*0.8)
             self.should_money_box.with_background(color=(255, 255, 255, 200))
 
@@ -2266,23 +2288,26 @@ def init_file() -> None:
     """
     Инициализирует основные классы
     """
-    global sm, am, da, wwl, scene, fm
 
     timee = time.time()
-    print("files_manager...")
-    fm = FilesManager()
-    fm.load_assets(os.listdir("./game/images/moving_shop_assets"), "movable_shop_assets")
-    fm.load_assets(os.listdir("./game/images/bying_shop_assets"), "movable_shop_assets_bying")
-    fm.load_assets(["box_office_3.png"], "movable_shop_assets_bying")
-    fm.load_assets(["golub_click.png", "golub.png"], "CTW")
     print("Saves...")
-    sm = Saves_manager()
+    g.sm = Saves_manager()
+    print("files_manager...")
+    g.fm = FilesManager()
+    g.fm.load_assets(os.listdir("./game/images/moving_shop_assets"), "movable_shop_assets")
+    g.fm.load_assets(os.listdir("./game/images/bying_shop_assets"), "movable_shop_assets_bying")
+    g.fm.load_assets(["box_office_3.png"], "movable_shop_assets_bying")
+    g.fm.load_assets(["golub_click.png", "golub.png"], "CTW")
     print("Audio manager...")
-    am = AudioManager(sm, fm)
+    g.am = AudioManager()
     print("Scene...")
-    scene = Scene(fm)
+    g.scene = Scene()
     print("Lore...")
-    wwl = Wwl(fm)
+    g.wwl = Wwl()
     print("Discord...")
-    da = Discord_act()
+    g.da = Discord_act()
+
+    print("Characters...")
+    g.attributes = Attributes()
+    g.ListCharacters = ListCharacters()
     print(f"Init done for {round(time.time() - timee, 2)}s")

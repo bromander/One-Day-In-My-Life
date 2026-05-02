@@ -8,36 +8,32 @@ from arcade import Sprite, Texture, load_image, get_window, load_animated_gif, T
 from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
+from .globals import globals as g
+
 class Namespace:
-    def __init__(self, GameView, Views, ListCharacters, Wwl, AudioManager, Wait_trigger, SavesManager) -> None:
+    def __init__(self) -> None:
         """
         Отвечает за работу со всеми функциями, используемыми в сценариях.
-        :param GameView: Объект класса GameView
-        :param ListCharacters: Объект класса ListCharacters
-        :param Wwl: Объект класса Wwl
-        :param AudioManager: Объект класса AudioManager
-        :param Wait_trigger: Одноимённый объект класса Waiter
         """
 
-        self.Game_view = GameView
-        self.ListCharacters = ListCharacters
-        self.Wwl = Wwl
-        self.AudioManager = AudioManager
-        self.Wait_trigger = Wait_trigger
-        self.SavesManager = SavesManager
+        self.Game_view = g.main
+        self.ListCharacters = g.ListCharacters
+        self.Wwl = g.wwl
+        self.AudioManager = g.am
+        self.SavesManager = g.sm
 
         self.NAMESPACE = {
-            "Data" : self.Data(GameView, ListCharacters, Wwl, AudioManager, self),
-            "Persistent": self.Persistent(SavesManager),
+            "Data" : self.Data(self),
+            "Persistent": self.Persistent(),
             "Define": self.Define(),
-            "Scene": self.Scene(GameView, ListCharacters, Wwl, Wait_trigger, SavesManager),
-            "Screen" : self.Screen(GameView, Views),
-            "Audio": self.Audio(GameView, AudioManager),
-            "Lore": self.Lore(GameView, Wwl),
+            "Scene": self.Scene(),
+            "Screen" : self.Screen(),
+            "Audio": self.Audio(),
+            "Lore": self.Lore(),
             "SpriteEffects": self.SpriteEffects(),
             "wait" : lambda duration: self.wait(duration),
             "talk" : self.talk,
-            "end" : lambda: self.end(self.Wwl, self.Game_view)
+            "end" : lambda: self.end()
         }
         self.returning = None
 
@@ -64,11 +60,11 @@ class Namespace:
         return self.NAMESPACE.get(key, default)
 
     class Persistent:
-        def __init__(self, sm: Saves_manager):
+        def __init__(self):
             """
             Отвечает за работу с переменными, которые сохраняются между сессиями
             """
-            object.__setattr__(self, 'sm', sm)
+            object.__setattr__(self, 'sm', g.sm)
 
         def __setattr__(self, name, value):
             self.sm.Persistent.set_persistent(name, value)
@@ -139,16 +135,16 @@ class Namespace:
         Предоставляет доступ к основным классам движка
         '''
 
-        def __init__(self, Game_view, ListCharacters, Wwl, AudioManager, namespace):
-            self.session_id = Game_view.session_id
-            self.height = Game_view.height
-            self.width = Game_view.width
-            self.Window = Game_view.window
+        def __init__(self, namespace):
+            self.session_id = g.main.session_id
+            self.height = g.main.height
+            self.width = g.main.width
+            self.Window = g.main.window
             self.namespace = namespace
-            self.Game_view = Game_view
-            self.ListCharacters = ListCharacters
-            self.Wwl = Wwl
-            self.AudioManager = AudioManager
+            self.Game_view = g.main
+            self.ListCharacters = g.ListCharacters
+            self.Wwl = g.wwl
+            self.AudioManager = g.am
             self.PIL = PIL
 
             self.mix = {
@@ -213,21 +209,15 @@ class Namespace:
                     available.append((name, fset[1]))
             return available
 
-
-
     class Scene:
-        def __init__(self, Game_view, ListCharacters, Wwl, Wait_trigger, sm: Saves_manager) -> None:
+        def __init__(self) -> None:
             """
             Отвечает за работу с игровой сценой
-            :param Game_view: Объект класса Game_view
-            :param ListCharacters: Объект класса ListCharacters
-            :param Wwl: Объект класса Wwl
             """
-            self.Game_view = Game_view
-            self.ListCharacters = ListCharacters
-            self.Wwl = Wwl
-            self.Wait_trigger = Wait_trigger
-            self.sm = sm
+            self.Game_view = g.main
+            self.ListCharacters = g.ListCharacters
+            self.Wwl = g.wwl
+            self.sm = g.sm
 
 
         @property
@@ -377,7 +367,7 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(filename, layer, self.Game_view, self.sm),
+                    effect.effect(filename, layer),
                     "show_sprite_effect"
                 )
 
@@ -398,7 +388,7 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(filename, "sprites", self.Game_view, self.sm, 0),
+                    effect.effect(filename, "sprites", 0),
                     "hide_sprite_effect"
                 )
             self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
@@ -454,7 +444,7 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(character.split(" ")[0], "sprites", self.Game_view, self.sm),
+                    effect.effect(character.split(" ")[0], "sprites"),
                     "show_sprite_effect"
                 )
 
@@ -474,7 +464,7 @@ class Namespace:
                 yield
 
             if effect is not None:
-                effect = effect.effect(character, "sprites", self.Game_view, self.sm, 0)
+                effect = effect.effect(character, "sprites", 0)
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
                     effect,
@@ -556,7 +546,7 @@ class Namespace:
 
             self.Game_view.actions.active_generators.add_generator(stream, target(bg_id, effect is None), "set_scene")
             if effect is not None:
-                self.Game_view.actions.active_generators.add_generator(stream, effect.effect(bg_id, "bg", self.Game_view, self.sm), "set_scene_effect")
+                self.Game_view.actions.active_generators.add_generator(stream, effect.effect(bg_id, "bg"), "set_scene_effect")
                 self.Game_view.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")
 
         def set_scene_parallax(self,
@@ -654,13 +644,12 @@ class Namespace:
             self.add_sprite(cutscene, layer="animated_sprites", at=(0.5, 0.5))
 
     class Lore:
-        def __init__(self, Game_view, Wwl) -> None:
+        def __init__(self) -> None:
             """
             Обеспечивает работу с перемещением по сюжету сценария
-            :param Game_view: Объект класса Game_view
             """
-            self.Game_view = Game_view
-            self.Wwl = Wwl
+            self.Game_view = g.main
+            self.Wwl = g.wwl
 
         def jump(self, label: str, position: int = 0) -> None:
             """
@@ -672,27 +661,25 @@ class Namespace:
             self.Wwl.label = label
 
     class Screen:
-        def __init__(self, Game_view, Views) -> None:
-            self.Game_view = Game_view
-            self.Views = Views
+        def __init__(self) -> None:
+            self.Game_view = g.main
+            self.Views = g.All_views
 
-        def call_view(self, view_name: str, *args, **kwargs):
+        def call_view(self, view_name: str):
             def call():
                 self.Game_view.waiting_autoskip.off()
-                view = getattr(self.Views, view_name)(*args, **kwargs)
+                view = getattr(self.Views, view_name)()
                 self.Game_view.window.show_view(view)
                 yield
             self.Game_view.actions.active_generators.add_generator("consistently", call(), "call_screen")
 
     class Audio:
-        def __init__(self, Game_view, AudioManager) -> None:
+        def __init__(self) -> None:
             """
             Отвечает за работу с аудио
-            :param Game_view: Объект класса Game_view
-            :param AudioManager: Объект класса AudioManager
             """
-            self.Game_view = Game_view
-            self.AudioManager = AudioManager
+            self.Game_view = g.main
+            self.AudioManager = g.am
 
         def play(self, channel: Literal["music", "sound"],
                  file_name: str,
@@ -751,14 +738,14 @@ class Namespace:
                 self.name = "DISSOLVE"
                 self.duration = duration
 
-            def effect(self, sprite_name: str, layer: str, Game_view, sm: Saves_manager, target_alpha: int = 255):
+            def effect(self, sprite_name: str, layer: str, target_alpha: int = 255):
 
-                if sprite_name not in Game_view.scene[layer]:
+                if sprite_name not in g.scene[layer]:
                     yield
                     return
 
-                sprite = Game_view.scene[layer][sprite_name]
-                duration = max(self.duration + sm.Volume.get_other("fade_speed"), 0.001)
+                sprite = g.scene[layer][sprite_name]
+                duration = max(self.duration + g.sm.Volume.get_other("fade_speed"), 0.001)
 
                 start_alpha = sprite.alpha
                 progress = 0.0
@@ -781,10 +768,10 @@ class Namespace:
         """
         self.Game_view.actions.start_action("wait", {"time": duration}, "consistently")
 
-    def end(self, Wwl, Game_view):
-        Wwl.label = "main"
-        Wwl.pose = 0
-        Game_view.chanel()
+    def end(self):
+        g.wwl.label = "main"
+        g.wwl.pose = 0
+        g.main.chanel()
 
     def talk(self, character: str, text: str):
         def format_text(text: str) -> str:
