@@ -1,6 +1,11 @@
 import arcade.gui
 
-class globals:
+
+class Globals:
+
+    WINDOW_TITLE = "ОДИН ДЕНЬ"
+    GAME_NAME = "ОДИН ДЕНЬ из моей оБыЧнОй ЖиЗнИ с моей женой соседкой которая, возможно, демон или вампир :D"
+
     fm = None  # Files manager
     sm = None  # Saves manager
     am = None  # Audio manager

@@ -5,7 +5,7 @@ from .list_generator import ListActiveGenerators
 from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError
 
-from .globals import globals as g
+from .globals import Globals as g
 
 class Actions:
     def __init__(self) -> None:

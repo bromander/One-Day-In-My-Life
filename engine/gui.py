@@ -41,7 +41,7 @@ from .waiter import Waiter
 from .character import Attributes
 from .files_manager import FilesManager
 
-from .globals import globals as g
+from .globals import Globals as g
 
 class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
     """A simple vertical slider.

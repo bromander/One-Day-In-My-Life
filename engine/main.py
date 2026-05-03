@@ -17,7 +17,8 @@ from collections import Counter
 
 from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText, ClickableSprite
 from .scene import Scene
-from .lore_viewer import Wwl, LoreLogger
+from .lore_viewer import Wwl
+from .lore_logger import LoreLogger
 from .waiter import Waiter
 from .saves import Saves_manager
 from .namespace import Namespace
@@ -27,13 +28,12 @@ from .presence import Discord_act
 from .files_manager import FilesManager
 from .character import ListCharacters, Attributes
 
-from .globals import globals as g
+from .globals import Globals as g
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
 wait_trigger = Waiter()
 
-GAME_NAME = ""
 
 class Views:
 

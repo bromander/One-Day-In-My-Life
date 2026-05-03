@@ -9,7 +9,7 @@ import os
 import random
 import re
 
-from .globals import globals as g
+from .globals import Globals as g
 
 class Attributes:
     def __init__(self):

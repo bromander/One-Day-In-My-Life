@@ -54,6 +54,7 @@ class Discord_act:
                 self.connected = True
 
         Thread(target=con).start()
+
     def update(self, name: str, description: str):
         try:
             if self.connected:

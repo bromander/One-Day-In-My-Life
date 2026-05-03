@@ -9,9 +9,9 @@ import engine
 from engine.main import Views
 import warnings
 
+from engine.globals import Globals as g
+
 #python -m nuitka --standalone --include-data-dir=./game/=game --windows-console-mode=attach --show-progress --assume-yes-for-downloads --jobs=6 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests  --windows-icon-from-ico=Setuper/pineapple.ico --output-filename=OneDay.exe start.pyцц
-WINDOW_TITLE = "ОДИН ДЕНЬ"
-engine.main.GAME_NAME = "ОДИН ДЕНЬ из моей оБыЧнОй ЖиЗнИ с моей женой соседкой которая, возможно, демон или вампир :D"
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
     if splash.startswith(">"):
         splash = splash.format(username=str(os.getenv("USERNAME") or os.getenv("USER")))[1:]
 
-    window = Views.MainWindow(width=1024, height=786, title=f"{WINDOW_TITLE}: {splash}")
+    window = Views.MainWindow(width=1024, height=786, title=f"{g.WINDOW_TITLE}: {splash}")
     game = Views.GameMenu()
     window.show_view(game)
     arcade.run()

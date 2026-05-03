@@ -1,7 +1,6 @@
 import time
 from pathlib import Path
 import os
-import arcade
 import mutagen
 from typing import Union, Optional, Dict, Literal
 from threading import Thread
@@ -167,7 +166,7 @@ class FilesManager:
             start = i * part_size + min(i, remainder)
             end = start + part_size + (1 if i < remainder else 0)
             part = textures[start:end]
-            thread = Thread(target=load, args=(part,))
+            thread = Thread(target=load, args=(part,), daemon=True)
             thread.start()
             threads.append(thread)
 
