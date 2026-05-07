@@ -99,17 +99,15 @@ class LoreLogger:
         defines = {}
         persistents = {}
 
-        find_last_unnecessary_object = False # (copyright)
+        find_last_unnecessary_object = False # (__builtins__)
 
         for name, value in g.main.NAMESPACE.NAMESPACE.items():
 
-            if not find_last_unnecessary_object and name != "copyright":
-                # Скипаем все стартовые функции т.к. они нам не нужны. copyright - всегда самая последняя
+            if not find_last_unnecessary_object and str(name) != "__builtins__":
+                # Скипаем все стартовые функции т.к. они нам не нужны. __builtins__ - всегда самая последняя
                 continue
             else:
                 find_last_unnecessary_object = True
-
-            print(name, value)
 
 
             if name.startswith('__') and name.endswith('__'):
