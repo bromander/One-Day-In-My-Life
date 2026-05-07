@@ -488,36 +488,31 @@ class UISliderSavesUpdater(agui.UISlider):
         self.sm = sm
         self.am = am
         self.type = type
-    
-    def on_click(self, event: UIOnClickEvent):
-        super().on_click(event)
-        match self.type:
-            case "music":
-                self.am.music.set_volume(round(self.value / 100, 2))
-            case "sound":
-                self.am.sound.set_volume(round(self.value / 100, 2))
-            case "voice":
-                self.am.voice.set_volume(round(self.value / 100, 2))
-            case "lps":
-                self.sm.Volume.set_other("lps", round(self.value, 2))
-            case "fade_speed":
-                self.sm.Volume.set_other("fade_speed", round(self.value, 2))
-        self.sm.Volume._save_data()
 
-    def on_change(self, event: UIOnChangeEvent):
-        super().on_change(event)
-        match self.type:
-            case "music":
-                self.am.music.set_volume(round(self.value / 100, 2))
-            case "sound":
-                self.am.sound.set_volume(round(self.value / 100, 2))
-            case "voice":
-                self.am.voice.set_volume(round(self.value / 100, 2))
-            case "lps":
-                self.sm.Volume.set_other("lps", round(self.value, 2))
-            case "fade_speed":
-                self.sm.Volume.set_other("fade_speed", round(self.value, 2))
-        self.sm.Volume._save_data()
+        self.directed = False
+
+    def on_event(self, event: UIEvent) -> bool | None:
+        super().on_event(event)
+
+        if UIMouseMovementEvent is type(event):
+            if self in [i for i in self.get_ui_manager().get_widgets_at((event.x, event.y))]:
+                self.directed = True
+            else:
+                self.directed = False
+
+        if UIMouseReleaseEvent is type(event) and self.directed:
+            match self.type:
+                case "music":
+                    self.am.music.set_volume(round(self.value / 100, 2))
+                case "sound":
+                    self.am.sound.set_volume(round(self.value / 100, 2))
+                case "voice":
+                    self.am.voice.set_volume(round(self.value / 100, 2))
+                case "lps":
+                    self.sm.Volume.set_other("lps", round(self.value, 2))
+                case "fade_speed":
+                    self.sm.Volume.set_other("fade_speed", round(self.value, 2))
+            self.sm.Volume._save_data()
 
 class Managers:
 
