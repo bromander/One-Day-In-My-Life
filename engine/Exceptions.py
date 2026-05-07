@@ -15,8 +15,13 @@ class LayerDoesNotExistError(Exception):
         super().__init__(self.message)
 
 class SpriteDoesNotExistError(Exception):
-    def __init__(self, message):
-        self.message = message
+    def __init__(self, sprite_name, layer):
+        self.message = f"Sprite {sprite_name} does not exist in layer {layer}!"
+        super().__init__(self.message)
+
+class SpriteIsNotLoadedError(Exception):
+    def __init__(self, sprite_name, layer):
+        self.message = f"Sprite {sprite_name} is not loaded on scene in layer {layer}!"
         super().__init__(self.message)
 
 class PersistentDoesNotExistError(Exception):

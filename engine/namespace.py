@@ -364,7 +364,7 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(filename, layer),
+                    effect.effect(sprite),
                     "show_sprite_effect"
                 )
 
@@ -383,9 +383,10 @@ class Namespace:
                 yield
 
             if effect is not None:
+                sprite = self.Game_view.scene.get_scene_sprite(filename, "sprites")
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(filename, "sprites", 0),
+                    effect.effect(sprite, 0),
                     "hide_sprite_effect"
                 )
             self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
@@ -441,7 +442,7 @@ class Namespace:
             if effect is not None:
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
-                    effect.effect(character.split(" ")[0], "sprites"),
+                    effect.effect(sprite),
                     "show_sprite_effect"
                 )
 
@@ -461,7 +462,8 @@ class Namespace:
                 yield
 
             if effect is not None:
-                effect = effect.effect(character, "sprites", 0)
+                sprite = self.Game_view.scene.get_scene_sprite(character, "sprites")
+                effect = effect.effect(sprite, 0)
                 self.Game_view.actions.active_generators.add_generator(
                     stream,
                     effect,
@@ -503,6 +505,10 @@ class Namespace:
                     self.Game_view.scene.clear_layer("bg")
                     yield
 
+                if effect is not None:
+                    sprite = self.Game_view.scene.get_scene_sprite(file_name, "sprites")
+                    self.Game_view.actions.active_generators.add_generator(stream, effect.effect(sprite),"set_scene_effect")
+
                 self.Game_view.actions.active_generators.add_generator(stream, del_layer(), "set_scene")
 
                 return None
@@ -543,7 +549,7 @@ class Namespace:
 
             self.Game_view.actions.active_generators.add_generator(stream, target(bg_id, effect is None), "set_scene")
             if effect is not None:
-                self.Game_view.actions.active_generators.add_generator(stream, effect.effect(bg_id, "bg"), "set_scene_effect")
+                self.Game_view.actions.active_generators.add_generator(stream, effect.effect(sprite), "set_scene_effect")
                 self.Game_view.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")
 
         def set_scene_parallax(self,
@@ -735,13 +741,8 @@ class Namespace:
                 self.name = "DISSOLVE"
                 self.duration = duration
 
-            def effect(self, sprite_name: str, layer: str, target_alpha: int = 255):
+            def effect(self, sprite: Sprite, target_alpha: int = 255):
 
-                if sprite_name not in g.scene[layer]:
-                    yield
-                    return
-
-                sprite = g.scene[layer][sprite_name]
                 duration = max(self.duration + g.sm.Volume.get_other("fade_speed"), 0.001)
 
                 start_alpha = sprite.alpha

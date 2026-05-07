@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import threading
 from typing import Optional, List, Union, Literal
-from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError
+from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError, SpriteIsNotLoadedError
 from .files_manager import FilesManager
 
 from .globals import Globals as g
@@ -52,6 +52,16 @@ class Scene:
             sprite = Sprite(texture)
             return sprite
         return None
+
+    def get_scene_sprite(self, filename: str, layer: str) -> Optional[Sprite]:
+        """
+        Возвращает спрайт со сцены
+        :raises SpriteIsNotLoadedError: Если спрайт не найден на сцене
+        """
+        sprite = self.data[layer].get(filename, None)
+        if sprite is None:
+            raise SpriteIsNotLoadedError(filename, layer)
+        return sprite
 
     def __getitem__(self, item):
         return self.data[item]
@@ -103,10 +113,7 @@ class Scene:
         elif isinstance(sprite, Texture):
             self.data[layer][name] = Sprite(sprite)
 
-
-    def delete_sprite(self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str],
-                      name: str) -> None:
-        print("inside", id(self.data), self.data)
+    def delete_sprite(self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str], name: str) -> None:
         """
         Удаляет спрайт со сцены
         :param layer: Слой
@@ -119,7 +126,7 @@ class Scene:
         if name in self.data[layer]:
             del self.data[layer][name]
         else:
-            raise SpriteDoesNotExistError(f"Sprite {name} does not exist in layer {layer}!")
+            raise SpriteDoesNotExistError(name, layer)
 
     def clear_layer(self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str]) -> None:
         """
