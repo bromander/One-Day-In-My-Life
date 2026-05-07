@@ -494,6 +494,7 @@ class Namespace:
                 raise ValueError("Layer must be greater than zero.")
 
             bg_id = int(layer)
+
             if effect is not None:
                 bg_id = -1
 
@@ -537,6 +538,7 @@ class Namespace:
                 if hide_scene:
                     self.Game_view.scene.clear_layer("bg")
                 self.Game_view.scene.add_sprite(f"bg", bg_id, sprite)
+                g.main.set_bg_by_scene_bg()
                 yield
 
 
@@ -562,6 +564,7 @@ class Namespace:
                 self.Game_view.scene.clear_layer("sprites")
                 self.Game_view.scene.clear_layer("bg")
                 self.Game_view.scene.add_parallax_bg(file_name, speed, self.Game_view.center_x, self.Game_view.center_y)
+                g.main.set_bg_by_scene_bg()
                 yield
 
             for data in files:

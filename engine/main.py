@@ -39,17 +39,12 @@ class Views:
 
     class MainWindow(arcade.Window):
         def __init__(self, width, height, title):
-            super().__init__(width=width, height=height, title=title, resizable=False)
+            super().__init__(width=width, height=height, title=title, resizable=True)
             self.GameView: Optional[Views.GameView] = None
 
             g.All_views = Views
 
         def on_close(self) -> None:
-            try:
-                g.da.stop_thread_flag = True
-            except NameError:
-                pass
-
             arcade.close_window()
 
         def on_activate(self) -> EVENT_HANDLE_STATE:
@@ -130,10 +125,14 @@ class Views:
 
         def _get_most_frequent_color(self, num_colors=10):
 
-            if not list(g.am.scene["bg"].values()):
+            if list(g.scene["bg"].values()):
+                sprite: arcade.Sprite = list(g.scene["bg"].values())[-1]
+                print(sprite.texture.file_path.name)
+            elif g.scene["bg_parallax"]:
+                sprite: arcade.Sprite = g.scene["bg_parallax"][0]['sprite']
+            else:
                 return None
 
-            sprite: arcade.Sprite = list(g.scene["bg"].values())[-1]
             img = sprite.texture.image
             img = img.resize((150, 150))
             img = img.quantize(num_colors)
@@ -151,7 +150,7 @@ class Views:
                 color = self._get_most_frequent_color()
                 if color:
                     self.background_color = color
-            except NameError:
+            except NameError or AttributeError:
                 raise NameError("Сцена ещё не инициализирована!")
 
         def on_update(self, delta_time: float) -> None:
@@ -418,7 +417,6 @@ class Views:
             self._update_dialog_window(width, height)
 
         def chanel(self):
-            g.da.stop_thread_flag = True
             time.sleep(0.05)
 
             self.actions.active_generators.clear()
@@ -1026,7 +1024,7 @@ class Views:
                     self.cleanup_ui()
                     self.window.set_fullscreen(False)
                     self.window.size = (1920, 1080)
-                    self.window.set_fullscreen(True)
+                    #self.window.set_fullscreen(True)
                     self.manager.disable()
                     game = Views.GameView()
                     self.window.GameView = game
