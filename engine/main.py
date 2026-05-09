@@ -1324,7 +1324,6 @@ class Views:
                     multiline=True
                 )
 
-
                 if i[0] is not None:
                     button.on_click = lambda event, value=i[0]: open_save(value)
 

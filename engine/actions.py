@@ -20,8 +20,8 @@ class Actions:
 
         duration = max(now["time"] + g.sm.Volume.get_other("fade_speed"), 0.001)
         progress = 0.0
-        last_alpha = g.main.scene["fade"]["fade"].alpha
-        fade_sprite = g.main.scene["fade"]["fade"]
+        last_alpha = g.scene["fade"]["fade"].alpha
+        fade_sprite = g.scene["fade"]["fade"]
         min_step = 1
 
         while True:
@@ -44,8 +44,8 @@ class Actions:
 
         duration = max(now["time"] + g.sm.Volume.get_other("fade_speed"), 0.001)
         progress = 0.0
-        last_alpha = g.main.scene["fade"]["fade"].alpha
-        fade_sprite = g.main.scene["fade"]["fade"]
+        last_alpha = g.scene["fade"]["fade"].alpha
+        fade_sprite = g.scene["fade"]["fade"]
         min_step = 1
 
         while True:
@@ -131,14 +131,14 @@ class Actions:
 
     def _show_splash(self, now):
 
-        main = g.main
+        splash_manager = g.main.splash_manager
 
-        main.splash_manager.children[0][0].text = now["name"]
-        main.splash_manager.children[0][1].text = now["description"]
+        splash_manager.children[0][0].text = now["name"]
+        splash_manager.children[0][1].text = now["description"]
 
         duration = max(now["duration"] + g.sm.Volume.get_other("fade_speed"), 0.001)
         progress = 0.0
-        last_alpha = main.scene["fade"]["splash"].alpha
+        last_alpha = g.scene["fade"]["splash"].alpha
         min_step = 1
 
         while True:
@@ -152,10 +152,10 @@ class Actions:
             new_alpha = int(progress * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
-                main.splash_manager.children[0][0].update_font(font_color=(255, 255, 255, new_alpha))
-                main.splash_manager.children[0][1].update_font(font_color=(255, 255, 255, new_alpha))
+                splash_manager.children[0][0].update_font(font_color=(255, 255, 255, new_alpha))
+                splash_manager.children[0][1].update_font(font_color=(255, 255, 255, new_alpha))
 
-                main.scene["fade"]["splash"].alpha = new_alpha
+                g.scene["fade"]["splash"].alpha = new_alpha
                 last_alpha = new_alpha
 
             if progress >= 1.0:
@@ -170,7 +170,7 @@ class Actions:
 
         duration = max(now["duration"] / 2 + g.sm.Volume.get_other("fade_speed"), 0.001)
         progress = 0.0
-        last_alpha = main.scene["fade"]["splash"].alpha
+        last_alpha = g.scene["fade"]["splash"].alpha
         min_step = 1
 
         while True:
@@ -183,14 +183,14 @@ class Actions:
             new_alpha = 255 - int(progress * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
-                main.splash_manager.children[0][0].update_font(font_color=(255, 255, 255, new_alpha))
-                main.splash_manager.children[0][1].update_font(font_color=(255, 255, 255, new_alpha))
+                splash_manager.children[0][0].update_font(font_color=(255, 255, 255, new_alpha))
+                splash_manager.children[0][1].update_font(font_color=(255, 255, 255, new_alpha))
 
-                main.scene["fade"]["splash"].alpha = new_alpha
+                g.scene["fade"]["splash"].alpha = new_alpha
                 last_alpha = new_alpha
 
             if progress >= 1.0:
-                main.scene["fade"]["splash"].alpha = 0
+                g.scene["fade"]["splash"].alpha = 0
                 return
 
 

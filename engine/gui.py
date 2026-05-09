@@ -564,7 +564,7 @@ class Managers:
                     g.am.stop_sound()
 
                     tex_cache = arcade.cache.TextureCache()
-                    g.main.scene.clear_scene()
+                    g.scene.clear_scene()
                     for i in arcade.cache.TextureCache().get_all_textures():
                         tex_cache.delete(i)
 

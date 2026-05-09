@@ -198,7 +198,7 @@ class Namespace:
             else:
                 self.Game_view.show_dialogue_bg_trigger = not self.Game_view.show_dialogue_bg_trigger
 
-        def get_food_root(self) -> list[str, str]:
+        def get_food_root(self) -> list[tuple]:
             chosen = [i for i in self.namespace["Define"].collected_items.keys()]
             available = []
             for name, fset in self.mix.items():
@@ -211,33 +211,28 @@ class Namespace:
             """
             Отвечает за работу с игровой сценой
             """
-            self.Game_view = g.main
-            self.ListCharacters = g.ListCharacters
-            self.Wwl = g.wwl
-            self.sm = g.sm
 
 
         @property
         def character_slice(self):
-            return self.Game_view.scene.character_slice
+            return g.scene.character_slice
 
         @character_slice.setter
         def character_slice(self, value):
-            self.Game_view.scene.set_characters_slice(value)
+            g.scene.set_characters_slice(value)
 
         def _get_norm(self,
                       at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]],
                       sprite_name: str):
 
-            screen_width = self.Game_view.width
-            screen_height = self.Game_view.height
+            window = get_window()
 
             x_norm, y_norm = 0, 0.4
 
-            if sprite_name in self.Game_view.scene["sprites"]:
-                sprite = self.Game_view.scene["sprites"][sprite_name]
+            if sprite_name in g.scene["sprites"]:
+                sprite = g.scene["sprites"][sprite_name]
             else:
-                sprite = Sprite(center_x=screen_width * x_norm, center_y=screen_height * y_norm)
+                sprite = Sprite(center_x=window.width * x_norm, center_y=window.height * y_norm)
 
             match at:
                 case "center":
@@ -249,28 +244,28 @@ class Namespace:
                 case _ if isinstance(at, tuple) and len(at) == 2:
 
                     if at[0] == -1:
-                        x_norm = sprite.position[0] / screen_width
+                        x_norm = sprite.position[0] / window.width
                     elif isinstance(at[0], int):
-                        x_norm = at[0] / screen_width
+                        x_norm = at[0] / window.width
 
                     elif isinstance(at[0], float):
                         if 0 <= at[0] <= 1:
                             x_norm = at[0]
                         else:
-                            x_norm = at[0] / screen_width
+                            x_norm = at[0] / window.width
 
 
                     if at[1] == -1:
-                        y_norm = sprite.position[1] / screen_height
+                        y_norm = sprite.position[1] / window.height
 
                     elif isinstance(at[1], int):
-                            y_norm = at[1] / screen_height
+                            y_norm = at[1] / window.height
 
                     elif isinstance(at[1], float):
                         if 0 <= at[1] <= 1:
                             y_norm = at[1]
                         else:
-                            y_norm = at[1] / screen_height
+                            y_norm = at[1] / window.height
 
             return x_norm, y_norm
 
@@ -325,10 +320,12 @@ class Namespace:
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
             """
+            window = get_window()
+
             if isinstance(filename, Sprite):
                 sprite = filename
             else:
-                sprite: Sprite = self.Game_view.scene.get_sprite(filename)
+                sprite = g.scene.get_sprite(filename)
                 if sprite is None:
                     raise FileNotFoundError(f"File {filename} not found!")
 
@@ -337,19 +334,16 @@ class Namespace:
             if angle is not None:
                 sprite.angle = angle
 
-            screen_width = self.Game_view.width
-            screen_height = self.Game_view.height
-
             if at is not None:
 
                 x_norm, y_norm = self._get_norm(at, filename)
 
-                sprite.center_x = screen_width * x_norm
-                sprite.center_y = screen_height * y_norm
+                sprite.center_x = window.width * x_norm
+                sprite.center_y = window.height * y_norm
 
             else:
-                sprite.center_x = screen_width // 2
-                sprite.center_y = screen_height * 0.2
+                sprite.center_x = window.width // 2
+                sprite.center_y = window.height * 0.2
 
             if effect is not None:
                 sprite.alpha = 0
@@ -357,12 +351,12 @@ class Namespace:
                 sprite.alpha = 255
 
             def target():
-                self.Game_view.scene.add_sprite(layer, filename, sprite)
+                g.scene.add_sprite(layer, filename, sprite)
                 yield
 
-            self.Game_view.actions.active_generators.add_generator(stream, target(), "show_sprite")
+            g.main.actions.active_generators.add_generator(stream, target(), "show_sprite")
             if effect is not None:
-                self.Game_view.actions.active_generators.add_generator(
+                g.main.actions.active_generators.add_generator(
                     stream,
                     effect.effect(sprite),
                     "show_sprite_effect"
@@ -379,17 +373,17 @@ class Namespace:
             """
 
             def target():
-                self.Game_view.scene.delete_sprite("sprites", filename)
+                g.scene.delete_sprite("sprites", filename)
                 yield
 
             if effect is not None:
-                sprite = self.Game_view.scene.get_scene_sprite(filename, "sprites")
-                self.Game_view.actions.active_generators.add_generator(
+                sprite = g.scene.get_scene_sprite(filename, "sprites")
+                g.main.actions.active_generators.add_generator(
                     stream,
                     effect.effect(sprite, 0),
                     "hide_sprite_effect"
                 )
-            self.Game_view.actions.active_generators.add_generator(stream, target(), "hide_sprite")
+            g.main.actions.active_generators.add_generator(stream, target(), "hide_sprite")
 
 
         def show_character(self, character: str,
@@ -406,28 +400,27 @@ class Namespace:
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
             """
 
+            window = get_window()
+
             char_id = character.split(" ")[0]
-            sprite = self.ListCharacters[char_id].show(character)
+            sprite = g.ListCharacters[char_id].show(character)
 
             sprite.size = self._get_size(size, sprite.size)
-
-            screen_width = self.Game_view.width
-            screen_height = self.Game_view.height
 
             if at is not None:
 
                 x_norm, y_norm = self._get_norm(at, char_id)
 
-                sprite.center_x = screen_width * x_norm
-                sprite.center_y = screen_height * y_norm
+                sprite.center_x = window.width * x_norm
+                sprite.center_y = window.height * y_norm
 
             else:
-                if char_id in self.Game_view.scene["sprites"]:
-                    sprite.position = self.Game_view.scene["sprites"][char_id].position
-                    sprite.scale = self.Game_view.scene["sprites"][char_id].scale
+                if char_id in g.scene["sprites"]:
+                    sprite.position = g.scene["sprites"][char_id].position
+                    sprite.scale = g.scene["sprites"][char_id].scale
                 else:
-                    sprite.center_x = screen_width // 2
-                    sprite.center_y = screen_height * 0.2
+                    sprite.center_x = window.width // 2
+                    sprite.center_y = window.height * 0.2
 
             if effect is not None:
                 sprite.alpha = 0
@@ -435,12 +428,12 @@ class Namespace:
                 sprite.alpha = 255
 
             def target():
-                self.Game_view.scene.add_sprite("sprites", character.split(" ")[0], sprite)
+                g.scene.add_sprite("sprites", character.split(" ")[0], sprite)
                 yield
 
-            self.Game_view.actions.active_generators.add_generator(stream, target(), "show_sprite")
+            g.main.actions.active_generators.add_generator(stream, target(), "show_sprite")
             if effect is not None:
-                self.Game_view.actions.active_generators.add_generator(
+                g.main.actions.active_generators.add_generator(
                     stream,
                     effect.effect(sprite),
                     "show_sprite_effect"
@@ -455,21 +448,21 @@ class Namespace:
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
             """
-            print("hide", id(self.Game_view.scene.data), self.Game_view.scene.data)
+            print("hide", id(g.scene.data), g.scene.data)
             def target(scene):
                 print("hide", id(scene.data), scene.data)
                 scene.delete_sprite("sprites", character)
                 yield
 
             if effect is not None:
-                sprite = self.Game_view.scene.get_scene_sprite(character, "sprites")
+                sprite = g.scene.get_scene_sprite(character, "sprites")
                 effect = effect.effect(sprite, 0)
-                self.Game_view.actions.active_generators.add_generator(
+                g.main.actions.active_generators.add_generator(
                     stream,
                     effect,
                     "hide_sprite_effect"
                 )
-            self.Game_view.actions.active_generators.add_generator(stream, target(self.Game_view.scene), "hide_sprite")
+            g.main.actions.active_generators.add_generator(stream, target(g.scene), "hide_sprite")
 
         def set_scene(self,
                       file_name: Optional[Union[str, Sprite]],
@@ -490,6 +483,9 @@ class Namespace:
 
             #self.character_slice = -1
 
+            window = get_window()
+            scene = g.scene
+
             if layer < 0:
                 raise ValueError("Layer must be greater than zero.")
 
@@ -500,74 +496,76 @@ class Namespace:
 
             if file_name is None:
                 def del_layer():
-                    self.Game_view.scene.clear_layer("sprites")
-                    self.Game_view.scene.clear_layer("bg_parallax")
-                    self.Game_view.scene.clear_layer("animated_sprites")
-                    self.Game_view.scene.clear_layer("bg")
+                    scene.clear_layer("sprites")
+                    scene.clear_layer("bg_parallax")
+                    scene.clear_layer("animated_sprites")
+                    scene.clear_layer("bg")
                     yield
 
                 if effect is not None:
-                    sprite = self.Game_view.scene.get_scene_sprite(file_name, "sprites")
-                    self.Game_view.actions.active_generators.add_generator(stream, effect.effect(sprite),"set_scene_effect")
+                    sprite = scene.get_scene_sprite(file_name, "sprites")
+                    g.main.actions.active_generators.add_generator(stream, effect.effect(sprite),"set_scene_effect")
 
-                self.Game_view.actions.active_generators.add_generator(stream, del_layer(), "set_scene")
+                g.main.actions.active_generators.add_generator(stream, del_layer(), "set_scene")
 
                 return None
 
 
             if isinstance(file_name, str):
 
-                sprite = self.Game_view.scene.get_sprite(file_name)
+                sprite = scene.get_sprite(file_name)
                 if sprite is None:
                     raise FileNotFoundError(f"File {file_name} not found!")
 
             elif isinstance(file_name, Sprite):
                 sprite = file_name
 
-            sprite.center_x, sprite.center_y, sprite.size = self.Game_view.width * 0.5, self.Game_view.height * 0.5, self._get_size(size, sprite.size)
+            sprite.center_x, sprite.center_y, sprite.size = window.width * 0.5, window.height * 0.5, self._get_size(size, sprite.size)
 
             if effect is not None:
                 sprite.alpha = 0
 
             def target(bg_id, hide_scene: bool):
-                self.Game_view.scene.clear_layer("sprites")
-                self.Game_view.scene.clear_layer("bg_parallax")
-                self.Game_view.scene.clear_layer("animated_sprites")
+                scene.clear_layer("sprites")
+                scene.clear_layer("bg_parallax")
+                scene.clear_layer("animated_sprites")
                 if hide_scene:
-                    self.Game_view.scene.clear_layer("bg")
-                self.Game_view.scene.add_sprite(f"bg", bg_id, sprite)
+                    scene.clear_layer("bg")
+                scene.add_sprite(f"bg", bg_id, sprite)
                 g.main.set_bg_by_scene_bg()
                 g.scene.on_resize(*get_window().get_size())
                 yield
 
 
             def edit_layer_name_and_del_old(bg_id, layer):
-                old_bg = self.Game_view.scene["bg"][bg_id]
-                self.Game_view.scene.clear_layer("animated_sprites")
-                self.Game_view.scene.clear_layer("bg")
-                self.Game_view.scene["bg"][layer] = old_bg
+                old_bg = scene["bg"][bg_id]
+                scene.clear_layer("animated_sprites")
+                scene.clear_layer("bg")
+                scene["bg"][layer] = old_bg
                 yield
 
-            self.Game_view.actions.active_generators.add_generator(stream, target(bg_id, effect is None), "set_scene")
+            g.main.actions.active_generators.add_generator(stream, target(bg_id, effect is None), "set_scene")
             if effect is not None:
-                self.Game_view.actions.active_generators.add_generator(stream, effect.effect(sprite), "set_scene_effect")
-                self.Game_view.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")
+                g.main.actions.active_generators.add_generator(stream, effect.effect(sprite), "set_scene_effect")
+                g.main.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")
 
         def set_scene_parallax(self,
                       files: [tuple[str, float]],
                       stream: Literal["consistently", "together"] = "together") -> None:
 
-            self.Game_view.scene.clear_layer("bg_parallax")
+            window = get_window()
+
+            g.scene.clear_layer("bg_parallax")
 
             def target(file_name, speed):
-                self.Game_view.scene.clear_layer("sprites")
-                self.Game_view.scene.clear_layer("bg")
-                self.Game_view.scene.add_parallax_bg(file_name, speed, self.Game_view.center_x, self.Game_view.center_y)
+                g.scene.clear_layer("sprites")
+                g.scene.clear_layer("bg")
+                g.scene.add_parallax_bg(file_name, speed, window.center_x, window.center_y)
                 g.main.set_bg_by_scene_bg()
                 yield
 
             for data in files:
-                self.Game_view.actions.active_generators.add_generator(stream, target(data[0], data[1]), "set_scene")
+                g.main.actions.active_generators.add_generator(stream, target(data[0], data[1]), "set_scene")
 
         def move(self, sprite: str,
                  position: tuple[Tuple[int, float]],
@@ -581,7 +579,7 @@ class Namespace:
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
             """
             now = {"character": sprite, "pos": position, "speed": speed}
-            self.Game_view.actions.start_action("move_sprite", now, stream=stream)
+            g.main.actions.start_action("move_sprite", now, stream=stream)
 
         def fade(self, type: Literal["fadein", "fadeout"],
                  duration: float,
@@ -595,57 +593,24 @@ class Namespace:
             """
             match type:
                 case "fadein":
-                    self.Game_view.actions.start_action("fadein", {"time": duration}, stream=stream)
+                    g.main.actions.start_action("fadein", {"time": duration}, stream=stream)
                 case "fadeout":
-                    self.Game_view.actions.start_action("fadeout", {"time": duration}, stream=stream)
+                    g.main.actions.start_action("fadeout", {"time": duration}, stream=stream)
                 case _:
                     raise ActionNotFoundError(f"Action \"{type}\" now found!")
 
-        def add_sorry_sprite(self):
-
-
-            class Soorry(Sprite):
-                def __init__(self):
-                    super().__init__("game/images/scenes/sorry1.png")
-                    self.textures = [
-                        Texture(load_image("game/images/scenes/sorry1.png")),
-                        Texture(load_image("game/images/scenes/sorry2.png")),
-                        Texture(load_image("game/images/scenes/sorry3.png"))
-                    ]
-                    self.center_x = get_window().center_x
-                    self.center_y = get_window().center_y
-                    self.width = get_window().width
-                    self.height = get_window().height
-
-                    self.id = 0
-                    self.timer = time.time()
-
-                def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
-                    super().update(delta_time)
-                    if time.time() - self.timer > 0.1:
-                        self.timer = time.time()
-                        self.set_texture(self.id)
-                        self.id += 1
-                        if self.id > 2:
-                            self.id = 0
-
-            self.Game_view.scene.clear_layer("sprites")
-            self.Game_view.scene.clear_layer("bg")
-            self.Game_view.scene.clear_layer("bg_parallax")
-            self.set_scene(Soorry())
-
         def start_cutscene(self, path):
             print(path)
-            print(self.Game_view.scene.fm.textures)
-            cutscene: TextureAnimationSprite = self.Game_view.scene.get_sprite(path)
+            print(g.scene.fm.textures)
+            cutscene: TextureAnimationSprite = g.scene.get_sprite(path)
             while cutscene is None:
-                cutscene = self.Game_view.scene.get_sprite(path)
+                cutscene = g.scene.get_sprite(path)
 
             print(cutscene)
             print(str(cutscene.texture.file_path.name))
             cutscene.size = get_window().size
-            self.Game_view.scene.clear_layer("bg")
-            self.Game_view.scene.clear_layer("animated_sprites")
+            g.scene.clear_layer("bg")
+            g.scene.clear_layer("animated_sprites")
             self.add_sprite(cutscene, layer="animated_sprites", at=(0.5, 0.5))
 
     class Lore:
@@ -653,8 +618,6 @@ class Namespace:
             """
             Обеспечивает работу с перемещением по сюжету сценария
             """
-            self.Game_view = g.main
-            self.Wwl = g.wwl
 
         def jump(self, label: str, position: int = 0) -> None:
             """
@@ -662,29 +625,24 @@ class Namespace:
             :param label: Название лейбла
             :param position: На какой строке сценария
             """
-            self.Wwl.pose = position
-            self.Wwl.label = label
+            g.wwl.pose = position
+            g.wwl.label = label
 
     class Screen:
-        def __init__(self) -> None:
-            self.Game_view = g.main
-            self.Views = g.All_views
 
         def call_view(self, view_name: str):
             def call():
-                self.Game_view.waiting_autoskip.off()
-                view = getattr(self.Views, view_name)()
-                self.Game_view.window.show_view(view)
+                g.main.waiting_autoskip.off()
+                view = getattr(g.All_views, view_name)()
+                get_window().show_view(view)
                 yield
-            self.Game_view.actions.active_generators.add_generator("consistently", call(), "call_screen")
+            g.main.actions.active_generators.add_generator("consistently", call(), "call_screen")
 
     class Audio:
         def __init__(self) -> None:
             """
             Отвечает за работу с аудио
             """
-            self.Game_view = g.main
-            self.AudioManager = g.am
 
         def play(self, channel: Literal["music", "sound"],
                  file_name: str,
@@ -705,12 +663,12 @@ class Namespace:
             match channel:
                 case "music":
                     loop = True if loop is None else loop
-                    target = self.AudioManager.play_music_gen(file_name, loop, volume, effect)
-                    self.Game_view.actions.active_generators.add_generator(stream, target, "play_music")
+                    target = g.am.play_music_gen(file_name, loop, volume, effect)
+                    g.main.actions.active_generators.add_generator(stream, target, "play_music")
                 case "sound":
                     loop = False if loop is None else loop
-                    target = self.AudioManager.play_sound_gen(file_name, loop, volume, effect)
-                    self.Game_view.actions.active_generators.add_generator(stream, target, "play_sound")
+                    target = g.am.play_sound_gen(file_name, loop, volume, effect)
+                    g.main.actions.active_generators.add_generator(stream, target, "play_sound")
                 case _:
                     raise ChannelDoesNotExistError(f"Channel {channel} does not exist")
 
@@ -726,9 +684,9 @@ class Namespace:
             """
             match channel:
                 case "music":
-                    self.Game_view.actions.active_generators.add_generator(stream, self.AudioManager.stop_music_gen(effect), "stop_music")
+                    g.main.actions.active_generators.add_generator(stream, g.am.stop_music_gen(effect), "stop_music")
                 case "sound":
-                    self.Game_view.actions.active_generators.add_generator(stream, self.AudioManager.stop_sound_gen(effect), "stop_sound")
+                    g.main.actions.active_generators.add_generator(stream, g.am.stop_sound_gen(effect), "stop_sound")
                 case N:
                     raise ChannelDoesNotExistError(f"Channel {N} does not exist")
 
@@ -766,7 +724,7 @@ class Namespace:
         Заставляет игру... Ждать
         :param duration:
         """
-        self.Game_view.actions.start_action("wait", {"time": duration}, "consistently")
+        g.main.actions.start_action("wait", {"time": duration}, "consistently")
 
     def end(self):
         g.wwl.label = "main"
@@ -782,7 +740,7 @@ class Namespace:
                     text[e] = str(self.get(i.strip("[]"), "NONE"))
             text = "".join(text).replace("\\\\", "\\").replace("\[", "[").replace("\]", "]")
             return text
-        gen = self.ListCharacters[character].talk(format_text(text))
+        gen = g.ListCharacters[character].talk(format_text(text))
 
-        self.Game_view.actions.active_generators.add_generator("consistently", gen, "talk")
+        g.main.actions.active_generators.add_generator("consistently", gen, "talk")
         self.returning = "END_text"

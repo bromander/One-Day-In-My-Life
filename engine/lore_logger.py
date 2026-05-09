@@ -15,14 +15,13 @@ class LoreLogger:
     ### ==== SCENE ===
 
     def _snapshot_scene(self):
-        main = g.main
         snapshot = []
 
-        for layer, layer_data in main.scene.data.items():
+        for layer, layer_data in g.scene.data.items():
             if layer in ("fade", "gui"):
                 continue
 
-            container = main.scene[layer]
+            container = g.scene[layer]
 
             # --- dict слои ---
             if isinstance(container, dict):
@@ -59,9 +58,8 @@ class LoreLogger:
         return snapshot
 
     def _restore_scene(self, snapshot):
-        main = g.main
 
-        main.scene.clear_scene()
+        g.scene.clear_scene()
 
         for entry in snapshot:
             t = entry["type"]
@@ -78,12 +76,12 @@ class LoreLogger:
                 sprite.alpha = d["alpha"]
                 sprite.visible = d["visible"]
 
-                main.scene.add_sprite(entry["layer"], entry["name"], sprite)
+                g.scene.add_sprite(entry["layer"], entry["name"], sprite)
 
             elif t == "parallax":
                 d = entry["data"]
 
-                main.scene.add_parallax_bg(
+                g.scene.add_parallax_bg(
                     d["texture"],
                     d["speed"],
                     d["original_x"],
