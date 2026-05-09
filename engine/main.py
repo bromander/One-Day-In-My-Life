@@ -253,6 +253,7 @@ class Views:
                 self.window.set_fullscreen(True)
             elif self.window_mode == "window":
                 self.window.set_fullscreen(False)
+                self.window.maximize()
 
             g.main = self
 
@@ -419,11 +420,13 @@ class Views:
 
                     self.window.GameView = self
 
+                    self.set_bg_by_scene_bg()
+
             load_saves(session_id)
 
             self.actions = Actions()
 
-            self.settings_manager = Managers.SettingsManager(Views)
+            self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
 
             self.characters_texts_manager = Managers.CharactersTextManager()
@@ -630,7 +633,7 @@ class Views:
 
         def on_mouse_release(self, x, y, button, modifiers) -> None:
             if (int(button) == 1) and not self.settings_manager.waiting_settings:
-                if len(list(self.in_game_manager.get_widgets_at((x, y)))) == 1: # Проверяем, нажали ли мы на какую-нибудь кнопку.
+                if len(list(self.in_game_manager.get_widgets_at((x, y)))) == 1: # Проверяем, не нажали ли мы на какую-нибудь кнопку.
                     self.waiting_autoskip.off()
                     self.talk_manager()
 
@@ -1063,6 +1066,7 @@ class Views:
 
                 def start_game(event=None):
 
+                    self.window.center_window()
                     self.cleanup_ui()
                     self.window.set_fullscreen(False)
                     self.window.size = g.DEFAULT_IN_GAME_WINDOW_SIZE
@@ -1258,6 +1262,7 @@ class Views:
                 self.window.show_view(game)
 
             def open_save(session_id: str, event=None):
+                self.window.center_window()
                 self.window.set_fullscreen(False)
                 self.window.size = g.DEFAULT_IN_GAME_WINDOW_SIZE
                 self.window.set_fullscreen(True)
@@ -1267,7 +1272,7 @@ class Views:
                 print("OPENING!")
                 print("-"*20)
 
-                game = Views.GameView(session_id, "no")
+                game = Views.GameView(session_id)
                 self.window.show_view(game)
 
             def delete_save(event=None):
@@ -1613,7 +1618,7 @@ class Views:
             self.lore = self._lore()
             self.scene = g.scene
 
-            self.settings_manager = Managers.SettingsManager(Views)
+            self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
 
             self.attributes = Attributes()
@@ -1724,7 +1729,7 @@ class Views:
             self.lore = self._lore()
             self.scene = g.scene
 
-            self.settings_manager = Managers.SettingsManager(Views)
+            self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
 
             self.attributes = Attributes()
@@ -1857,7 +1862,7 @@ class Views:
                 'original_y': self.height // 2
             })
 
-            self.settings_manager = Managers.SettingsManager(Views)
+            self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
 
             width = self.width
@@ -2059,7 +2064,7 @@ class Views:
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
 
-            self.settings_manager = Managers.SettingsManager(Views)
+            self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
 
             self.sprites = [self.scene.get_sprite("golub.png"), self.scene.get_sprite("golub_click.png")]
@@ -2168,7 +2173,7 @@ class Views:
                 'original_y': self.height * 0.2
             })
 
-            self.settings_manager = Managers.SettingsManager(Views)
+            self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
 
             self.collecting_zone = (self.width * 0.5, self.width * 0.97, self.height * 0.5, self.height * 0.97)

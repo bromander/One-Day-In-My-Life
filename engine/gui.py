@@ -517,9 +517,9 @@ class UISliderSavesUpdater(agui.UISlider):
 class Managers:
 
     class SettingsManager(agui.UIManager):
-        def __init__(self, Views):
+        def __init__(self):
             super().__init__()
-            self.Views = Views
+            self.Views = g.All_views
 
             self.settings_scene = Scene()
 
@@ -557,6 +557,8 @@ class Managers:
                 volumes = data['options']
 
                 def return_to_main_menu(event=None):
+
+                    self.window.set_fullscreen(True)
                     g.main.actions.active_generators.clear()
                     g.am.stop_music()
                     g.am.stop_sound()
@@ -566,9 +568,9 @@ class Managers:
                     for i in arcade.cache.TextureCache().get_all_textures():
                         tex_cache.delete(i)
 
-
                     self.window.set_fullscreen(False)
                     self.window.size = (1024, 786)
+                    self.window.center_window()
                     game = self.Views.GameMenu(show_lc=True)
                     self.window.show_view(game)
 
