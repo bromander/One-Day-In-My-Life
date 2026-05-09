@@ -53,6 +53,19 @@ class Scene:
             return sprite
         return None
 
+    def on_resize(self, width, height):
+        for i in self.data["bg"].values():
+            i: Sprite = i
+
+            scale = min(width / i.width, height / i.height)
+
+            i.height *= scale
+            i.width *= scale
+
+            i.center_x = width / 2
+            i.center_y = height / 2
+
+
     def get_scene_sprite(self, filename: str, layer: str) -> Optional[Sprite]:
         """
         Возвращает спрайт со сцены
@@ -101,17 +114,19 @@ class Scene:
         if name in self.data[layer]:
             del self.data[layer][name]
 
+
         if isinstance(sprite, str):
             sprite_new = self.get_sprite(sprite)
             if sprite_new is None:
                 raise FileNotFoundError(f"File {sprite} not found!")
-            self.data[layer][name] = sprite_new
 
         elif isinstance(sprite, Sprite):
-            self.data[layer][name] = sprite
+            sprite_new = sprite
 
         elif isinstance(sprite, Texture):
-            self.data[layer][name] = Sprite(sprite)
+            sprite_new = Sprite(sprite)
+
+        self.data[layer][name] = sprite_new
 
     def delete_sprite(self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str], name: str) -> None:
         """

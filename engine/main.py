@@ -39,11 +39,13 @@ wait_trigger = Waiter()
 class Views:
 
     class MainWindow(arcade.Window):
-        def __init__(self, width, height, title):
-            super().__init__(width=width, height=height, title=title, resizable=True)
+        def __init__(self, width, height, title, resizable=True):
+            super().__init__(width=width, height=height, title=title, resizable=resizable)
             self.GameView: Optional[Views.GameView] = None
 
             g.All_views = Views
+
+            self.detect_and_block_resize = resizable
 
         def on_close(self) -> None:
             arcade.close_window()
@@ -72,6 +74,11 @@ class Views:
                 except NameError:
                     pass
 
+        def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
+            if self.detect_and_block_resize:
+                pass
+
+
     class Main_template(arcade.View):
         def __init__(self) -> None:
             """
@@ -79,6 +86,8 @@ class Views:
             Создаёт счётчик ФПС и отвечает за курсор
             """
             super().__init__()
+
+            self.window.set_mouse_visible(False)
 
             self.scale = arcade.get_screens()[0].get_scale()
 
@@ -158,7 +167,6 @@ class Views:
             if "x" in self.window.mouse.data and "y" in self.window.mouse.data:
                 mouse_x, mouse_y = self.window.mouse.data["x"], self.window.mouse.data["y"]
                 self.cursor_texture.position = (mouse_x, mouse_y)
-            self.window.set_mouse_visible(False)
 
             if Saves_manager().Volume.get_other("show_fps"):
                 current_fps = 1.0 / delta_time if delta_time > 0 else 0
@@ -420,6 +428,7 @@ class Views:
             self.settings_manager.update_size(width, height)
             self.characters_texts_manager.update_pos(width, height)
             self._update_dialog_window(width, height)
+            self.scene.on_resize(width, height)
 
         def chanel(self):
             time.sleep(0.05)
@@ -634,6 +643,8 @@ class Views:
             self.loading_screen_fade.size = (2500, 2500)
             self.loading_screen.alpha = 0
 
+            self.background_color = (199, 100, 131)
+
             self.manager = agui.UIManager()
             self.manager.disable()
 
@@ -662,12 +673,17 @@ class Views:
             if show_lc:
                 self.show_ls()
 
+        def on_resize(self, width: int, height: int) -> bool | None:
+            self.bg_sprite.center_x, self.bg_sprite.top = self.center_x, self.height
+            self.bg_other_sprite.center_x, self.bg_other_sprite.center_y = self.width * 0.15, self.height * 0.3
+
         def show_ls(self) -> None:
             """
             Отображает загрузочный экран
             """
 
             def loading(self):
+                self.background_color = (0, 69, 255)
                 self.loading_screen_fade.alpha = 255
                 for i in range(0, int(250 / 2)):
                     if random.random() > 0.9:
@@ -700,6 +716,8 @@ class Views:
                     yield
                 self.is_loading = False
                 g.am.play_music("game/music/buttercup by jack stauber (but kazoo).mp3")
+                self.background_color = (199, 100, 131)
+
 
             self.loading_screen.alpha = 255
             self.is_loading = True
@@ -713,10 +731,6 @@ class Views:
             self.other_manager.draw()
             arcade.draw_sprite(self.loading_screen)
             arcade.draw_sprite(self.loading_screen_fade)
-            if self.is_loading:
-                self.background_color = (0, 69, 255)
-            else:
-                self.background_color = (255, 255, 255)
             super().on_draw()
 
         def _start_vokhanalia(self):
@@ -1028,7 +1042,7 @@ class Views:
 
                     self.cleanup_ui()
                     self.window.set_fullscreen(False)
-                    self.window.size = (1920, 1080)
+                    self.window.size = g.DEFAULT_IN_GAME_WINDOW_SIZE
                     #self.window.set_fullscreen(True)
                     self.manager.disable()
                     game = Views.GameView()
@@ -1093,11 +1107,17 @@ class Views:
                 exit_button.on_click = lambda event: self.window.on_close()
                 self.v_box.add(exit_button)
 
-                ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
+                ui_anchor_layout = arcade.gui.UIAnchorLayout()
                 ui_anchor_layout.add(child=self.v_box)
                 ui_anchor_layout.center_y = self.window.height * -0.3
 
                 self.manager.add(ui_anchor_layout)
+
+
+                dataminer_v_box = arcade.gui.UIBoxLayout(space_between=20)
+                dataminer_ui_anchor_layout = arcade.gui.UIAnchorLayout()
+                dataminer_ui_anchor_layout.add(dataminer_v_box, anchor_y="center", anchor_x="right", align_x=-20, align_y=-100)
+                self.manager.add(dataminer_ui_anchor_layout)
 
                 dataminer = agui.UIFlatButton(  # сасите письку
                     text="ВКЛЮЧИТЬ ратник",
@@ -1110,7 +1130,7 @@ class Views:
                     align="center"
                 )
                 dataminer.on_click = self.start_vzlom
-                self.manager.add(dataminer)
+                dataminer_v_box.add(dataminer)
 
                 dataminer = agui.UIFlatButton(  # сасите письку
                     text="ВЫКЛЮЧИТЬ ратник",
@@ -1123,17 +1143,7 @@ class Views:
                     align="center"
                 )
                 dataminer.on_click = self.del_vzlom
-                self.manager.add(dataminer)
-
-                oth_style = STYLE_DEFAULT_BUTTON.copy()
-                oth_style["hover"] = arcade.gui.UIFlatButton.UIStyle(
-                    font_size=16,
-                    font_name=(FONT_NAME, ),
-                    font_color=arcade.color.BLACK,
-                    bg=(0, 77, 255, 255),
-                    border=(79, 67, 13, 255),
-                    border_width=5
-                )
+                dataminer_v_box.add(dataminer)
 
             create_menu_buttons()
 
@@ -1226,7 +1236,7 @@ class Views:
 
             def open_save(session_id: str, event=None):
                 self.window.set_fullscreen(False)
-                self.window.size = (1920, 1080)
+                self.window.size = g.DEFAULT_IN_GAME_WINDOW_SIZE
                 self.window.set_fullscreen(True)
 
                 self.cleanup_ui()

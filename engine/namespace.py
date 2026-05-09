@@ -524,8 +524,6 @@ class Namespace:
             elif isinstance(file_name, Sprite):
                 sprite = file_name
 
-            #sprite.scale_x = self.Game_view.width
-            #sprite.scale_y = self.Game_view.height
             sprite.center_x, sprite.center_y, sprite.size = self.Game_view.width * 0.5, self.Game_view.height * 0.5, self._get_size(size, sprite.size)
 
             if effect is not None:
@@ -539,6 +537,7 @@ class Namespace:
                     self.Game_view.scene.clear_layer("bg")
                 self.Game_view.scene.add_sprite(f"bg", bg_id, sprite)
                 g.main.set_bg_by_scene_bg()
+                g.scene.on_resize(*get_window().get_size())
                 yield
 
 

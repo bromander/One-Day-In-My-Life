@@ -3,6 +3,8 @@ import arcade.gui
 
 class Globals:
 
+    DEFAULT_IN_GAME_WINDOW_SIZE = (1920, 1080)
+
     WINDOW_TITLE = "ОДИН ДЕНЬ"
     GAME_NAME = "ОДИН ДЕНЬ из моей оБыЧнОй ЖиЗнИ с моей женой соседкой которая, возможно, демон или вампир :D"
 
