@@ -133,7 +133,7 @@ class Views:
                 if hasattr(self.in_game_manager, 'clear'):
                     self.in_game_manager.clear()
 
-        def _get_most_frequent_color(self, num_colors=10):
+        def _get_amend_color(self, border_thickness=20):
 
             if list(g.scene["bg"].values()):
                 sprite: arcade.Sprite = list(g.scene["bg"].values())[-1]
@@ -143,25 +143,48 @@ class Views:
             else:
                 return None
 
+            if not hasattr(sprite, 'texture') or sprite.texture is None:
+                return None
+
             img = sprite.texture.image
-            img = img.resize((150, 150))
-            img = img.quantize(num_colors)
-            img = img.convert('RGB')
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
 
-            pixels = list(img.getdata())
+            img.thumbnail((img.width*0.5, img.height*0.5))
+            width, height = img.size
 
-            counter = Counter(pixels)
-            most_common = counter.most_common(1)[0][0]
+            border = min(border_thickness, width // 2, height // 2)
 
-            return most_common
+            if border <= 0:
+                pixels = list(img.getdata())
+            else:
+                parts = [
+                    img.crop((0, 0, width, border)),  # top
+                    img.crop((0, height - border, width, height)),  # bottom
+                    img.crop((0, border, border, height - border)),  # left
+                    img.crop((width - border, border, width, height - border)),  # right
+                ]
+
+                pixels = []
+
+                for part in parts:
+                    pixels.extend(part.getdata())
+
+            if not pixels:
+                return None
+
+            count = len(pixels)
+
+            red = sum(p[0] for p in pixels) // count
+            green = sum(p[1] for p in pixels) // count
+            blue = sum(p[2] for p in pixels) // count
+
+            return (red, green, blue)
 
         def set_bg_by_scene_bg(self):
-            try:
-                color = self._get_most_frequent_color()
-                if color:
-                    self.background_color = color
-            except NameError or AttributeError:
-                raise NameError("Сцена ещё не инициализирована!")
+            color = self._get_amend_color()
+            if color:
+                self.background_color = color
 
         def on_update(self, delta_time: float) -> None:
             if "x" in self.window.mouse.data and "y" in self.window.mouse.data:
