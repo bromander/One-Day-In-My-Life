@@ -27,6 +27,7 @@ from .audio import AudioManager
 from .presence import Discord_act
 from .files_manager import FilesManager
 from .character import ListCharacters, Attributes
+from .Exceptions import VolumeDoesNotExistError
 
 from .globals import Globals as g
 
@@ -209,16 +210,20 @@ class Views:
 
     class GameView(Main_template):
 
-        def __init__(self, session_id: Optional[str] = None, pon = "pon") -> None:
+        def __init__(self, session_id: Optional[str] = None) -> None:
             """
             Отвечает за основное окно новельной части
             :param session_id: Айди сессии
             """
             super().__init__()
 
-            g.main = self
+            self.window_mode = g.sm.Volume.get_other("window_mode")
+            if self.window_mode == "full-screen":
+                self.window.set_fullscreen(True)
+            elif self.window_mode == "window":
+                self.window.set_fullscreen(False)
 
-            print(pon)
+            g.main = self
 
             g.am.stop_music()
             g.am.stop_sound()
@@ -1377,6 +1382,23 @@ class Views:
                     g.sm.Volume.set_other("show_fps", not g.sm.Volume.get_other("show_fps"))
                     g.sm.Volume._save_data()
 
+                def edit_window_mode(event=None):
+                    old_value = g.sm.Volume.get_other("window_mode")
+
+                    if old_value == "full-screen":
+                        window_mode = "window"
+                        window_mode_text = "Оконный"
+                    else:
+                        window_mode = "full-screen"
+                        window_mode_text = "Полный экран"
+
+                    g.sm.Volume.set_other("window_mode", window_mode)
+                    g.sm.Volume._save_data()
+
+                    print(g.sm.Volume.get_other("window_mode"))
+
+                    self.window_mode_button.text = window_mode_text
+
                 STYLE_DEFAULT_BUTTON = g.STYLE_DEFAULT_BUTTON
                 FONT_NAME = g.FONT_NAME
 
@@ -1508,7 +1530,31 @@ class Views:
 
                 self.manager.add(ui_anchor_layout)
 
+
+                window_mode_text = agui.UILabel(
+                    "Режим окна",
+                    text_color=arcade.color.BLACK,
+                    font_name=FONT_NAME
+                )
+                window_mode_text.center_x = self.center_x
+                window_mode_text.center_y = self.height * 0.3
+                self.manager.add(window_mode_text)
+
+
+                old_value = g.sm.Volume.get_other("window_mode")
+                self.window_mode_button = agui.UIFlatButton(
+                    text="Полный экран" if old_value == "full-screen" else "Оконный",
+                    width=300,
+                    height=50,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                self.window_mode_button.on_click = edit_window_mode
+                self.window_mode_button.center_x = self.center_x
+                self.window_mode_button.center_y = self.height * 0.25
+                self.manager.add(self.window_mode_button)
+
             create_menu_buttons()
+
 
     class MenuView(Main_template):
         def __init__(self):

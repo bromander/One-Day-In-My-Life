@@ -26,7 +26,8 @@ class Saves_manager:
                         },
                         "lps" : 60,
                         "fade_speed" : 0,
-                        "show_fps" : False
+                        "show_fps" : False,
+                        "window_mode" : "full-screen"
                     }
                 }
                 json.dump(data, file, indent=4, ensure_ascii=False)
@@ -164,8 +165,6 @@ class Saves_manager:
             :raises VolumeDoesNotExistError: Если параметр не существует
             """
             self._get_data()
-            if name not in self.file["options"]:
-                raise VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
             self.file["options"][name] = value
 
 
