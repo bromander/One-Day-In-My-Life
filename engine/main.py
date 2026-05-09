@@ -29,7 +29,7 @@ from .files_manager import FilesManager
 from .character import ListCharacters, Attributes
 from .Exceptions import VolumeDoesNotExistError
 
-from .globals import Globals as g
+from .globals import g
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 

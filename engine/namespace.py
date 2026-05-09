@@ -8,7 +8,7 @@ from arcade import Sprite, Texture, load_image, get_window, load_animated_gif, T
 from .saves import Saves_manager
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
-from .globals import Globals as g
+from .globals import g
 
 class Namespace:
     def __init__(self) -> None:

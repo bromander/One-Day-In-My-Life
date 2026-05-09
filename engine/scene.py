@@ -7,7 +7,7 @@ from typing import Optional, List, Union, Literal
 from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError, SpriteIsNotLoadedError
 from .files_manager import FilesManager
 
-from .globals import Globals as g
+from .globals import g
 
 class Scene:
     def  __init__(self) -> None:

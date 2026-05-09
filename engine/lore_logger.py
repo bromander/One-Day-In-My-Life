@@ -5,7 +5,7 @@ from .audio import AudioManager
 from .files_manager import FilesManager
 from .namespace import Namespace
 
-from .globals import Globals as g
+from .globals import g
 
 
 class LoreLogger:

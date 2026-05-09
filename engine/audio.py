@@ -7,7 +7,7 @@ import pyglet.media.player
 from .saves import Saves_manager
 from .files_manager import FilesManager
 
-from .globals import Globals as g
+from .globals import g
 
 
 class AudioChannel:

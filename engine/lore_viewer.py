@@ -4,7 +4,7 @@ import ast
 from typing import Optional
 from .Exceptions import MainLabelNotFoundError, LabelNotFoundError
 
-from .globals import Globals as g
+from .globals import g
 
 class Wwl:
 

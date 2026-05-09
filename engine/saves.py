@@ -5,7 +5,7 @@ from .Exceptions import PersistentDoesNotExistError, VolumeDoesNotExistError, Sa
 from .files_manager import FilesManager
 from arcade import Sprite, TextureAnimationSprite
 
-from .globals import Globals as g
+from .globals import g
 
 class Saves_manager:
     def  __init__(self):
