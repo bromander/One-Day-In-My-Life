@@ -30,7 +30,7 @@ class LoreLogger:
                         "type": "parallax",
                         "layer": layer,
                         "data": {
-                            "texture": item["sprite"].texture.file_path,
+                            "texture": str(item["sprite"].texture.file_path.name),
                             "speed": item["speed"],
                             "original_x": item["original_x"],
                             "original_y": item["original_y"],
