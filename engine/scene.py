@@ -1,3 +1,4 @@
+import copy
 import time
 from arcade import Sprite, draw_sprite, Texture, load_texture, get_window, TextureAnimationSprite
 import os
@@ -99,7 +100,7 @@ class Scene:
             "animated_sprites": {},
             "sprites": {},
             "gui": {},
-            "fade": {"fade" : Sprite(), "splash": Sprite()}
+            "fade": copy.copy(self.data["fade"])
         }
 
     def add_sprite(self, layer: Literal["bg", "sprites", "gui", "fade"],
