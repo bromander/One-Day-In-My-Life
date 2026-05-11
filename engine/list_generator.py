@@ -106,8 +106,7 @@ class ListActiveGenerators:
         Обновляет генераторы
         :param delta_time: Промежуток между кадрами
         """
-        #processed_dt = self._process_dt(delta_time)
-        processed_dt = delta_time
+        processed_dt = self._process_dt(delta_time)
         if processed_dt is None:
             return
 

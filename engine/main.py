@@ -479,7 +479,7 @@ class Views:
             if gens.active_generators_consistently:
                 if gens.active_generators_consistently[0][0].startswith('talk'):
                     while gens.active_generators_consistently[0][0].startswith("talk"):
-                        gens.update(1 / 1000)
+                        gens._update_consistently(1 / 1000)
                         if not gens.active_generators_consistently:
                             break
                     return
