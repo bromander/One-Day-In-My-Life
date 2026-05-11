@@ -54,6 +54,10 @@ class Globals:
             )
         }
 
+    @property
+    def DEFAULT_DATA_FILE_NAME(self):
+        return "data.json"
+
     fm = None  # Files manager
     sm = None  # Saves manager
     am = None  # Audio manager

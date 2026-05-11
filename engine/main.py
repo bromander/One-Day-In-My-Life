@@ -1418,7 +1418,7 @@ class Views:
 
             def create_menu_buttons():
                 save_folder = sm.get_save_path()
-                with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as data:
+                with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as data:
                     data = json.load(data)
                 volumes = data['options']
 

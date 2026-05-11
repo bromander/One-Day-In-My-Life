@@ -1,7 +1,9 @@
 import copy
 import pathlib
 import sys
-import  json, os
+import zlib
+import json, os
+from base64 import b64encode, b64decode
 from .Exceptions import PersistentDoesNotExistError, VolumeDoesNotExistError, SaveDoesNotExistError
 from .files_manager import FilesManager
 from arcade import Sprite, TextureAnimationSprite
@@ -14,10 +16,11 @@ class Saves_manager:
         Отвечает за работу с сохранением различных данных.
         """
         save_folder = self.get_save_path()
-        if not os.path.exists(os.path.join(save_folder, 'saves.JSON')):
-            with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
+        if not os.path.exists(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME)):
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
+
                 data = {
-                    "saves": {},
+                    "saves": b64encode(zlib.compress(json.dumps({}, ensure_ascii=False).encode('utf-8'), 9)).decode('ascii'),
                     "persistent" : {},
                     "options": {
                         "volume": {
@@ -57,18 +60,18 @@ class Saves_manager:
         """
         def  __init__(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             self.file = file
 
         def _save_data(self) -> None:
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
                 json.dump(self.file, file)
 
         def _get_data(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             self.file = file
 
@@ -119,18 +122,18 @@ class Saves_manager:
         """
         def  __init__(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             self.file = file
 
         def _save_data(self) -> None:
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
                 json.dump(self.file, file)
 
         def _get_data(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             self.file = file
 
@@ -208,18 +211,19 @@ class Saves_manager:
         """
         def  __init__(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             self.file = file
 
         def _save_data(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, 'saves.JSON'), "w", encoding="UTF-8") as file:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
+                print(self.file)
                 json.dump(self.file, file)
 
         def _get_data(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, 'saves.JSON'), "r", encoding="UTF-8") as file:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
             self.file = file
 
@@ -308,7 +312,9 @@ class Saves_manager:
                 "characters_slice": g.scene.characters_slice
             }
 
-            self.file["saves"][g.main.session_id] = {
+            saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
+
+            saves[g.main.session_id] = {
                 "position": g.wwl.pose - 1,
                 "label": g.wwl.label,
                 "defines": defines,
@@ -316,6 +322,9 @@ class Saves_manager:
                 "files_manager" : files_manager,
                 "session_data" : g.main.session_data
             }
+
+            self.file["saves"] = b64encode(zlib.compress(json.dumps(saves, ensure_ascii=False).encode('utf-8'), 9)).decode('ascii')
+
             self._save_data()
 
         def get_save(self, session_id: str) -> dict:
@@ -325,19 +334,31 @@ class Saves_manager:
             :raises SaveDoesNotExistError: Если сохранение не  существует
             """
             self._get_data()
-            if session_id not in self.file["saves"]:
+
+            saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
+
+            if session_id not in saves:
                 raise SaveDoesNotExistError(f"Save \"{session_id}\" does not exist!")
 
-            return self.file["saves"][session_id]
+            return saves[session_id]
 
         def get_all_saves(self) -> list:
             """
             Возвращает все игровые сохранения
             """
             self._get_data()
-            return [[i, o] for i, o in self.file["saves"].items()]
+
+            saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
+
+            return [[i, o] for i, o in saves.items()]
 
         def del_save(self, session_id):
             self._get_data()
-            del self.file["saves"][session_id]
+
+            saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
+
+            del saves[session_id]
+
+            self.file["saves"] = b64encode(zlib.compress(json.dumps(saves, ensure_ascii=False).encode('utf-8'), 9)).decode('ascii')
+
             self._save_data()
