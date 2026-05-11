@@ -159,7 +159,6 @@ class AudioManager:
                     dt = yield
                     while self.music.fade_modifier < 1.0:
                         self.music.fade_modifier += 0.5 * dt if dt is not None else 0.5
-                        print(dt)
                         dt = yield
                     self.music.fade_modifier = 1.0
                 return fadeout_music()

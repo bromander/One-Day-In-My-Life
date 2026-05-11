@@ -24,7 +24,19 @@ class LoreLogger:
             container = g.scene[layer]
 
             # --- dict слои ---
-            if isinstance(container, dict):
+            if layer == "bg_parallax":
+                for item in container:
+                    snapshot.append({
+                        "type": "parallax",
+                        "layer": layer,
+                        "data": {
+                            "texture": item["sprite"].texture.file_path,
+                            "speed": item["speed"],
+                            "original_x": item["original_x"],
+                            "original_y": item["original_y"],
+                        }
+                    })
+            else:
                 for name, sprite in container.items():
                     snapshot.append({
                         "type": "sprite",
@@ -39,19 +51,6 @@ class LoreLogger:
                             "angle": sprite.angle,
                             "alpha": sprite.alpha,
                             "visible": sprite.visible,
-                        }
-                    })
-
-            elif isinstance(container, list):
-                for item in container:
-                    snapshot.append({
-                        "type": "parallax",
-                        "layer": layer,
-                        "data": {
-                            "texture": item["sprite"].texture.file_path,
-                            "speed": item["speed"],
-                            "original_x": item["original_x"],
-                            "original_y": item["original_y"],
                         }
                     })
 
