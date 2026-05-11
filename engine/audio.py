@@ -60,10 +60,10 @@ class AudioChannel:
         else:
             self._local_modifier = 1
 
-        if type(file) is str or type(file) is type(Path()):
+        if isinstance(file, (str, Path)):
             self.now_playing_path = str(file)
             file_sound = load_sound(str(file), streaming=streaming)
-        elif type(file) is sound.Sound:
+        elif isinstance(file, Sound):
             file_sound = file
             self.now_playing_path = file.file_name
         else:
@@ -151,16 +151,17 @@ class AudioManager:
         if path in self.fm.audios:
             path = self.fm.audios[path]
 
-        match effect:
-            case "FADE":
+        match effect.lower():
+            case "fade":
                 def fadeout_music():
+                    self.music.fade_modifier = 0.0
+                    self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
+                    dt = yield
                     while self.music.fade_modifier < 1.0:
-                        self.music.fade_modifier += 0.005
-                        yield
+                        self.music.fade_modifier += 0.1 * dt if dt is not None else 0.1
+                        print(dt)
+                        dt = yield
                     self.music.fade_modifier = 1.0
-
-                self.music.fade_modifier = 0.0
-                self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
                 return fadeout_music()
 
             case _:
@@ -186,13 +187,14 @@ class AudioManager:
         match effect:
             case "fade":
                 def fadeout_sound():
+                    self.sound.fade_modifier = 0.0
+                    self.sound.play(path, loop=loop, local_volume=volume)
+                    dt = yield
                     while self.sound.fade_modifier < 1.0:
-                        self.sound.fade_modifier += 0.005
-                        yield
+                        self.sound.fade_modifier += 0.1 * dt if dt is not None else 0.1
+                        dt = yield
                     self.sound.fade_modifier = 1.0
 
-                self.sound.fade_modifier = 0.0
-                self.sound.play(path, loop=loop, local_volume=volume)
                 return fadeout_sound()
 
             case _:
@@ -223,9 +225,10 @@ class AudioManager:
         match effect:
             case "fade":
                 def fadeout_music():
+                    dt = yield
                     while 0.0 < self.music.fade_modifier:
-                        self.music.fade_modifier -= 0.005
-                        yield
+                        self.music.fade_modifier -= 0.1 * dt if dt is not None else 0.1
+                        dt = yield
                     self.music.fade_modifier = 0.0
                     self.music.pause()
                     self.music.stop()
@@ -250,9 +253,10 @@ class AudioManager:
         match effect:
             case "FADE":
                 def fadeout_sound():
+                    dt = yield
                     while 0.0 < self.sound.fade_modifier:
-                        self.sound.fade_modifier -= 0.005
-                        yield
+                        self.sound.fade_modifier -= 0.1 * dt if dt is not None else 0.1
+                        dt = yield
                     self.sound.fade_modifier = 0.0
                     self.sound.pause()
                     self.sound.stop()

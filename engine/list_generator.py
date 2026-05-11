@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional, Literal, Dict, Tuple, List, Union
 import types
 
@@ -7,8 +8,9 @@ class ListActiveGenerators:
         """
         Отвечает за управление всеми генераторами
         """
-        self.active_generators_consistently: List[Union[str, types.GeneratorType]] = []
-        self.active_generators_together: List[Union[str, types.GeneratorType]] = []
+        self.active_generators_consistently: List[tuple[str, types.GeneratorType]] = []
+        self.active_generators_consistently_async: List[tuple[str, types.GeneratorType]] = []
+        self.active_generators_together: List[tuple[str, types.GeneratorType]] = []
         self.dt_accumulator = 0.0
         self._talk_description = "talk"  # Константа для описания
 
@@ -30,7 +32,7 @@ class ListActiveGenerators:
             if item[0] != self._talk_description
         ]
 
-    def add_generator(self, stream: Literal["together", "consistently"],
+    def add_generator(self, stream: Literal["together", "consistently", "consistently_async"],
                       gen: types.GeneratorType,
                       descr: str) -> None:
         """
@@ -42,10 +44,19 @@ class ListActiveGenerators:
         if descr == self._talk_description:
             self._remove_talk_generators()
 
-        target_list = (self.active_generators_together if stream == "together" else self.active_generators_consistently)
+        match stream:
+            case "consistently":
+                target_list = self.active_generators_consistently
+            case "consistently_async":
+                target_list = self.active_generators_consistently_async
+            case _:
+                target_list = self.active_generators_together
+
+        descr = f"{descr}_{uuid.uuid4()}"
+
         target_list.append((descr, gen))
 
-    def _process_generator(self, gen_tuple: Union[str, types.GeneratorType],
+    def _process_generator(self, gen_tuple: tuple[str, types.GeneratorType],
                            delta_time: float) -> bool:
 
         _, generator = gen_tuple
@@ -81,17 +92,28 @@ class ListActiveGenerators:
         if self._process_generator(first_gen, delta_time):
             self.active_generators_consistently.pop(0)
 
+    def _update_consistently_async(self, delta_time: float) -> None:
+        if not self.active_generators_consistently_async:
+            return
+
+        first_gen = self.active_generators_consistently_async[0]
+
+        if self._process_generator(first_gen, delta_time):
+            self.active_generators_consistently_async.pop(0)
+
     def update(self, delta_time: float) -> None:
         """
         Обновляет генераторы
         :param delta_time: Промежуток между кадрами
         """
-        processed_dt = self._process_dt(delta_time)
+        #processed_dt = self._process_dt(delta_time)
+        processed_dt = delta_time
         if processed_dt is None:
             return
 
         self._update_together(processed_dt)
         self._update_consistently(processed_dt)
+        self._update_consistently_async(processed_dt)
 
     def clear(self) -> None:
         """
@@ -101,3 +123,4 @@ class ListActiveGenerators:
         self.dt_accumulator = 0.0
         self.active_generators_together.clear()
         self.active_generators_consistently.clear()
+        self.active_generators_consistently_async.clear()

@@ -161,7 +161,7 @@ class LoreLogger:
         return {
             "consistently": [
                 g for g in gens.active_generators_consistently
-                if g[0] != "talk"
+                if not g[0].startswith("talk")
             ],
             "together": copy.copy(gens.active_generators_together)
         }
@@ -171,9 +171,10 @@ class LoreLogger:
         gens.clear()
 
         gens.active_generators_consistently = copy.copy(data["consistently"])
+        gens.active_generators_consistently_async = copy.copy(data["consistently"])
         gens.active_generators_together = copy.copy(data["together"])
 
-        while gens.active_generators_consistently or gens.active_generators_together:
+        while gens.active_generators_consistently or gens.active_generators_together or gens.active_generators_consistently_async:
             gens.update(1 / 1000)
 
     ### ==== ATTRIBUTES ===

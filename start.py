@@ -11,7 +11,7 @@ import warnings
 
 from engine.globals import Globals as g
 
-#python -m nuitka --standalone --include-data-dir=./game/=game --windows-console-mode=attach --show-progress --assume-yes-for-downloads --jobs=6 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests  --windows-icon-from-ico=Setuper/pineapple.ico --output-filename=OneDay.exe start.pyцц
+#python -m nuitka --standalone --include-data-dir=./game/=game --windows-console-mode=attach --show-progress --assume-yes-for-downloads --jobs=6 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests  --windows-icon-from-ico=Setuper/pineapple.ico --output-filename=OneDay.exe start.py
 
 
 def main():

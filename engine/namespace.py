@@ -309,7 +309,7 @@ class Namespace:
                        size: Optional[Union[tuple[int, int], int]] = None,
                        angle: int = 0.0,
                        effect = None,
-                       stream: Literal["consistently", "together"] = "consistently",
+                       stream: Literal["consistently", "consistently_async", "together"] = "consistently",
                        layer: str = "sprites") -> None:
             """
             Добавляет спрайт на сцену
@@ -364,7 +364,7 @@ class Namespace:
 
         def hide_sprite(self, filename: str,
                         effect = None,
-                        stream: Literal["consistently", "together"] = "consistently") -> None:
+                        stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
             """
             Удаляет спрайт со сцены
             :param filename: Название файла
@@ -390,7 +390,7 @@ class Namespace:
                         at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
                         size: Optional[Union[int, float, Tuple[int], Tuple[float]]] = None,
                         effect = None,
-                        stream: Literal["consistently", "together"] = "consistently") -> None:
+                        stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
             """
             Добавляет спрайт персонажа на сцену
             :param character: Айди персонажа
@@ -441,7 +441,7 @@ class Namespace:
 
         def hide_character(self, character: str,
                         effect = None,
-                        stream: Literal["consistently", "together"] = "consistently") -> None:
+                        stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
             """
             Удаляет спрайт персонажа со сцены
             :param character: Айди персонажа
@@ -469,7 +469,7 @@ class Namespace:
                       size: Optional[Union[tuple[int, int], int]] = None,
                       layer: int = 0,
                       effect = None,
-                      stream: Literal["consistently", "together"] = "consistently") -> None:
+                      stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
             """
             Изменяет бекграунд
             :param file_name: Название файла
@@ -551,7 +551,7 @@ class Namespace:
 
         def set_scene_parallax(self,
                       files: [tuple[str, float]],
-                      stream: Literal["consistently", "together"] = "together") -> None:
+                      stream: Literal["consistently", "consistently_async", "together"] = "together") -> None:
 
             window = get_window()
 
@@ -570,7 +570,7 @@ class Namespace:
         def move(self, sprite: str,
                  position: tuple[Tuple[int, float]],
                  speed: float,
-                 stream: Literal["consistently", "together"] = "consistently") -> None:
+                 stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
             """
             Перемещает персонажа из текущего положения в определённую координату
             :param sprite: Название спрайта
@@ -583,7 +583,7 @@ class Namespace:
 
         def fade(self, type: Literal["fadein", "fadeout"],
                  duration: float,
-                 stream: Literal["consistently", "together"] = "consistently") -> None:
+                 stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
             """
             Создаёт эффект фейдинга на экране
             :param type: Тип фейда "fadein" или "fadeout"
@@ -649,7 +649,7 @@ class Namespace:
                  volume: float = 1.0,
                  loop: Optional[bool] = None,
                  effect: Optional[Literal["fade"]] = None,
-                 stream: Literal["consistently", "together"] = "together") -> None:
+                 stream: Literal["consistently", "consistently_async", "together"] = "consistently_async") -> None:
             """
             Запускает музыку
             :param channel: Канал ("music" / "sound")
@@ -674,7 +674,7 @@ class Namespace:
 
         def stop(self, channel: Literal["music", "sound"],
                  effect: Optional[Literal["fade"]] = None,
-                 stream: Literal["consistently", "together"] = "together") -> None:
+                 stream: Literal["consistently", "consistently_async", "together"] = "consistently_async") -> None:
             """
             Останавливает проигрывание канала
             :param channel: Канал ("music" / "sound")
