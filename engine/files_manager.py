@@ -198,9 +198,9 @@ class FilesManager:
             if texture_data[0] is None:
                 return None
         if isinstance(texture_data[0], TextureAnimationSprite):
-            texture = texture_data[0]
-            texture.file_path = texture_data[1]
-            return texture
+            sprite = texture_data[0]
+            sprite.file_path = texture_data[1]
+            return sprite
 
         texture = texture_data[0].copy()
         texture = Texture(texture)

@@ -121,7 +121,7 @@ class Scene:
             if sprite_new is None:
                 raise FileNotFoundError(f"File {sprite} not found!")
 
-        elif isinstance(sprite, Sprite):
+        elif isinstance(sprite, (Sprite, TextureAnimationSprite)):
             sprite_new = sprite
 
         elif isinstance(sprite, Texture):

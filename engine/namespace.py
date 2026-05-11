@@ -304,7 +304,7 @@ class Namespace:
             return sprite_size
 
 
-        def add_sprite(self, filename: [str, Sprite],
+        def add_sprite(self, filename_or_sprite: [str, Sprite, TextureAnimationSprite],
                        at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
                        size: Optional[Union[tuple[int, int], int]] = None,
                        angle: int = 0.0,
@@ -313,7 +313,7 @@ class Namespace:
                        layer: str = "sprites") -> None:
             """
             Добавляет спрайт на сцену
-            :param filename: Название спрайта
+            :param filename_or_sprite: Название спрайта или сам спрайт
             :param at: Позиция
             :param size: Размер спрайта
             :param angle: поворот спрайта
@@ -322,12 +322,14 @@ class Namespace:
             """
             window = get_window()
 
-            if isinstance(filename, Sprite):
-                sprite = filename
+            if isinstance(filename_or_sprite, (Sprite, TextureAnimationSprite)):
+                filename = filename_or_sprite.texture.file_path.name
+                sprite = filename_or_sprite
             else:
-                sprite = g.scene.get_sprite(filename)
+                filename = filename_or_sprite
+                sprite = g.scene.get_sprite(filename_or_sprite)
                 if sprite is None:
-                    raise FileNotFoundError(f"File {filename} not found!")
+                    raise FileNotFoundError(f"File {filename_or_sprite} not found!")
 
             sprite.size = self._get_size(size, sprite.size)
 
@@ -601,13 +603,11 @@ class Namespace:
 
         def start_cutscene(self, path):
             print(path)
-            print(g.scene.fm.textures)
             cutscene: TextureAnimationSprite = g.scene.get_sprite(path)
             while cutscene is None:
                 cutscene = g.scene.get_sprite(path)
 
             print(cutscene)
-            print(str(cutscene.texture.file_path.name))
             cutscene.size = get_window().size
             g.scene.clear_layer("bg")
             g.scene.clear_layer("animated_sprites")

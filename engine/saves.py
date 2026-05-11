@@ -1,4 +1,5 @@
 import copy
+import pathlib
 import sys
 import  json, os
 from .Exceptions import PersistentDoesNotExistError, VolumeDoesNotExistError, SaveDoesNotExistError
@@ -246,6 +247,18 @@ class Saves_manager:
                 for i, o in g.scene["sprites"].items()
             ]
 
+
+            animated_sprites = [
+                {
+                    "id": str(str(pathlib.Path(i).name)),
+                    "path": str(o.texture.file_path),
+                    "size": o.size,
+                    "pos": o.position
+                }
+                for i, o in g.scene["animated_sprites"].items()
+            ]
+
+
             defines = {}
             for name, value in g.main.NAMESPACE["Define"].get_all_variables().items():
                 if not name.startswith("__") and not name.endswith("__"):
@@ -282,16 +295,15 @@ class Saves_manager:
                     filename: str(sound.file_name) for filename, sound in g.fm.audios.items()
                 }
             }
-            for filename, texture in g.fm.textures.items():
-                if type(texture[0]) is TextureAnimationSprite:
-                    paths = [str(i.texture.file_path) for i in texture[0].textures]
-                    files_manager["loaded_textures"][filename] = paths
-
+            for filename, sprite in g.fm.textures.items():
+                if type(sprite[0]) is TextureAnimationSprite:
+                    files_manager["loaded_textures"][filename] = str(sprite[0].texture.file_path.absolute())
 
             scene = {
                 "bg": bg,
                 "bg_parallax" : bg_parallax,
                 "sprites": sprites,
+                "animated_sprites" : animated_sprites,
                 "music": {"volume" : music_volume, "path" : music_file},
                 "characters_slice": g.scene.characters_slice
             }

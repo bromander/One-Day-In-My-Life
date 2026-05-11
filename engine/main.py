@@ -415,6 +415,17 @@ class Views:
                             else:
                                 break
 
+                    for i in old_scene["animated_sprites"]:
+                        cutscene: arcade.TextureAnimationSprite = g.fm.get_texture(i["id"])
+                        while cutscene is None:
+                            cutscene = g.fm.get_texture(i["id"])
+
+                        cutscene.size = self.window.size
+                        cutscene.center_x, cutscene.center_y = self.width / 2, self.height/2
+                        g.scene.clear_layer("bg")
+                        g.scene.clear_layer("animated_sprites")
+                        self.scene.add_sprite("animated_sprites", i["id"], cutscene)
+
                     self.session_data["name"] = save["session_data"]["name"]
                     self.session_data["description"] = save["session_data"]["description"]
 
