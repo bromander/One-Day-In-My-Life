@@ -1,4 +1,6 @@
 import copy
+import types
+
 from arcade import Sprite
 
 from .audio import AudioManager
@@ -93,6 +95,7 @@ class LoreLogger:
         variables = {}
         functions = {}
         classes = {}
+        modules = {}
         defines = {}
         persistents = {}
 
@@ -113,6 +116,8 @@ class LoreLogger:
                 classes[name] = copy.copy(value)
             elif callable(value):
                 functions[name] = copy.copy(value)
+            elif isinstance(value, types.ModuleType):
+                modules[name] = value
             else:
                 variables[name] = copy.copy(value)
 
@@ -126,6 +131,7 @@ class LoreLogger:
             "variables": variables,
             "functions": functions,
             "classes": classes,
+            "modules" : modules,
             "defines": defines,
             "persistents" : persistents
         }
@@ -144,6 +150,9 @@ class LoreLogger:
             new_namespace.NAMESPACE[name] = value
 
         for name, value in data["classes"].items():
+            new_namespace.NAMESPACE[name] = value
+
+        for name, value in data["modules"].items():
             new_namespace.NAMESPACE[name] = value
 
 
