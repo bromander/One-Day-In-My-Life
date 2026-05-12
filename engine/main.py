@@ -2209,13 +2209,11 @@ class Views:
                 MovableBlock(scene.get_texture("money_three.png"), width * 0.38, height * 0.2, 100, 0.6, self.collecting_zone, True),
                 MovableBlock(scene.get_texture("money_three.png"), width * 0.38, height * 0.2, 100, 0.6, self.collecting_zone, True),
 
-                MovableBlock(scene.get_texture("money_wth_pon_zalupkin.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone),
                 MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
                 MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
                 MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
                 MovableBlock(scene.get_texture("money_five.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone, True),
 
-                ClickableSprite([scene.get_texture("money_wth.png"), scene.get_texture("money_wth_clicked.png")], width * 0.64, height * 0.2, 100, 0.6),
                 MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True),
                 MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True),
                 MovableBlock(scene.get_texture("money_seven.png"), width * 0.64, height * 0.2, 100, 0.6, self.collecting_zone, True),
@@ -2227,6 +2225,11 @@ class Views:
                 (5, 4),  # 2 монеты по 5
                 (7, 4),  # 4 монеты по 7
             ]
+
+            random.shuffle(items)
+
+            items.insert(0, MovableBlock(scene.get_texture("money_wth_pon_zalupkin.png"), width * 0.51, height * 0.2, 100, 0.6, self.collecting_zone))
+            items.insert(0, ClickableSprite([scene.get_texture("money_wth.png"), scene.get_texture("money_wth_clicked.png")], width * 0.64, height * 0.2, 100, 0.6))
 
             self.items_manager = SpriteList()
             for i in items:
@@ -2370,7 +2373,8 @@ class Views:
                     else:
                         self.layers[e]['original_x'] = layer['sprite'].center_x
                         self.layers[e]['original_y'] = layer['sprite'].center_y
-                        self.layers.append(self.layers.pop(e))
+                        if isinstance(layer['sprite'], MovableBlock) and layer['sprite'].collect:
+                            self.layers.append(self.layers.pop(e))
 
                 else:
                     self._move_parallax(layer, x, y)
