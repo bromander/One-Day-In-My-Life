@@ -199,7 +199,7 @@ class Actions:
 
     def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait", "show_splash"],
                      now: dict,
-                     stream: Literal["consistently", "together"]) -> None:
+                     stream: Literal["consistently", "together", "consistently_async"]) -> None:
         """
         Запускает нужный генератор
         :param name: Название генератора

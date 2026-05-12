@@ -719,12 +719,11 @@ class Namespace:
                     new_alpha = int(start_alpha + (target_alpha - start_alpha) * progress)
                     sprite.alpha = new_alpha
 
-    def wait(self, duration: float):
+    def wait(self, duration: float, stream: Literal["consistently", "consistently_async", "together"] = "consistently"):
         """
         Заставляет игру... Ждать
-        :param duration:
         """
-        g.main.actions.start_action("wait", {"time": duration}, "consistently")
+        g.main.actions.start_action("wait", {"time": duration}, stream)
 
     def end(self):
         g.wwl.label = "main"
