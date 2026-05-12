@@ -89,6 +89,10 @@ class LoreLogger:
                     d["original_y"]
                 )
 
+        g.scene["fade"]["splash"].alpha = 0
+        g.main.splash_manager.children[0][0].update_font(font_color=(255, 255, 255, 0))
+        g.scene["fade"]["fade"].alpha = 0
+
     ### ==== NAMESPACE ===
 
     def _snapshot_namespace(self):
@@ -253,9 +257,9 @@ class LoreLogger:
 
         # восстановление
         self._restore_namespace(data["namespace"])
-        self._restore_scene(data["scene"])
         self._restore_attributes(data["attributes"])
         self._restore_lore(data["lore"])
         self._restore_generators(data["generators"])
+        self._restore_scene(data["scene"])
 
         g.main.talk_manager(-1, clicked=True, do_snapshot=False)

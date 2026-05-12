@@ -191,6 +191,7 @@ class Actions:
 
             if progress >= 1.0:
                 g.scene["fade"]["splash"].alpha = 0
+                splash_manager.children[0][0].update_font(font_color=(255, 255, 255, 0))
                 return
 
 
