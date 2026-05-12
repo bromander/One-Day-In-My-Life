@@ -466,7 +466,7 @@ label home():
     Scene.set_scene("home_hallway.jpg")
 
     Scene.show_character("shak angry", at="right", effect=SpriteEffects.Dissolve(0.5), stream = "together")
-    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(0.5), stream = "together")
+    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(0.5))
     <shak> "...что это."
     Scene.show_character("oz aww")
     <oz> "Это зайка)"
@@ -484,8 +484,7 @@ label home():
     <shak> "*вздох смирения* И где ты взяла это черничное море? Не дай боже снова заляпаешь комнату своими порталами, оттирать будешь сама."
     Scene.show_character("oz meet 4")
     <oz> "Да неееее, я не- \n {w=1.0} ОХ БЛИН СПАСИБО ЧТО НАПОМНИЛА ЗАКРЫТЬ-"
-    Scene.set_scene("home_hallway.jpg")
-    Scene.show_character("shak usual", at="right")
+    Scene.hide_sprite("oz", effect=SpriteEffects.Dissolve(0.1))
     <shak> "Мгм, всегда пожалуйста"
     <oz> "Кто знает, какая дурь оттуда бы выползла, если б ты сейчас не сказала..."
     <shak> "А ты разве сама не знаешь?"

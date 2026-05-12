@@ -212,7 +212,6 @@ class Namespace:
             Отвечает за работу с игровой сценой
             """
 
-
         @property
         def character_slice(self):
             return g.scene.character_slice

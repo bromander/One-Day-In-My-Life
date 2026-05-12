@@ -584,15 +584,28 @@ class Views:
                 self.clear()
                 self.scene.draw()
                 self.splash_manager.draw()
+
                 if self.show_dialogue_bg_trigger:
                     arcade.draw_sprite(self.dialog_window)
+
                 self.characters_texts_manager.draw()
-                self.in_game_manager.draw()
+
+                if self.show_dialogue_bg_trigger:
+                    self.in_game_manager.draw()
+
                 self.menu_manager.draw()
                 self.settings_manager.draw()
             super().on_draw()
 
         def on_update(self, delta_time) -> None:
+
+            if self.show_dialogue_bg_trigger:
+                if not self.in_game_manager._enabled:
+                    self.in_game_manager.enable()
+
+            else:
+                if self.in_game_manager._enabled:
+                    self.in_game_manager.disable()
 
             self.delta_time = delta_time
 
