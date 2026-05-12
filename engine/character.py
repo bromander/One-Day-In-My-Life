@@ -33,13 +33,12 @@ class Attributes:
 class Character:
 
     def __init__(self,
-                 text_anchor,
                  name: str,
                  char_id: Optional[str] = None,
                  colour: str = "",
                  name_colour: str = "",
                  c_scale: float = 1.0,
-                 text_anch: Union[int, float, Literal["left", "right", "center"]] = "left",
+                 text_anchor: Union[int, float, Literal["left", "right", "center"]] = "left",
                  lps: int = 60
                  ) -> None:
 
@@ -50,7 +49,7 @@ class Character:
         :param colour: Цвет текста речи (в HEX формате)
         :param name_colour: Цвет текста имени (в HEX формате)
         :param c_scale: Размер спрайта
-        :param text_anch: Положение текста на экране (left, right, center)/ int - координата X / float - координата (width * text_anch)
+        :param text_anchor: Положение текста на экране (left, right, center)/ int - координата X / float - координата (width * text_anch)
         :param lps: Letters per frame: Скорость появления букв в секунду.
         """
 
@@ -72,8 +71,6 @@ class Character:
 
         self.attributes = g.attributes
 
-        self.text_anchor = text_anchor
-
         self.sm = g.sm
         self.am = g.am
         self.fm = g.fm
@@ -91,7 +88,7 @@ class Character:
 
         self.char_id = char_id
 
-        self.text_anch = text_anch
+        self.text_anchor = text_anchor
 
     def talk(self, text: str):
         """
@@ -131,7 +128,7 @@ class Character:
                         dialog_text_text_alt[string_index_alt] = "".join(_text_alt)
 
 
-        self.attributes.text_anchor = self.text_anch
+        self.attributes.text_anchor = self.text_anchor
 
         self.am.stop_voice()
 
@@ -255,20 +252,16 @@ class ListCharacters:
         Хранит в себе список всех персонажей
         """
 
-        _Character = lambda name, char_id = None, colour = "", name_colour = "", c_scale = 1.0, text_anch= "left", lps = 60: Character(
-            name=name, char_id=char_id, colour=colour, name_colour=name_colour, c_scale=c_scale, text_anchor=text_anch, lps=lps
-        )
-
         self.characters = {
-            "narr" : _Character(" ", None, text_anch="center"),
-            "unk1" : _Character("???", None, text_anch="center", colour="#f0c4c0"),
-            "unk2" : _Character("???", None, text_anch="center", colour="#d5dbf0"),
-            "shak" : _Character("Жаклин", "shak", "#f5a889", "#f0855b"),
-            "lshak" : _Character("Жаклин", "lshak", "#f5a889", "#f0855b"),
-            "masorubka" : _Character("Кассир", "masorubka", "#E0FFFF", "#7FFFD4"),
-            "ed" : _Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
-            "oz": _Character("Ms. Ф. ОЗИНАД", "oz", "#12d3da","#a44aff", c_scale=1.5),
-            "del": _Character("Доставщик", "del", "#7290b0"),
+            "narr" : Character(" ", None, text_anchor="center"),
+            "unk1" : Character("???", None, text_anchor="center", colour="#f0c4c0"),
+            "unk2" : Character("???", None, text_anchor="center", colour="#d5dbf0"),
+            "shak" : Character("Жаклин", "shak", "#f5a889", "#f0855b"),
+            "lshak" : Character("Жаклин", "lshak", "#f5a889", "#f0855b"),
+            "masorubka" : Character("Кассир", "masorubka", "#E0FFFF", "#7FFFD4"),
+            "ed" : Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
+            "oz": Character("Ms. Ф. ОЗИНАД", "oz", "#12d3da","#a44aff", c_scale=1.5),
+            "del": Character("Доставщик", "del", "#7290b0"),
         }
 
     def __getitem__(self, item) -> dict[str : Character]:

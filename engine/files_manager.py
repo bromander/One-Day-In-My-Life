@@ -188,7 +188,7 @@ class FilesManager:
                 texture.file_path = texture_data[2]
                 new_key = key.rsplit(".", 1)[0]
                 textures[new_key] = texture
-                return textures
+        return textures
 
     def get_texture(self, filename: str) -> Optional[Union[Texture, TextureAnimationSprite]]:
         texture_data = self.textures.get(filename, None)
