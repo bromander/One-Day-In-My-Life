@@ -1173,11 +1173,13 @@ class ItemsNotifText(Text):
         )
         self.bold = True
 
+        self.window = get_window()
+
     def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
         self.velocity  = self.velocity + 200 * delta_time
         self.y = self.y + self.velocity * delta_time
 
-        if self.y > 2000:
+        if self.y > self.window.height+300:
             self.visible = False
 
 
