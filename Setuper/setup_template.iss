@@ -1,5 +1,5 @@
 #define MyAppName "OneDay"
-#define MyAppVersion "1.0.3"
+#define MyAppVersion "1.0.5"
 #define MyAppPublisher "piskisiski"
 #define MyAppExeName "OneDaySetup.exe"
 #define OtherFiles "C:\Program Files"
@@ -16,7 +16,7 @@ DisableProgramGroupPage=yes
 LicenseFile={#Repo}\LICENSE_INFO.md
 OutputDir="{#Repo}\Setuper\{#MyAppVersion}"
 Compression=lzma
-UsePreviousAppDir=yes
+UsePreviousAppDir=no
 SolidCompression=yes
 DisableDirPage=no
 WizardStyle=modern
@@ -34,3 +34,6 @@ Name: desktopicon; Description: "Создать ярлык на рабочем �
 
 [Icons]
 Name: "{userdesktop}\{#MyAppName}"; Filename: "{app}\OneDay.exe"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\OneDay.exe"; Description: "Запустить {#MyAppName}"; Flags: postinstall nowait skipifsilent unchecked

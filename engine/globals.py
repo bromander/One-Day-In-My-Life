@@ -2,10 +2,24 @@ import arcade.gui
 import logging
 import colorlog
 import sys
+import os
 
 class Globals:
     def __init__(self):
         self._handlers = self._create_handlers()
+
+    @staticmethod
+    def get_save_path():
+        if os.name == 'nt':  # Windows
+            # Используем %APPDATA% (C:\Users\Имя\AppData\Roaming\Название_игры)
+            app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
+            save_dir = os.path.join(app_data, 'OneDay')
+        else:
+            # Linux/Mac
+            save_dir = os.path.join(os.path.expanduser('~'), '.local', 'share', 'OneDay')
+
+        os.makedirs(save_dir, exist_ok=True)
+        return save_dir
 
     def _create_handlers(self):
         if sys.platform == "win32":
@@ -35,7 +49,8 @@ class Globals:
             }
         ))
 
-        file_handler = logging.FileHandler("latest.log", "w", encoding="utf-8")
+        save_folder = self.get_save_path()
+        file_handler = logging.FileHandler(os.path.join(save_folder, "latest.log"), "w", encoding="utf-8")
         file_handler.setFormatter(logging.Formatter(
             '%(asctime)s - [%(name)s] - [%(levelname)s]: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
