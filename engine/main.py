@@ -1,5 +1,5 @@
 import arcade
-from arcade import SpriteList
+from arcade import SpriteList, View
 from pyglet.event import EVENT_HANDLE_STATE
 import arcade.gui as agui
 import arcade.gui.widgets.layout
@@ -12,8 +12,6 @@ import uuid
 from typing import Generator
 from webbrowser import open_new_tab as web_open
 from pyglet.gl.lib import GLException
-from PIL import Image
-from collections import Counter
 
 from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText, ClickableSprite
 from .scene import Scene
@@ -30,6 +28,8 @@ from .character import ListCharacters, Attributes
 from .Exceptions import VolumeDoesNotExistError
 
 from .globals import g
+
+logger = g.get_logger(__name__)
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
@@ -77,6 +77,10 @@ class Views:
         def on_resize(self, width: int, height: int) -> EVENT_HANDLE_STATE:
             if self.detect_and_block_resize:
                 pass
+
+        def show_view(self, new_view: View) -> None:
+            super().show_view(new_view)
+            logger.warning(f"Открываем новое View: {new_view}")
 
 
     class Main_template(arcade.View):
@@ -137,7 +141,6 @@ class Views:
 
             if list(g.scene["bg"].values()):
                 sprite: arcade.Sprite = list(g.scene["bg"].values())[-1]
-                print(sprite.texture.file_path.name)
             elif g.scene["bg_parallax"]:
                 sprite: arcade.Sprite = g.scene["bg_parallax"][0]['sprite']
             else:
@@ -185,6 +188,9 @@ class Views:
             color = self._get_amend_color()
             if color:
                 self.background_color = color
+                logger.debug(f"Бекгрунд установлен на {color}")
+            else:
+                logger.warning("При попытке вызова Main_template._get_amend_color, возвращено None. Бекграунд не установлен")
 
         def on_update(self, delta_time: float) -> None:
             if "x" in self.window.mouse.data and "y" in self.window.mouse.data:
@@ -222,11 +228,12 @@ class Views:
                 if self.cursor_texture:
                     arcade.draw_sprite(self.cursor_texture)
             except (GLException, AttributeError):
-                # Если возникла ошибка OpenGL, пробуем пересоздать курсор
+                logger.warning("При попытке создать курсор, возникла ошибка OpenGL. Пересоздаём...")
                 try:
                     self.cursor_texture = arcade.Sprite("game/images/gui/cursor.png", 0.2)
                     arcade.draw_sprite(self.cursor_texture)
                 except:
+                    logger.error("Курсор не был создан!")
                     pass
 
             if Saves_manager().Volume.get_other("show_fps"):
@@ -356,6 +363,8 @@ class Views:
                 if session_id is None:
                     self.session_id = str(uuid.uuid4())
                 else:
+                    logger.info(f"Открытие сохранения {session_id}")
+
                     wwl = g.wwl
                     self.session_id = str(uuid.uuid4())
                     save = g.sm.Save.get_save(session_id)
@@ -425,6 +434,8 @@ class Views:
                         g.scene.clear_layer("bg")
                         g.scene.clear_layer("animated_sprites")
                         self.scene.add_sprite("animated_sprites", i["id"], cutscene)
+
+                    logger.info(f"Сохранение было успешно открыто!")
 
                     self.session_data["name"] = save["session_data"]["name"]
                     self.session_data["description"] = save["session_data"]["description"]
@@ -514,7 +525,10 @@ class Views:
 
             g.attributes.reset()
             now = g.wwl.get_thing(pos_offset)
-            print(now)
+
+            if now['action'] == "EXECUTE":
+                logger.log(5, str(now['data']))
+
             res = self.talk(now)
 
             if self.start_trigger:
@@ -576,7 +590,7 @@ class Views:
                         return "NEXT"
 
                     case _:
-                        print(f"Неопознанная команда: {now}")
+                        logger.error(f"Неопознанная команда: {now}")
                         return "NEXT"
 
         def on_draw(self) -> None:
@@ -1293,9 +1307,6 @@ class Views:
 
                 self.cleanup_ui()
 
-                print("OPENING!")
-                print("-"*20)
-
                 game = Views.GameView(session_id)
                 self.window.show_view(game)
 
@@ -1455,8 +1466,6 @@ class Views:
 
                     g.sm.Volume.set_other("window_mode", window_mode)
                     g.sm.Volume._save_data()
-
-                    print(g.sm.Volume.get_other("window_mode"))
 
                     self.window_mode_button.text = window_mode_text
 
@@ -1802,7 +1811,6 @@ class Views:
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
             for name, state in self.food.items():
-                print(name, state, data)
                 _text = name
                 if name in data:
                     _label = data[name]
@@ -2398,25 +2406,27 @@ def init_file() -> None:
     Инициализирует основные классы
     """
 
+    logger.info("Инициализация...")
+
     timee = time.time()
-    print("Saves...")
+    logger.debug("Инициализация [1/8]: Saves_manager")
     g.sm = Saves_manager()
-    print("files_manager...")
+    logger.debug("Инициализация [2/8]: FilesManager")
     g.fm = FilesManager()
     g.fm.load_assets(os.listdir("./game/images/moving_shop_assets"), "movable_shop_assets")
     g.fm.load_assets(os.listdir("./game/images/bying_shop_assets"), "movable_shop_assets_bying")
     g.fm.load_assets(["box_office_3.png"], "movable_shop_assets_bying")
     g.fm.load_assets(["golub_click.png", "golub.png"], "CTW")
-    print("Audio manager...")
+    logger.debug("Инициализация [3/8]: AudioManager")
     g.am = AudioManager()
-    print("Scene...")
+    logger.debug("Инициализация [4/8]: Scene")
     g.scene = Scene()
-    print("Lore...")
+    logger.debug("Инициализация [5/8]: WorkWithLore")
     g.wwl = Wwl()
-    print("Discord...")
+    logger.debug("Инициализация [6/8]: DiscordActor")
     g.da = Discord_act()
-
-    print("Characters...")
+    logger.debug("Инициализация [7/8]: Attributes")
     g.attributes = Attributes()
+    logger.debug("Инициализация [8/8]: ListCharacters")
     g.ListCharacters = ListCharacters()
-    print(f"Init done for {round(time.time() - timee, 2)}s")
+    logger.info(f"Инициализация завершена за {round(time.time() - timee, 2)} сек")

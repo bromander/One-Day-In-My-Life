@@ -6,6 +6,8 @@ from .Exceptions import MainLabelNotFoundError, LabelNotFoundError
 
 from .globals import g
 
+logger = g.get_logger(__name__)
+
 class Wwl:
 
     def __init__(self, find_files_path: str = "./game"):
@@ -276,7 +278,7 @@ class Wwl:
                             if block.strip():
                                 label.append({"action": "EXECUTE", "data": block})
                     else:
-                        print(f"Не найдена команда: {i.strip()}")
+                        logger.error(f"Не найдена команда: {i.strip()}")
         return label
 
     def _split_python_code(self, code):

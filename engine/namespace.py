@@ -449,9 +449,7 @@ class Namespace:
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
             """
-            print("hide", id(g.scene.data), g.scene.data)
             def target(scene):
-                print("hide", id(scene.data), scene.data)
                 scene.delete_sprite("sprites", character)
                 yield
 
@@ -601,12 +599,10 @@ class Namespace:
                     raise ActionNotFoundError(f"Action \"{type}\" now found!")
 
         def start_cutscene(self, path):
-            print(path)
             cutscene: TextureAnimationSprite = g.scene.get_sprite(path)
             while cutscene is None:
                 cutscene = g.scene.get_sprite(path)
 
-            print(cutscene)
             cutscene.size = get_window().size
             g.scene.clear_layer("bg")
             g.scene.clear_layer("animated_sprites")

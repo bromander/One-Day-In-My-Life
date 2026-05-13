@@ -218,7 +218,6 @@ class Saves_manager:
         def _save_data(self):
             save_folder = Saves_manager.get_save_path()
             with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
-                print(self.file)
                 json.dump(self.file, file)
 
         def _get_data(self):

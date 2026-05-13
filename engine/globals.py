@@ -1,7 +1,61 @@
 import arcade.gui
-
+import logging
+import colorlog
+import sys
 
 class Globals:
+    def __init__(self):
+        self._handlers = self._create_handlers()
+
+    def _create_handlers(self):
+        if sys.platform == "win32":
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+
+        class CustomLogger(logging.Logger):
+            def event(self, message, *args, **kwargs):
+                if self.isEnabledFor(5):
+                    self._log(5, message, args, **kwargs)
+
+        logging.addLevelName(5, "EXECUTE")
+        logging.setLoggerClass(CustomLogger)
+
+        console_handler = colorlog.StreamHandler()
+        console_handler.setFormatter(colorlog.ColoredFormatter(
+            '%(log_color)s%(asctime)s - [%(name)s] - [%(levelname)s]: %(message)s',
+            datefmt='%H:%M:%S',
+            log_colors={
+                "DEBUG": "white",
+                "EXECUTE": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "bold_red",
+            }
+        ))
+
+        file_handler = logging.FileHandler("latest.log", "w", encoding="utf-8")
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s - [%(name)s] - [%(levelname)s]: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        ))
+
+        return [console_handler, file_handler]
+
+    @property
+    def handlers(self):
+        return self._handlers
+
+    def get_logger(self, name):
+        logger = colorlog.getLogger(name)
+
+        if not logger.handlers:
+            for handler in self.handlers:
+                logger.addHandler(handler)
+
+        logger.setLevel(5)
+        return logger
 
     @property
     def DEFAULT_IN_GAME_WINDOW_SIZE(self):

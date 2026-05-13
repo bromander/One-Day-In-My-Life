@@ -16,9 +16,13 @@ TextureKeyframe,
 TextureAnimation,
 SpriteSheet#, load_animated_gif
 
-)#
+)
 from PIL import Image, ImageSequence
 from arcade.texture import default_texture_cache
+
+from .globals import g
+
+logger = g.get_logger(__name__)
 
 def load_animated_gif(resource_name: str | Path) -> tuple[TextureAnimationSprite, (int, int)]:
 
@@ -124,7 +128,6 @@ class FilesManager:
 
             for i in filenames:
                 if i in textures_paths and i not in textures:
-                    print(str(textures_paths[i]))
                     path = str(textures_paths[i])
                     if path.endswith(".gif"):
                         textures[i] = load_animated_gif(path)
@@ -170,7 +173,7 @@ class FilesManager:
             thread.start()
             threads.append(thread)
 
-        print(threads)
+        logger.warning(f"Подгрузка ассетов: {n} потоков, {length} текстур")
 
         return threads
 
