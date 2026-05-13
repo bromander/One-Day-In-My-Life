@@ -424,6 +424,7 @@ label home_late_continue():
     <oz> "Ну и супер! Ты давай держись, я жду твоих абсурдных историй с работы как вечернюю газету~"
     Scene.show_character("shak funny 2")
     <shak> "Только благодаря тебе и держусь, Оз."
+    Scene.set_scene(None)
     Scene.set_scene("dz_ending.png", effect=SpriteEffects.Dissolve(1.0))
     <> "Она грустно улыбнулась и закрыла глаза, положив голову на плечо подруге."
     <shak> "Спасибо за понимание."
