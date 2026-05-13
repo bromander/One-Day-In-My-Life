@@ -91,6 +91,7 @@ class LoreLogger:
 
         g.scene["fade"]["splash"].alpha = 0
         g.main.splash_manager.children[0][0].update_font(font_color=(255, 255, 255, 0))
+        g.main.splash_manager.children[0][1].update_font(font_color=(255, 255, 255, 0))
         g.scene["fade"]["fade"].alpha = 0
 
     ### ==== NAMESPACE ===

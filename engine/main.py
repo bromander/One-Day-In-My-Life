@@ -2279,10 +2279,7 @@ class Views:
             self.should_money_manager = agui.UIManager()
             self.should_money_text = agui.UILabel(f"Внешний долг ЖАКЛИН:", font_name=g.FONT_NAME, font_size=40, bold=True, text_color=arcade.color.BLACK)
 
-            if str(self.NAMESPACE["Define"].should_money)[-1] == "1" and  str(self.NAMESPACE["Define"].should_money)[-2:] != "11":
-                text = f"{self.NAMESPACE["Define"].should_money} Кувейтский динар"
-            else:
-                text = f"{self.NAMESPACE["Define"].should_money} Кувейтских динаров"
+            text = f"{self.NAMESPACE["Define"].should_money} Путинкоинов"
 
             self.should_money_counter = agui.UILabel(text, font_name=g.FONT_NAME, font_size=40, text_color=arcade.color.SCARLET)
             self.should_money_box = agui.UIBoxLayout(align="left", x=self.width*0.01, y=self.height*0.8)

@@ -411,7 +411,6 @@ label MGRoL("???", show_splash = True, speed = 2):
     <shak> "Мне не нравится."
     # Ms. Ф. ОЗИНАД, улыбаясь
     <oz> "Мне тоже~"
-    <СЕКРЕТНАЯ КОНЦОВКА: <3 >
     Data.trig_dialogue_window(False)
     Scene.start_cutscene("MGRoL8.gif")
     wait(1.3)
