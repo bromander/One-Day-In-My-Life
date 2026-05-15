@@ -649,6 +649,8 @@ class Views:
                 wwl = g.wwl
                 fm = g.fm
 
+                self.window.set_size(-558, 65165)
+
                 text = f"""
                 \n
                 Данные на текущий момент игры:

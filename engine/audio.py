@@ -157,8 +157,11 @@ class AudioManager:
                     self.music.fade_modifier = 0.0
                     self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
                     dt = yield
-                    while self.music.fade_modifier < 1.0:
-                        self.music.fade_modifier += 0.5 * dt if dt is not None else 0.5
+                    while True:
+                        step = 0.5 * dt if dt is not None else 0.5
+                        self.music.fade_modifier = round(self.music.fade_modifier + step, 3)
+                        if self.music.fade_modifier >= 1.0:
+                            break
                         dt = yield
                     self.music.fade_modifier = 1.0
                 return fadeout_music()
@@ -189,8 +192,11 @@ class AudioManager:
                     self.sound.fade_modifier = 0.0
                     self.sound.play(path, loop=loop, local_volume=volume)
                     dt = yield
-                    while self.sound.fade_modifier < 1.0:
-                        self.sound.fade_modifier += 0.5 * dt if dt is not None else 0.5
+                    while True:
+                        step = 0.5 * dt if dt is not None else 0.5
+                        self.sound.fade_modifier = round(self.sound.fade_modifier + step, 3)
+                        if self.sound.fade_modifier >= 1.0:
+                            break
                         dt = yield
                     self.sound.fade_modifier = 1.0
 
@@ -225,8 +231,11 @@ class AudioManager:
             case "fade":
                 def fadeout_music():
                     dt = yield
-                    while 0.0 < self.music.fade_modifier:
-                        self.music.fade_modifier -= 0.5 * dt if dt is not None else 0.5
+                    while True:
+                        step = 0.5 * dt if dt is not None else 0.5
+                        self.music.fade_modifier = round(self.music.fade_modifier - step, 3)
+                        if self.music.fade_modifier <= 0.0:
+                            break
                         dt = yield
                     self.music.fade_modifier = 0.0
                     self.music.pause()
@@ -253,8 +262,11 @@ class AudioManager:
             case "FADE":
                 def fadeout_sound():
                     dt = yield
-                    while 0.0 < self.sound.fade_modifier:
-                        self.sound.fade_modifier -= 0.5 * dt if dt is not None else 0.5
+                    while True:
+                        step = 0.5 * dt if dt is not None else 0.5
+                        self.sound.fade_modifier = round(self.sound.fade_modifier - step, 3)
+                        if self.sound.fade_modifier <= 0.0:
+                            break
                         dt = yield
                     self.sound.fade_modifier = 0.0
                     self.sound.pause()

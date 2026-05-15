@@ -3,6 +3,7 @@ import logging
 import colorlog
 import sys
 import os
+import re
 
 class Globals:
     def __init__(self):
@@ -26,6 +27,41 @@ class Globals:
             import ctypes
             kernel32 = ctypes.windll.kernel32
             kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+
+        class Tee:
+            def __init__(self, file_path):
+                self.file = open(file_path, "w", encoding="utf-8")
+
+                self.stdout = sys.stdout
+                self.stderr = sys.stderr
+
+                self.ANSI_ESCAPE = re.compile(
+                    r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])'
+                )
+
+            def write(self, data):
+                # В консоль — как есть
+                self.stdout.write(data)
+
+                # В файл — без ANSI
+                clean = self.ANSI_ESCAPE.sub('', data)
+                self.file.write(clean)
+
+                self.stdout.flush()
+                self.file.flush()
+
+            def flush(self):
+                self.stdout.flush()
+                self.file.flush()
+
+        save_folder = self.get_save_path()
+        file = os.path.join(save_folder, "latest_full.log")
+        tee = Tee(file)
+
+        sys.stdout = tee
+        sys.stderr = tee
+
+
 
         class CustomLogger(logging.Logger):
             def event(self, message, *args, **kwargs):
