@@ -270,3 +270,5 @@ class LoreLogger:
         self._restore_scene(data["scene"])
 
         g.main.talk_manager(-1, clicked=True, do_snapshot=False)
+
+        g.main.set_bg_by_scene_bg()
