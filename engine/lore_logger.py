@@ -51,7 +51,8 @@ class LoreLogger:
                             "width": sprite.width,
                             "height": sprite.height,
                             "angle": sprite.angle,
-                            "alpha": sprite.alpha,
+                            "alpha": 255, # при возврате назад, если к спрайтам применялся эффект растворения, то их 'растворяющиеся' версии остаются на сцене.
+                                          # Пока оставлю значение 255 как заглушку, но это надо в будущем пофиксить
                             "visible": sprite.visible,
                         }
                     })
@@ -176,7 +177,8 @@ class LoreLogger:
                 g for g in gens.active_generators_consistently
                 if not g[0].startswith("talk")
             ],
-            "together": copy.copy(gens.active_generators_together)
+            "together": copy.copy(gens.active_generators_together),
+            "consistently_async" : copy.copy(gens.active_generators_consistently_async)
         }
 
     def _restore_generators(self, data):
@@ -184,7 +186,7 @@ class LoreLogger:
         gens.clear()
 
         gens.active_generators_consistently = copy.copy(data["consistently"])
-        gens.active_generators_consistently_async = copy.copy(data["consistently"])
+        gens.active_generators_consistently_async = copy.copy(data["consistently_async"])
         gens.active_generators_together = copy.copy(data["together"])
 
         while gens.active_generators_consistently or gens.active_generators_together or gens.active_generators_consistently_async:
@@ -248,6 +250,10 @@ class LoreLogger:
         Возвращает игру на последний созданный снимок
         :return:
         """
+
+        if g.main.waiting_autoskip:
+            return None
+
         if len(self.logs) < 2:
             return
 

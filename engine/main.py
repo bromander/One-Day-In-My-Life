@@ -1696,6 +1696,8 @@ class Views:
             self.settings_manager.on_update(delta_time)
             self.menu_manager.on_update(delta_time)
 
+            g.main.actions.update(delta_time)
+
         def on_draw(self) -> None:
             self.clear()
             g.scene.draw()
@@ -1838,6 +1840,8 @@ class Views:
             self.characters_texts_manager.update(delta_time)
             self.settings_manager.on_update(delta_time)
             self.menu_manager.on_update(delta_time)
+
+            g.main.actions.update(delta_time)
 
         def on_draw(self) -> None:
             self.clear()
@@ -2059,6 +2063,8 @@ class Views:
                     i.kill()
                     del i
 
+            g.main.actions.update(delta_time)
+
         def on_key_press(self, key: int, modifiers: int) -> bool | None:
             if key == arcade.key.S or key == arcade.key.ESCAPE:
                 self.settings_manager.turn_visibl()
@@ -2162,6 +2168,8 @@ class Views:
             if self.length <= 0:
                 self.NAMESPACE["Lore"].jump("bad_ending_golubi")
                 self.window.show_view(self.window.GameView)
+
+            g.main.actions.update(delta_time)
 
     class ShopGetting(Main_template):
         def __init__(self):
@@ -2363,6 +2371,8 @@ class Views:
                             if self.layers[e]["collected"]:
                                 self.NAMESPACE["Define"].got_money -= self.table[layer['sprite'].texture.file_path.name]
                             self.layers[e]["collected"] = False
+
+            g.main.actions.update(delta_time)
 
 
 
