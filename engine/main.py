@@ -1450,6 +1450,9 @@ class Views:
 
                 def return_to_main_menu(event=None):
                     game = Views.GameMenu(False)
+
+                    self.manager.clear()
+
                     self.window.show_view(game)
 
                 def show_fps(event=None):
