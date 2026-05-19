@@ -10,6 +10,8 @@ from arcade import Sprite, TextureAnimationSprite
 
 from .globals import g
 
+logger = g.get_logger(__name__)
+
 class Saves_manager:
     def  __init__(self):
         """
@@ -17,22 +19,13 @@ class Saves_manager:
         """
         save_folder = self.get_save_path()
         if not os.path.exists(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME)):
+            logger.warning("Создаём файл сохранения!")
             with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
 
                 data = {
                     "saves": b64encode(zlib.compress(json.dumps({}, ensure_ascii=False).encode('utf-8'), 9)).decode('ascii'),
                     "persistent" : {},
-                    "options": {
-                        "volume": {
-                            "music": 1.0,
-                            "sound": 1.0,
-                            "voice": 1.0
-                        },
-                        "lps" : 60,
-                        "fade_speed" : 0,
-                        "show_fps" : False,
-                        "window_mode" : "full-screen"
-                    }
+                    "options": g.DEFAULT_OPTIONS_PARAM
                 }
                 json.dump(data, file, indent=4, ensure_ascii=False)
 
@@ -124,86 +117,54 @@ class Saves_manager:
             save_folder = Saves_manager.get_save_path()
             with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
                 file = dict(json.load(file))
-            self.file = file
+
+            super().__setattr__("file", file)
+
+        def __getattr__(self, name):
+            self._update_data()
+
+            file = super().__getattribute__("file")
+
+            if name in file["options"]["volume"]:
+                return file["options"]["volume"][name]
+            elif name in file["options"]:
+                return file["options"][name]
+
+            return None
+
+        def __setattr__(self, key, value):
+            file = super().__getattribute__("file")
+
+            if key in file["options"]["volume"]:
+                file["options"]["volume"][key] = value
+            else:
+                file["options"][key] = value
+
+            self._save_data()
+
+        def __delattr__(self, item):
+            file = super().__getattribute__("file")
+
+            if item in file["options"]["volume"]:
+                del file["options"]["volume"][item]
+            else:
+                del file["options"][item]
+
+            self._save_data()
 
         def _save_data(self) -> None:
+
+            file = super().__getattribute__("file")
+
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
-                json.dump(self.file, file)
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as data_file:
+                json.dump(file, data_file)
 
-        def _get_data(self):
+        def _update_data(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
-                file = dict(json.load(file))
-            self.file = file
-
-        def set_music(self, value: float) -> None:
-            """
-            Устанавливает значение параметру music
-            :param value: Значение
-            """
-            self._get_data()
-            self.file["options"]["volume"]["music"] = value
-
-        def set_sound(self, value: float) -> None:
-            """
-            Устанавливает значение параметру sound
-            :param value: Значение
-            """
-            self._get_data()
-            self.file["options"]["volume"]["sound"] = value
-
-        def set_voice(self, value: float) -> None:
-            """
-            Устанавливает значение параметру voice
-            :param value: Значение
-            """
-            self._get_data()
-            self.file["options"]["volume"]["voice"] = value
-
-        def set_other(self, name: str, value: any) -> None:
-            """
-            Устанавливает значение
-            :param name: Название значения
-            :param value: Значение
-            :raises VolumeDoesNotExistError: Если параметр не существует
-            """
-            self._get_data()
-            self.file["options"][name] = value
-
-
-        def get_music(self) -> float:
-            """
-            Возвращает значение параметра music
-            """
-            self._get_data()
-            return self.file["options"]["volume"].get("music", None)
-
-        def get_sound(self) -> float:
-            """
-            Возвращает значение параметра music
-            """
-            self._get_data()
-            return self.file["options"]["volume"].get("sound", None)
-
-        def get_voice(self) -> float:
-            """
-            Возвращает значение параметра music
-            """
-            self._get_data()
-            return self.file["options"]["volume"].get("voice", None)
-
-        def get_other(self, name: str) -> any:
-            """
-            Возвращает значение параметра
-            :param name: название параметра
-            :raises VolumeDoesNotExistError: Если параметр не существует
-            """
-            self._get_data()
-            if name not in self.file["options"]:
-                raise VolumeDoesNotExistError(f"Volume \"{name}\" does not exist!")
-
-            return self.file["options"].get(name, None)
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as data_file:
+                data_file = dict(json.load(data_file))
+            super().__setattr__("file", data_file)
 
     class Save:
         """

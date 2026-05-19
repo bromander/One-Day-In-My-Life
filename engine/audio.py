@@ -11,7 +11,7 @@ from .globals import g
 
 
 class AudioChannel:
-    def __init__(self, sm: Saves_manager, default_volume: float=1.0, modifier: float = 1.0, volume_type: Optional[str] = None):
+    def __init__(self, sm: Saves_manager, default_volume: float=1.0, volume_type: Optional[str] = None):
         '''
         Отвечает за отдельный канал аудио
         :param default_volume: Громкость по умолчанию
@@ -21,6 +21,11 @@ class AudioChannel:
         self.default_volume: float = default_volume # Громкость по умолчанию
         self.volume_type: Optional[str] = volume_type # Тип канала
         self.now_playing_path:  Optional[str] = None
+
+        modifier = 1.0
+        if volume_type:
+            modifier = g.sm.Volume.__getattr__(volume_type)
+
         self.modifier = modifier # Модификатор громкости. Предназначен для управления громкостью ползунками из настроек
         self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью во время плавных переходов (FADEIN/FADEOUT)
         self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью текущего трека. Сбрасывается при запуске нового трека
@@ -115,12 +120,7 @@ class AudioChannel:
                     self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
 
                 # Сохраняем значения
-                if self.volume_type == "music":
-                    self.sm.Volume.set_music(self.modifier)
-                elif self.volume_type == "sound":
-                    self.sm.Volume.set_sound(self.modifier)
-                elif self.volume_type == "voice":
-                    self.sm.Volume.set_voice(self.modifier)
+                self.sm.Volume.__setattr__(self.volume_type, self.modifier)
             else:
                 self._local_modifier = vol
                 if self.player:
@@ -138,9 +138,9 @@ class AudioManager:
         Управляет 3 основными каналами: music, sound, voice
         """
         self.fm: FilesManager = g.fm
-        self.music = AudioChannel(g.sm, modifier=g.sm.Volume.get_music(), volume_type="music")
-        self.sound = AudioChannel(g.sm, modifier=g.sm.Volume.get_sound(), volume_type="sound")
-        self.voice = AudioChannel(g.sm, modifier=g.sm.Volume.get_voice(), volume_type="voice", default_volume=2.0)
+        self.music = AudioChannel(g.sm, volume_type="music")
+        self.sound = AudioChannel(g.sm, volume_type="sound")
+        self.voice = AudioChannel(g.sm, volume_type="voice", default_volume=2.0)
 
     def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None, streaming: bool = True):
         """

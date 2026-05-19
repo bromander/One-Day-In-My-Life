@@ -18,7 +18,7 @@ class Actions:
 
     def _fadein(self, now: dict):
 
-        duration = max(now["time"] + g.sm.Volume.get_other("fade_speed"), 0.001)
+        duration = max(now["time"] * g.sm.Volume.fade_speed, 0.001)
         progress = 0.0
         last_alpha = g.scene["fade"]["fade"].alpha
         fade_sprite = g.scene["fade"]["fade"]
@@ -42,7 +42,7 @@ class Actions:
 
     def _fadeout(self, now: dict):
 
-        duration = max(now["time"] + g.sm.Volume.get_other("fade_speed"), 0.001)
+        duration = max(now["time"] * g.sm.Volume.fade_speed, 0.001)
         progress = 0.0
         last_alpha = g.scene["fade"]["fade"].alpha
         fade_sprite = g.scene["fade"]["fade"]
@@ -136,7 +136,7 @@ class Actions:
         splash_manager.children[0][0].text = now["name"]
         splash_manager.children[0][1].text = now["description"]
 
-        duration = max(now["duration"] + g.sm.Volume.get_other("fade_speed"), 0.001)
+        duration = max(now["duration"] * g.sm.Volume.fade_speed, 0.001)
         progress = 0.0
         last_alpha = g.scene["fade"]["splash"].alpha
         min_step = 1
@@ -168,7 +168,7 @@ class Actions:
                 continue
             remaining_time -= dt
 
-        duration = max(now["duration"] / 2 + g.sm.Volume.get_other("fade_speed"), 0.001)
+        duration = max(now["duration"] / 2 * g.sm.Volume.fade_speed, 0.001)
         progress = 0.0
         last_alpha = g.scene["fade"]["splash"].alpha
         min_step = 1

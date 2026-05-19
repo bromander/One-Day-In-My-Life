@@ -102,7 +102,7 @@ class Character:
                 return text
             return text[:index] + new_char + text[index + 1:]
 
-        now_lps = self.lps * (self.lps / self.sm.Volume.get_other("lps"))
+        now_lps = self.lps * self.sm.Volume.lps
 
         dialog_text_text_alt = [" "]
         string_index_alt = 0

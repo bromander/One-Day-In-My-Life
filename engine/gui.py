@@ -459,6 +459,7 @@ class UISliderSavesUpdater(agui.UISlider):
             sm: Saves_manager,
             am: AudioManager,
             value: float = 0,
+            start_value: Optional[float] = None,
             min_value: float = 0,
             max_value: float = 100,
             x: float = 0,
@@ -489,7 +490,47 @@ class UISliderSavesUpdater(agui.UISlider):
         self.am = am
         self.type = type
 
+        self.start_value = start_value
+
         self.directed = False
+
+    def do_render(self, surface: Surface):
+        super().do_render(surface)
+
+        if self.start_value:
+            self._render_start_pos(surface)
+
+    def _render_start_pos(self, surface: Surface):
+        if self.start_value is None:
+            return
+
+        if self.step:
+            steps_count = round((self.start_value - self.min_value) / self.step)
+            start_value = self.min_value + steps_count * self.step
+        else:
+            start_value = self.start_value
+
+        value_ratio = (start_value - self.min_value) / (self.max_value - self.min_value)
+
+        slider_left_x = self._x_for_value(self.min_value) - self.content_rect.left
+        slider_right_x = self._x_for_value(self.max_value) - self.content_rect.left
+        track_width = slider_right_x - slider_left_x
+
+        start_x = slider_left_x + value_ratio * track_width
+
+        slider_height = self.content_height // 3
+        slider_bottom = (self.content_height - slider_height) // 2 - 5
+
+        start_color = self.get_current_style().border
+        rect_width = max(3, slider_height // 2)
+
+        arcade.draw_lbwh_rectangle_filled(
+            start_x - rect_width / 2,
+            slider_bottom,
+            rect_width,
+            slider_height + 10,
+            start_color
+        )
 
     def on_event(self, event: UIEvent) -> bool | None:
         super().on_event(event)
@@ -509,9 +550,9 @@ class UISliderSavesUpdater(agui.UISlider):
                 case "voice":
                     self.am.voice.set_volume(round(self.value / 100, 2))
                 case "lps":
-                    self.sm.Volume.set_other("lps", round(self.value, 2))
+                    self.sm.Volume.lps = self.value
                 case "fade_speed":
-                    self.sm.Volume.set_other("fade_speed", round(self.value, 2))
+                    self.sm.Volume.fade_speed = self.value / 10
             self.sm.Volume._save_data()
 
 class Managers:
@@ -551,10 +592,8 @@ class Managers:
             self.settings_scene["in_game_settings"].alpha = 0
 
             def create_settings_buttons():
-                save_folder = g.sm.get_save_path()
-                with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as data:
-                    data = json.load(data)
-                volumes = data['options']
+
+                volumes = g.sm.Volume
 
                 def return_to_main_menu(event=None):
 
@@ -606,11 +645,12 @@ class Managers:
                     "music",
                     g.sm,
                     g.am,
-                    value=volumes['volume']["music"] * 100,  # начальное значение
+                    value=volumes.music * 100,  # начальное значение
                     min_value=0,
                     max_value=200,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["music"]*100
                 )
                 self.settings_v_box.add(music_volume_slider)
                 self.settings_v_box.add(agui.UISpace(height=10))
@@ -627,11 +667,12 @@ class Managers:
                     "sound",
                     g.sm,
                     g.am,
-                    value=volumes['volume']["sound"] * 100,  # начальное значение
+                    value=volumes.sound * 100,  # начальное значение
                     min_value=0,
                     max_value=200,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["sound"]*100
                 )
                 self.settings_v_box.add(sound_volume_slider)
                 self.settings_v_box.add(agui.UISpace(height=10))
@@ -644,17 +685,18 @@ class Managers:
                 )
                 self.settings_v_box.add(voice_volume_label)
 
-                voice_volume_slider = UISliderSavesUpdater(
+                """voice_volume_slider = UISliderSavesUpdater(
                     "voice",
                     g.sm,
                     g.am,
-                    value=volumes['volume']["voice"] * 100,  # начальное значение
+                    value=volumes.voice * 100,  # начальное значение
                     min_value=0,
                     max_value=200,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["voice"]*100
                 )
-                self.settings_v_box.add(voice_volume_slider)
+                self.settings_v_box.add(voice_volume_slider)"""
 
                 lps_label = agui.UILabel(
                     "Скорость появления букв",
@@ -667,11 +709,12 @@ class Managers:
                     "lps",
                     g.sm,
                     g.am,
-                    value=volumes["lps"],  # начальное значение
-                    min_value=20,
-                    max_value=110,
+                    value=volumes.lps,  # начальное значение
+                    min_value=0.1,
+                    max_value=3,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["lps"]
                 )
                 self.settings_v_box_1.add(self.lps_slider)
                 self.settings_v_box_1.add(agui.UISpace(height=20))
@@ -687,11 +730,12 @@ class Managers:
                     "fade_speed",
                     g.sm,
                     g.am,
-                    value=volumes["fade_speed"],  # начальное значение
-                    min_value=-10,
-                    max_value=10,
+                    value=volumes.fade_speed,  # начальное значение
+                    min_value=0,
+                    max_value=2.0,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["fade_speed"]
                 )
                 self.settings_v_box_1.add(self.fade_speed_slider)
 

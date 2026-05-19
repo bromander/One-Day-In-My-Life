@@ -1,9 +1,14 @@
+import json
+import traceback
 import arcade.gui
 import logging
 import colorlog
 import sys
 import os
 import re
+from hawk_python_sdk import Hawk
+import hawk_python_sdk.core as hawk_core
+from .tk_error_inform import show_error, has_internet
 
 class Globals:
     def __init__(self):
@@ -23,6 +28,7 @@ class Globals:
         return save_dir
 
     def _create_handlers(self):
+
         if sys.platform == "win32":
             import ctypes
             kernel32 = ctypes.windll.kernel32
@@ -94,6 +100,38 @@ class Globals:
 
         return [console_handler, file_handler]
 
+    @staticmethod
+    def _get_hawk():
+
+        def _safe_get_near_filelines(filepath, line, margin=10):
+            with open(filepath, encoding="UTF-8") as file:
+                content = file.readlines()
+                content = [x.rstrip() for x in content]
+
+            error_line_in_array = line - 1
+            start = max(0, error_line_in_array - margin)
+
+            end = min(len(content), error_line_in_array + margin + 1)
+
+            lines = content[start:end]
+
+            pon = [
+                {
+                    'line': array_line + 1,
+                    'content': lines[array_line - start]
+                } for array_line in range(start, end)
+            ]
+
+            return pon
+
+        hawk_core.Hawk.get_near_filelines = staticmethod(_safe_get_near_filelines)
+
+        with open("./game/game_data.JSON", "r", encoding="UTF-8") as f:
+            f = json.load(f)
+            key = f["hawk_integration_API"]
+        hawk = Hawk(key)
+        return hawk
+
     @property
     def handlers(self):
         return self._handlers
@@ -107,6 +145,21 @@ class Globals:
 
         logger.setLevel(5)
         return logger
+
+    @property
+    def DEFAULT_OPTIONS_PARAM(self):
+        return {
+                    "volume": {
+                        "music": 1.0,
+                        "sound": 1.0,
+                        "voice": 1.0
+                    },
+                    "lps" : 1.0,
+                    "fade_speed" : 1.0,
+                    "show_fps" : False,
+                    "window_mode" : "full-screen",
+                    "telemetry" : True
+                }
 
     @property
     def DEFAULT_IN_GAME_WINDOW_SIZE(self):
@@ -162,6 +215,35 @@ class Globals:
     @property
     def DEFAULT_DATA_FILE_NAME(self):
         return "data.json"
+
+    def notice_crash(self, e: Exception):
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        text = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+
+        logger = self.get_logger("__main__")
+
+        logger.critical(text)
+        show_error(exc_type, self.sm.Volume.telemetry)
+
+        save_folder = self.get_save_path()
+
+        file = os.path.join(save_folder, "latest_full.log")
+
+        def get_full_logs():
+            with open(file, "r", encoding="UTF-8") as logs:
+                logs = logs.read()
+            return [i for i in logs.split("\n")]
+
+        custom_data = {
+            "logs": str(get_full_logs())
+        }
+
+        if g.sm.Volume.telemetry and has_internet:
+            self.hawk.send(e, context=custom_data)
+        else:
+            logger.error("Не получилось отправить лог! Отсутствует подключение к интернету или отключена телеметрия...")
+
+    hawk = _get_hawk()
 
     fm = None  # Files manager
     sm = None  # Saves manager

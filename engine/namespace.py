@@ -698,7 +698,7 @@ class Namespace:
 
             def effect(self, sprite: Sprite, target_alpha: int = 255):
 
-                duration = max(self.duration + g.sm.Volume.get_other("fade_speed"), 0.001)
+                duration = max(self.duration * g.sm.Volume.fade_speed, 0.001)
 
                 start_alpha = sprite.alpha
                 progress = 0.0

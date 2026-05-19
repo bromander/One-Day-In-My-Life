@@ -6,6 +6,7 @@ from arcade import Sprite
 from .audio import AudioManager
 from .files_manager import FilesManager
 from .namespace import Namespace
+from .load_animated_gif import load_animated_gif
 
 from .globals import g
 
@@ -36,6 +37,23 @@ class LoreLogger:
                             "speed": item["speed"],
                             "original_x": item["original_x"],
                             "original_y": item["original_y"],
+                        }
+                    })
+            elif layer == "animated_sprites":
+                for name, sprite in container.items():
+                    snapshot.append({
+                        "type": "animated_sprite",
+                        "layer": layer,
+                        "name": name,
+                        "data": {
+                            "texture": sprite.texture.file_path,
+                            "center_x": sprite.center_x,
+                            "center_y": sprite.center_y,
+                            "width": sprite.width,
+                            "height": sprite.height,
+                            "angle": sprite.angle,
+                            "alpha": sprite.alpha,
+                            "visible": sprite.visible,
                         }
                     })
             else:
@@ -74,6 +92,19 @@ class LoreLogger:
                 sprite.center_y = d["center_y"]
                 sprite.width = d["width"]
                 sprite.height = d["height"]
+                sprite.angle = d["angle"]
+                sprite.alpha = d["alpha"]
+                sprite.visible = d["visible"]
+
+                g.scene.add_sprite(entry["layer"], entry["name"], sprite)
+
+            elif t == "animated_sprite":
+
+                d = entry["data"]
+
+                sprite = load_animated_gif(d["texture"])[0]
+                sprite.center_x, sprite.center_y = d["center_x"], d["center_y"]
+                sprite.width, sprite.height = d["width"], d["height"]
                 sprite.angle = d["angle"]
                 sprite.alpha = d["alpha"]
                 sprite.visible = d["visible"]

@@ -197,7 +197,7 @@ class Views:
                 mouse_x, mouse_y = self.window.mouse.data["x"], self.window.mouse.data["y"]
                 self.cursor_texture.position = (mouse_x, mouse_y)
 
-            if Saves_manager().Volume.get_other("show_fps"):
+            if Saves_manager().Volume.show_fps:
                 current_fps = 1.0 / delta_time if delta_time > 0 else 0
 
                 self.fps['window'].append(current_fps)
@@ -236,7 +236,7 @@ class Views:
                     logger.error("Курсор не был создан!")
                     pass
 
-            if Saves_manager().Volume.get_other("show_fps"):
+            if Saves_manager().Volume.show_fps:
                 arcade.draw_lrbt_rectangle_filled(
                     left=5,
                     right=8*len(self.fps['label'].text),
@@ -255,7 +255,7 @@ class Views:
             """
             super().__init__()
 
-            self.window_mode = g.sm.Volume.get_other("window_mode")
+            self.window_mode = g.sm.Volume.window_mode
             if self.window_mode == "full-screen":
                 self.window.set_fullscreen(True)
             elif self.window_mode == "window":
@@ -1456,11 +1456,10 @@ class Views:
                     self.window.show_view(game)
 
                 def show_fps(event=None):
-                    g.sm.Volume.set_other("show_fps", not g.sm.Volume.get_other("show_fps"))
-                    g.sm.Volume._save_data()
+                    g.sm.Volume.show_fps = not g.sm.Volume.show_fps
 
                 def edit_window_mode(event=None):
-                    old_value = g.sm.Volume.get_other("window_mode")
+                    old_value = g.sm.Volume.window_mode
 
                     if old_value == "full-screen":
                         window_mode = "window"
@@ -1469,13 +1468,25 @@ class Views:
                         window_mode = "full-screen"
                         window_mode_text = "Полный экран"
 
-                    g.sm.Volume.set_other("window_mode", window_mode)
-                    g.sm.Volume._save_data()
+                    g.sm.Volume.window_mode = window_mode
 
                     self.window_mode_button.text = window_mode_text
 
+                def edit_telemetry(event=None):
+                    g.sm.Volume.telemetry = not g.sm.Volume.telemetry
+                    self.telemetry_button.text = "Включено" if g.sm.Volume.telemetry else "Выключено"
+
                 STYLE_DEFAULT_BUTTON = g.STYLE_DEFAULT_BUTTON
                 FONT_NAME = g.FONT_NAME
+
+
+                everything_vbox = arcade.gui.UIBoxLayout(space_between=20)
+                everything_ui_anchor_layout = arcade.gui.UIAnchorLayout()
+                everything_ui_anchor_layout.add(child=everything_vbox, anchor_x="center_x", anchor_y="center_y")
+
+                self.manager.add(everything_ui_anchor_layout)
+
+                buttons_1_vbox = arcade.gui.UIBoxLayout(space_between=0)
 
                 return_button = agui.UIFlatButton(
                     text="Назад",
@@ -1484,9 +1495,9 @@ class Views:
                     style=STYLE_DEFAULT_BUTTON
                 )
                 return_button.on_click = return_to_main_menu
-                return_button.center_x = self.window.center_x
-                return_button.center_y = self.window.height * 0.8
-                self.manager.add(return_button)
+                buttons_1_vbox.add(return_button)
+
+                buttons_1_vbox.add(arcade.gui.UISpace(height=20))
 
                 FPS_check_box = agui.UIFlatButton(
                     text="Счтчик FPS",
@@ -1495,9 +1506,16 @@ class Views:
                     style=STYLE_DEFAULT_BUTTON
                 )
                 FPS_check_box.on_click = show_fps
-                FPS_check_box.center_x = self.window.center_x
-                FPS_check_box.center_y = self.window.height * 0.7
-                self.manager.add(FPS_check_box)
+                buttons_1_vbox.add(FPS_check_box)
+
+                ui_anchor_layout = arcade.gui.UIAnchorLayout()
+                ui_anchor_layout.add(buttons_1_vbox, anchor_x="center_x", anchor_y="center_y")
+
+                everything_vbox.add(ui_anchor_layout)
+
+                everything_vbox.add(arcade.gui.UISpace(height=50))
+
+
 
                 music_volume_label = agui.UILabel(
                     "Музыка",
@@ -1514,7 +1532,8 @@ class Views:
                     min_value=0,
                     max_value=200,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["music"]*100
                 )
                 self.v_box.add(self.music_volume_slider)
                 self.v_box.add(arcade.gui.UISpace(height=20))
@@ -1534,12 +1553,13 @@ class Views:
                     min_value=0,
                     max_value=200,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["sound"]*100
                 )
                 self.v_box.add(self.sound_volume_slider)
                 self.v_box.add(arcade.gui.UISpace(height=20))
 
-                voice_volume_label = agui.UILabel(
+                """voice_volume_label = agui.UILabel(
                     "Голос",
                     text_color=arcade.color.BLACK,
                     font_name=FONT_NAME
@@ -1554,10 +1574,11 @@ class Views:
                     min_value=0,
                     max_value=200,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["voice"]*100
                 )
                 self.v_box.add(self.voice_volume_slider)
-                self.v_box.add(arcade.gui.UISpace(height=20))
+                self.v_box.add(arcade.gui.UISpace(height=20))"""
 
 
 
@@ -1566,10 +1587,11 @@ class Views:
                     sm,
                     am,
                     value=volumes["lps"],  # начальное значение
-                    min_value=20,
-                    max_value=110,
+                    min_value=0.1,
+                    max_value=3.0,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["lps"]
                 )
                 self.v_box_1.add(self.lps_slider)
                 lps_label = agui.UILabel(
@@ -1585,10 +1607,11 @@ class Views:
                     sm,
                     am,
                     value=volumes["fade_speed"],  # начальное значение
-                    min_value=-10,
-                    max_value=10,
+                    min_value=0.1,
+                    max_value=2.0,
                     width=300,
-                    height=20
+                    height=20,
+                    start_value=g.DEFAULT_OPTIONS_PARAM["fade_speed"]
                 )
                 self.v_box_1.add(self.fade_speed_slider)
                 fade_speed_label = agui.UILabel(
@@ -1600,11 +1623,11 @@ class Views:
 
                 self.main_h_box.add(self.v_box_1)
                 self.main_h_box.add(self.v_box)
-                ui_anchor_layout = arcade.gui.widgets.layout.UIAnchorLayout()
-                ui_anchor_layout.add(child=self.main_h_box, anchor_x="center_x", anchor_y="center_y")
 
-                self.manager.add(ui_anchor_layout)
+                everything_vbox.add(self.main_h_box)
 
+
+                buttons_2_vbox = arcade.gui.UIBoxLayout(space_between=10)
 
                 window_mode_text = agui.UILabel(
                     "Режим окна",
@@ -1613,10 +1636,10 @@ class Views:
                 )
                 window_mode_text.center_x = self.center_x
                 window_mode_text.center_y = self.height * 0.3
-                self.manager.add(window_mode_text)
+                buttons_2_vbox.add(window_mode_text)
 
 
-                old_value = g.sm.Volume.get_other("window_mode")
+                old_value = g.sm.Volume.window_mode
                 self.window_mode_button = agui.UIFlatButton(
                     text="Полный экран" if old_value == "full-screen" else "Оконный",
                     width=300,
@@ -1626,7 +1649,36 @@ class Views:
                 self.window_mode_button.on_click = edit_window_mode
                 self.window_mode_button.center_x = self.center_x
                 self.window_mode_button.center_y = self.height * 0.25
-                self.manager.add(self.window_mode_button)
+                buttons_2_vbox.add(self.window_mode_button)
+
+                buttons_2_vbox.add(arcade.gui.UISpace(height=20))
+
+                window_mode_text = agui.UILabel(
+                    "Телеметрия",
+                    text_color=arcade.color.BLACK,
+                    font_name=FONT_NAME
+                )
+                window_mode_text.center_x = self.center_x
+                window_mode_text.center_y = self.height * 0.18
+                buttons_2_vbox.add(window_mode_text)
+
+                if not hasattr(g.sm.Volume, "telemetry"):
+                    g.sm.Volume.telemetry = True
+
+                self.telemetry_button = agui.UIFlatButton(
+                    text="Включено" if g.sm.Volume.telemetry else "Выключено",
+                    width=300,
+                    height=50,
+                    style=STYLE_DEFAULT_BUTTON
+                )
+                self.telemetry_button.on_click = edit_telemetry
+                self.telemetry_button.center_x = self.center_x
+                self.telemetry_button.center_y = self.height * 0.13
+                buttons_2_vbox.add(self.telemetry_button)
+
+                everything_vbox.add(buttons_2_vbox)
+
+
 
             create_menu_buttons()
 
