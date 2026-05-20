@@ -275,8 +275,6 @@ class Views:
 
             self.show_dialogue_bg_trigger = True
 
-            self.scene = g.scene
-
             self.menu_manager = agui.UIManager()
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
@@ -311,7 +309,7 @@ class Views:
                     center_y=self.height * 0.5
                 )
                 sprite.alpha = 0
-                self.scene.add_sprite("fade", "fade", sprite)
+                g.scene.add_sprite("fade", "fade", sprite)
 
                 #splash
                 texture = arcade.load_texture("game/images/gui/splash.png")
@@ -322,7 +320,7 @@ class Views:
                     center_y=self.height * 0.5
                 )
                 sprite.alpha = 0
-                self.scene.add_sprite("fade", "splash", sprite)
+                g.scene.add_sprite("fade", "splash", sprite)
 
                 text = agui.UILabel(
                     " ",
@@ -395,7 +393,7 @@ class Views:
                         bg_sprite = arcade.Sprite(i["path"])
                         bg_sprite.size = tuple(i["size"])
                         bg_sprite.position = tuple(i["pos"])
-                        self.scene.add_sprite("bg", i["layer"], bg_sprite)
+                        g.scene.add_sprite("bg", i["layer"], bg_sprite)
 
                     for i in old_scene["sprites"]:
                         if isinstance(i["path"], str):
@@ -406,7 +404,7 @@ class Views:
 
                         sprite.size = tuple(i["size"])
                         sprite.position = tuple(i["pos"])
-                        self.scene.add_sprite("sprites", i["id"], sprite)
+                        g.scene.add_sprite("sprites", i["id"], sprite)
 
 
                     if old_scene["music"]["path"] is not None:
@@ -418,7 +416,7 @@ class Views:
                     for i in old_scene["bg_parallax"]:
                         while True:
                             try:
-                                self.scene.add_parallax_bg(i["path"], i["speed"], i["original_x"], i["original_y"])
+                                g.scene.add_parallax_bg(i["path"], i["speed"], i["original_x"], i["original_y"])
                             except AttributeError:
                                 continue
                             else:
@@ -433,7 +431,7 @@ class Views:
                         cutscene.center_x, cutscene.center_y = self.width / 2, self.height/2
                         g.scene.clear_layer("bg")
                         g.scene.clear_layer("animated_sprites")
-                        self.scene.add_sprite("animated_sprites", i["id"], cutscene)
+                        g.scene.add_sprite("animated_sprites", i["id"], cutscene)
 
                     logger.info(f"Сохранение было успешно открыто!")
 
@@ -476,7 +474,7 @@ class Views:
             self.settings_manager.update_size(width, height)
             self.characters_texts_manager.update_pos(width, height)
             self._update_dialog_window(width, height)
-            self.scene.on_resize(width, height)
+            g.scene.on_resize(width, height)
 
         def chanel(self):
             time.sleep(0.05)
@@ -514,7 +512,7 @@ class Views:
                         g.attributes.reset()
                         return
                     else:
-                        if time.time() - self.last_text_skip < 0.1:
+                        if time.time() - self.last_text_skip < 0.3:
                             return
                         else:
                             self.last_text_skip = time.time()
@@ -596,7 +594,7 @@ class Views:
         def on_draw(self) -> None:
             if not self.start_trigger:
                 self.clear()
-                self.scene.draw()
+                g.scene.draw()
                 self.splash_manager.draw()
 
                 if self.show_dialogue_bg_trigger:
@@ -623,7 +621,7 @@ class Views:
 
             self.delta_time = delta_time
 
-            self.scene.update(delta_time)
+            g.scene.update(delta_time)
 
             self.menu_manager.on_update(delta_time)
 
@@ -665,7 +663,7 @@ class Views:
                 ===== АССЕТЫ =====
                 - Текстуры: ЗАГРУЖЕНО: {len(fm.textures)}, НЕ ЗАГРУЖЕНО: {len(fm.textures_paths) - len(fm.textures)}
                 - Аудио: ЗАГРУЖЕНО: {len(fm.audios)}, НЕ ЗАГРУЖЕНО: {len(fm.audio_paths) - len(fm.audios)}
-                - Активные спрайты: {self.scene.len_loaded_textures}
+                - Активные спрайты: {g.scene.len_loaded_textures}
                 \n
                 """
 
@@ -678,7 +676,7 @@ class Views:
                     self.talk_manager()
 
         def on_mouse_motion(self, x: int, y: int, dx: int, dy: int) -> bool | None:
-            self.scene.on_mouse_motion(x, y)
+            g.scene.on_mouse_motion(x, y)
 
     class GameMenu(Main_template):
         def __init__(self, show_lc: bool = True) -> None:
@@ -1705,7 +1703,6 @@ class Views:
             #self.window.set_vsync(True)
             self.menu_manager = agui.UIManager()
             self.lore = self._lore()
-            self.scene = g.scene
 
             self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
@@ -1818,7 +1815,6 @@ class Views:
             #self.window.set_vsync(True)
             self.menu_manager = agui.UIManager()
             self.lore = self._lore()
-            self.scene = g.scene
 
             self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
@@ -1928,7 +1924,6 @@ class Views:
             g.main.NAMESPACE["Define"].collected_items = {}
 
             #self.window.set_vsync(True)
-            self.scene = g.scene
             self.actions = g.main.actions
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
@@ -2080,7 +2075,7 @@ class Views:
 
         def on_draw(self) -> None:
             self.clear()
-            self.scene.draw()
+            g.scene.draw()
             self.layers_sprite_list.draw()
             for i in self.notifiers:
                 if i.visible:
@@ -2098,7 +2093,7 @@ class Views:
 
         def on_update(self, delta_time: float) -> None:
             super().on_update(delta_time)
-            self.scene.update(delta_time)
+            g.scene.update(delta_time)
             #if len(list(self.return_button_manager.get_widgets_at((self.window._mouse_x, self.window._mouse_y)))) == 0:
             self.items_manager.update(delta_time, self.window.mouse.data)
             for i in self.notifiers:
@@ -2153,7 +2148,6 @@ class Views:
             super().__init__()
 
             #self.window.set_vsync(True)
-            self.scene = g.scene
             self.actions = g.main.actions
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
@@ -2161,7 +2155,7 @@ class Views:
             self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
 
-            self.sprites = [self.scene.get_sprite("golub.png"), self.scene.get_sprite("golub_click.png")]
+            self.sprites = [g.scene.get_sprite("golub.png"), g.scene.get_sprite("golub_click.png")]
             for i in self.sprites:
                 i.center_x = self.center_x
                 i.center_y = self.center_y
@@ -2185,7 +2179,7 @@ class Views:
 
         def on_draw(self) -> None:
             self.clear()
-            self.scene.draw()
+            g.scene.draw()
             arcade.draw_sprite(self.draw_sprite)
             self.click_text.draw()
             arcade.draw_lrbt_rectangle_filled(self.width*0.2, self.width*0.8, self.height * 0.85, self.height * 0.95, (0,0,0,120))
@@ -2235,7 +2229,6 @@ class Views:
                 self.window.show_view(self.window.GameView)
 
             #self.window.set_vsync(True)
-            self.scene = g.scene
             self.actions = g.main.actions
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
@@ -2379,7 +2372,7 @@ class Views:
 
         def on_draw(self) -> None:
             self.clear()
-            self.scene.draw()
+            g.scene.draw()
             for layer in self.layers[:4]:
                 arcade.draw_sprite(layer['sprite'])
 
@@ -2401,7 +2394,7 @@ class Views:
 
         def on_update(self, delta_time: float) -> None:
             super().on_update(delta_time)
-            self.scene.update(delta_time)
+            g.scene.update(delta_time)
             if len(list(self.return_button_manager.get_widgets_at((self.window._mouse_x, self.window._mouse_y)))) == 0:
                 self.items_manager.update(delta_time, self.window.mouse.data)
 

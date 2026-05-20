@@ -11,16 +11,17 @@ from .globals import g
 
 
 class AudioChannel:
-    def __init__(self, sm: Saves_manager, default_volume: float=1.0, volume_type: Optional[str] = None):
+    def __init__(self, default_volume: float=1.0, volume_type: Optional[str] = None):
         '''
         Отвечает за отдельный канал аудио
         :param default_volume: Громкость по умолчанию
         :param volume_type: Тип звука ("music"/"sound"/"voice")
         '''
+
         self.player: Optional[pyglet.media.player.Player] = None
         self.default_volume: float = default_volume # Громкость по умолчанию
         self.volume_type: Optional[str] = volume_type # Тип канала
-        self.now_playing_path:  Optional[str] = None
+        self.now_playing_path: Optional[str] = None
 
         modifier = 1.0
         if volume_type:
@@ -32,7 +33,7 @@ class AudioChannel:
 
         self.paused = False
 
-        self.sm = sm
+        self.sm = g.sm
 
 
     @property
@@ -70,7 +71,7 @@ class AudioChannel:
             file_sound = load_sound(str(file), streaming=streaming)
         elif isinstance(file, Sound):
             file_sound = file
-            self.now_playing_path = file.file_name
+            self.now_playing_path = str(file_sound.file_name)
         else:
             raise TypeError("Sound type is not the desired data type")
 
@@ -85,7 +86,7 @@ class AudioChannel:
         if hasattr(self, "player"):
             if self.player:
                 self.player.delete()
-                del self.player
+                self.player = None
         self.paused = False
         self.now_playing_path = None
 
@@ -138,9 +139,9 @@ class AudioManager:
         Управляет 3 основными каналами: music, sound, voice
         """
         self.fm: FilesManager = g.fm
-        self.music = AudioChannel(g.sm, volume_type="music")
-        self.sound = AudioChannel(g.sm, volume_type="sound")
-        self.voice = AudioChannel(g.sm, volume_type="voice", default_volume=2.0)
+        self.music = AudioChannel(volume_type="music")
+        self.sound = AudioChannel(volume_type="sound")
+        self.voice = AudioChannel(volume_type="voice", default_volume=2.0)
 
     def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None, streaming: bool = True):
         """

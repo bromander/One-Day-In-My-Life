@@ -80,6 +80,9 @@ class Scene:
     def __getitem__(self, item):
         return self.data[item]
 
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
     def clear_scene(self):
         for name, dat in self.data.items():
             if name == "fade" or "gui":

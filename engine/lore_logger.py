@@ -1,12 +1,15 @@
 import copy
+from pathlib import Path
 import types
+from typing import Union, Optional, Dict, Literal
 
-from arcade import Sprite
+from arcade import Sprite, TextureAnimationSprite
 
 from .audio import AudioManager
 from .files_manager import FilesManager
 from .namespace import Namespace
 from .load_animated_gif import load_animated_gif
+from .scene import Scene
 
 from .globals import g
 
@@ -14,6 +17,81 @@ from .globals import g
 class LoreLogger:
     def __init__(self):
         self.logs: list[dict] = []
+
+    ### ==== AUDIO ===
+
+    def _snapshot_audio(self):
+        return_data = {}
+
+        if g.am.music.player:
+            music = {
+                "path" : str(g.am.music.now_playing_path),
+                "loop": g.am.music.player.loop,
+                "pitch": g.am.music.player.pitch,
+                #"paused": g.am.music.paused,
+                "streaming": True,
+                "default_volume": g.am.music.default_volume,
+                "local_modifier" : g.am.music._local_modifier,
+                "modifier": g.am.music.modifier,
+                "fade_modifier": 1.0
+            }
+            return_data["music"] = music
+
+        if g.am.sound.player:
+            sound = {
+                "path": str(g.am.sound.now_playing_path),
+                "loop": g.am.sound.player.loop,
+                "pitch": g.am.sound.player.pitch,
+                #"paused": g.am.sound.paused,
+                "streaming": False,
+                "default_volume": g.am.sound.default_volume,
+                "local_modifier": g.am.sound._local_modifier,
+                "modifier": g.am.sound.modifier,
+                "fade_modifier": 1.0
+            }
+            return_data["sound"] = sound
+
+        if g.am.voice.player:
+            voice = {
+                "path": str(g.am.voice.now_playing_path),
+                "loop": g.am.voice.player.loop,
+                "pitch": g.am.voice.player.pitch,
+                #"paused": g.am.voice.paused,
+                "streaming": False,
+                "default_volume": g.am.voice.default_volume,
+                "local_modifier": g.am.voice._local_modifier,
+                "modifier": g.am.voice.modifier,
+                "fade_modifier": 1.0
+            }
+            return_data["voice"] = voice
+
+        print(return_data)
+        return return_data
+
+    def _restore_audio(self, snapshot):
+
+        if "music" not in snapshot:
+            g.am.music.stop()
+        if "sound" not in snapshot:
+            g.am.sound.stop()
+        if "voice" not in snapshot:
+            g.am.voice.stop()
+
+        for channel_name, music_data in snapshot.items():
+            music_player = g.am.__getattribute__(channel_name)
+
+            if str(music_player.now_playing_path) == str(music_data["path"]):
+                continue
+
+            music_player.play(music_data["path"], music_data["loop"], music_data["pitch"], music_data["local_modifier"], music_data["streaming"])
+
+            #if music_data["paused"]:
+            #    music_player.pause()
+
+            music_player.default_volume = music_data["default_volume"]
+            music_player.modifier = music_data["modifier"]
+            music_player._local_modifier = music_data["local_modifier"]
+
 
     ### ==== SCENE ===
 
@@ -75,17 +153,56 @@ class LoreLogger:
                         }
                     })
 
-        return snapshot
+        return {"snapshot" : snapshot, "characters_slice" : int(g.scene.characters_slice)}
 
-    def _restore_scene(self, snapshot):
+    def _check_sprite_in_scene(self, sprite_data: dict):
+        scene = g.scene
 
-        g.scene.clear_scene()
+        sprite_name = str(Path(sprite_data["texture"]).name)
+
+        same_old_sprite = None
+
+        for layer, layer_data in scene.data.items():
+            if layer in ("fade", "gui", "bg_parallax"):
+                continue
+
+            for sprite in layer_data.items():
+                sprite: Sprite = sprite[1]
+                if str(sprite.texture.file_path.name) == sprite_name:
+                    same_old_sprite = sprite
+                    break
+
+            if same_old_sprite:
+                if (same_old_sprite.center_x == sprite_data["center_x"] and same_old_sprite.center_y == sprite_data["center_y"]) and \
+                        (same_old_sprite.width == sprite_data["width"] and same_old_sprite.height == sprite_data["height"]) and \
+                        (same_old_sprite.angle == sprite_data["angle"]) and \
+                        (same_old_sprite.alpha == sprite_data["alpha"]) and \
+                        (same_old_sprite.visible == sprite_data["visible"]):
+                    return same_old_sprite
+
+
+        return None
+
+    def _restore_scene(self, data):
+
+        snapshot = data["snapshot"]
+
+        new_scene = Scene()
+        new_scene["fade"] = g.scene["fade"]
+        new_scene["gui"] = g.scene["gui"]
 
         for entry in snapshot:
             t = entry["type"]
 
             if t == "sprite":
+
                 d = entry["data"]
+
+                same_old_sprite = self._check_sprite_in_scene(d)
+                if same_old_sprite:
+                    new_scene.add_sprite(entry["layer"], entry["name"], same_old_sprite)
+                    continue
+
 
                 sprite = Sprite(d["texture"])
                 sprite.center_x = d["center_x"]
@@ -96,11 +213,16 @@ class LoreLogger:
                 sprite.alpha = d["alpha"]
                 sprite.visible = d["visible"]
 
-                g.scene.add_sprite(entry["layer"], entry["name"], sprite)
+                new_scene.add_sprite(entry["layer"], entry["name"], sprite)
 
             elif t == "animated_sprite":
 
                 d = entry["data"]
+
+                same_old_sprite = self._check_sprite_in_scene(d)
+                if same_old_sprite:
+                    new_scene.add_sprite(entry["layer"], entry["name"], same_old_sprite)
+                    continue
 
                 sprite = load_animated_gif(d["texture"])[0]
                 sprite.center_x, sprite.center_y = d["center_x"], d["center_y"]
@@ -109,22 +231,25 @@ class LoreLogger:
                 sprite.alpha = d["alpha"]
                 sprite.visible = d["visible"]
 
-                g.scene.add_sprite(entry["layer"], entry["name"], sprite)
+                new_scene.add_sprite(entry["layer"], entry["name"], sprite)
 
             elif t == "parallax":
                 d = entry["data"]
 
-                g.scene.add_parallax_bg(
+                new_scene.add_parallax_bg(
                     d["texture"],
                     d["speed"],
                     d["original_x"],
                     d["original_y"]
                 )
 
-        g.scene["fade"]["splash"].alpha = 0
+        new_scene["fade"]["splash"].alpha = 0
         g.main.splash_manager.children[0][0].update_font(font_color=(255, 255, 255, 0))
         g.main.splash_manager.children[0][1].update_font(font_color=(255, 255, 255, 0))
-        g.scene["fade"]["fade"].alpha = 0
+        new_scene["fade"]["fade"].alpha = 0
+
+        g.scene = new_scene
+        g.scene.set_characters_slice(data["characters_slice"])
 
     ### ==== NAMESPACE ===
 
@@ -208,8 +333,7 @@ class LoreLogger:
                 g for g in gens.active_generators_consistently
                 if not g[0].startswith("talk")
             ],
-            "together": copy.copy(gens.active_generators_together),
-            "consistently_async" : copy.copy(gens.active_generators_consistently_async)
+            "together": copy.copy(gens.active_generators_together)
         }
 
     def _restore_generators(self, data):
@@ -217,10 +341,9 @@ class LoreLogger:
         gens.clear()
 
         gens.active_generators_consistently = copy.copy(data["consistently"])
-        gens.active_generators_consistently_async = copy.copy(data["consistently_async"])
         gens.active_generators_together = copy.copy(data["together"])
 
-        while gens.active_generators_consistently or gens.active_generators_together or gens.active_generators_consistently_async:
+        while gens.active_generators_consistently or gens.active_generators_together:
             gens.update(1 / 1000)
 
     ### ==== ATTRIBUTES ===
@@ -266,12 +389,14 @@ class LoreLogger:
         """
         Создаёт 'Снимок' текущего состояния игры
         """
+
         snapshot = {
             "scene": self._snapshot_scene(),
             "namespace": self._snapshot_namespace(),
             "generators": self._snapshot_generators(),
             "attributes": self._snapshot_attributes(),
-            "lore": self._snapshot_lore()
+            "lore": self._snapshot_lore(),
+            "audio": self._snapshot_audio()
         }
 
         self.logs.append(snapshot)
@@ -299,6 +424,7 @@ class LoreLogger:
         self._restore_lore(data["lore"])
         self._restore_generators(data["generators"])
         self._restore_scene(data["scene"])
+        self._restore_audio(data["audio"])
 
         g.main.talk_manager(-1, clicked=True, do_snapshot=False)
 
