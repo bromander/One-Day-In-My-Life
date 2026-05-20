@@ -137,50 +137,61 @@ class Views:
                 if hasattr(self.in_game_manager, 'clear'):
                     self.in_game_manager.clear()
 
-        def _get_amend_color(self, border_thickness=20):
-
-            if list(g.scene["bg"].values()):
-                sprite: arcade.Sprite = list(g.scene["bg"].values())[-1]
+        def _get_amend_color(self, border_thickness=20, min_border=2):
+            sprite = None
+            bg_values = list(g.scene["bg"].values())
+            if bg_values:
+                sprite = bg_values[-1]
             elif g.scene["bg_parallax"]:
-                sprite: arcade.Sprite = g.scene["bg_parallax"][0]['sprite']
-            else:
+                sprite = g.scene["bg_parallax"][0]['sprite']
+            if not sprite or not hasattr(sprite, 'texture') or sprite.texture is None:
                 return None
 
-            if not hasattr(sprite, 'texture') or sprite.texture is None:
-                return None
-
-            img = sprite.texture.image
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
-
-            img.thumbnail((img.width*0.5, img.height*0.5))
+            img = sprite.texture.image.copy()
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            img.thumbnail((img.width // 2, img.height // 2))
             width, height = img.size
 
             border = min(border_thickness, width // 2, height // 2)
+            pixels = img.load()
 
-            if border <= 0:
-                pixels = list(img.getdata())
-            else:
-                parts = [
-                    img.crop((0, 0, width, border)),  # top
-                    img.crop((0, height - border, width, height)),  # bottom
-                    img.crop((0, border, border, height - border)),  # left
-                    img.crop((width - border, border, width, height - border)),  # right
-                ]
+            visible_pixels = []
 
-                pixels = []
+            while border >= min_border:
+                for x in range(width):
+                    for y in range(border):
+                        if pixels[x, y][3] > 0:
+                            visible_pixels.append(pixels[x, y])
+                    for y in range(height - border, height):
+                        if pixels[x, y][3] > 0:
+                            visible_pixels.append(pixels[x, y])
+                for y in range(border, height - border):
+                    for x in range(border):
+                        if pixels[x, y][3] > 0:
+                            visible_pixels.append(pixels[x, y])
+                    for x in range(width - border, width):
+                        if pixels[x, y][3] > 0:
+                            visible_pixels.append(pixels[x, y])
 
-                for part in parts:
-                    pixels.extend(part.getdata())
+                if visible_pixels:
+                    break
+                border //= 2
 
-            if not pixels:
-                return None
+            if not visible_pixels:
+                cx0, cy0 = width // 4, height // 4
+                cx1, cy1 = width * 3 // 4, height * 3 // 4
+                for x in range(cx0, cx1):
+                    for y in range(cy0, cy1):
+                        if pixels[x, y][3] > 0:
+                            visible_pixels.append(pixels[x, y])
+                if not visible_pixels:
+                    return None
 
-            count = len(pixels)
-
-            red = sum(p[0] for p in pixels) // count
-            green = sum(p[1] for p in pixels) // count
-            blue = sum(p[2] for p in pixels) // count
+            count = len(visible_pixels)
+            red = sum(p[0] for p in visible_pixels) // count
+            green = sum(p[1] for p in visible_pixels) // count
+            blue = sum(p[2] for p in visible_pixels) // count
 
             return (red, green, blue)
 
