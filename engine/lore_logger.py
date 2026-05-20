@@ -1,12 +1,9 @@
 import copy
 from pathlib import Path
 import types
-from typing import Union, Optional, Dict, Literal
 
 from arcade import Sprite, TextureAnimationSprite
 
-from .audio import AudioManager
-from .files_manager import FilesManager
 from .namespace import Namespace
 from .load_animated_gif import load_animated_gif
 from .scene import Scene

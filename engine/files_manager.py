@@ -3,7 +3,6 @@ import os
 import mutagen
 from typing import Union, Optional, Dict, Literal
 from threading import Thread
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from arcade import (
 load_sound,
 load_texture,

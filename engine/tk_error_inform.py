@@ -1,7 +1,5 @@
 import tkinter as tk
 import os
-import time
-import platform
 from tkinter import ttk
 import requests
 import webbrowser

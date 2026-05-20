@@ -1,10 +1,7 @@
 import arcade.cache
 import arcade.gui as agui
 import warnings
-import json
 import random
-import math
-import os
 from PIL import Image, ImageFilter, ImageDraw
 from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider

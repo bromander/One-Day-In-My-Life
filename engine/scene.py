@@ -1,9 +1,5 @@
 import copy
-import time
 from arcade import Sprite, draw_sprite, Texture, load_texture, get_window, TextureAnimationSprite
-import os
-from pathlib import Path
-import threading
 from typing import Optional, List, Union, Literal
 from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError, SpriteIsNotLoadedError
 from .files_manager import FilesManager
