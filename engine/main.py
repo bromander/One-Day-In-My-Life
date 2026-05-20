@@ -208,7 +208,10 @@ class Views:
                 mouse_x, mouse_y = self.window.mouse.data["x"], self.window.mouse.data["y"]
                 self.cursor_texture.position = (mouse_x, mouse_y)
 
-            if Saves_manager().Volume.show_fps:
+            if not g.sm:
+                return None
+
+            if g.sm.Volume.show_fps:
                 current_fps = 1.0 / delta_time if delta_time > 0 else 0
 
                 self.fps['window'].append(current_fps)
@@ -247,7 +250,10 @@ class Views:
                     logger.error("Курсор не был создан!")
                     pass
 
-            if Saves_manager().Volume.show_fps:
+            if not g.sm:
+                return None
+
+            if g.sm.Volume.show_fps:
                 arcade.draw_lrbt_rectangle_filled(
                     left=5,
                     right=8*len(self.fps['label'].text),
@@ -255,6 +261,8 @@ class Views:
                     top=self.window.height - 10,
                     color=(0, 0, 0, 200)
                 )
+                self.fps['label'].x = 10
+                self.fps['label'].y = self.window.height - 10
                 self.fps['label'].draw()
 
     class GameView(Main_template):
@@ -1306,7 +1314,6 @@ class Views:
             def return_to_main_menu(event=None):
 
                 self.cleanup_ui()
-
                 game = Views.GameMenu(False)
                 self.window.show_view(game)
 
@@ -1410,6 +1417,12 @@ class Views:
         def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> bool | None:
             if (self.saves_len - self.slider.value) + scroll_y >= 0 and (self.saves_len - self.slider.value) + scroll_y < self.saves_len:
                 self.slider.value += -scroll_y
+
+        def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
+            if symbol == arcade.key.ESCAPE:
+                self.cleanup_ui()
+                game = Views.GameMenu(False)
+                self.window.show_view(game)
 
     class SettingsMenu(Main_template):
         def __init__(self) -> None:
@@ -1535,8 +1548,6 @@ class Views:
 
                 self.music_volume_slider = UISliderSavesUpdater(
                     "music",
-                    sm,
-                    am,
                     value=volumes['volume']["music"]*100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -1556,8 +1567,6 @@ class Views:
 
                 self.sound_volume_slider = UISliderSavesUpdater(
                     "sound",
-                    sm,
-                    am,
                     value=volumes['volume']["sound"]*100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -1593,8 +1602,6 @@ class Views:
 
                 self.lps_slider = UISliderSavesUpdater(
                     "lps",
-                    sm,
-                    am,
                     value=volumes["lps"],  # начальное значение
                     min_value=0.1,
                     max_value=3.0,
@@ -1613,8 +1620,6 @@ class Views:
 
                 self.fade_speed_slider = UISliderSavesUpdater(
                     "fade_speed",
-                    sm,
-                    am,
                     value=volumes["fade_speed"],  # начальное значение
                     min_value=0.1,
                     max_value=2.0,
@@ -1690,6 +1695,12 @@ class Views:
 
 
             create_menu_buttons()
+
+        def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
+            if symbol == arcade.key.ESCAPE:
+                game = Views.GameMenu(False)
+                self.manager.clear()
+                self.window.show_view(game)
 
 
     class MenuView(Main_template):

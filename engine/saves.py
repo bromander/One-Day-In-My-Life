@@ -19,15 +19,17 @@ class Saves_manager:
         """
         save_folder = self.get_save_path()
         if not os.path.exists(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME)):
-            logger.warning("Создаём файл сохранения!")
+            logger.warning("Создаём файл сохранений!")
             self._create_save()
         else:
             with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
                 file = json.load(file)
 
             if ("saves_version" not in file) or (file["saves_version"] != g.TOPICAL_SAVES_VERSION):
-                logger.warning("НЕВЕРНАЯ ВЕРСИЯ СОХРАНЕНИЯ! Пересоздаём файл сохранений!")
+                logger.warning("НЕВЕРНАЯ ВЕРСИЯ ФАЙЛА СОХРАНЕНИЙ! Пересоздаём файл сохранений!")
                 self._create_save()
+            else:
+                logger.info("С файлом сохранений всё впорядке!")
 
 
         self.Persistent = self.Persistent()

@@ -65,7 +65,6 @@ class LoreLogger:
             }
             return_data["voice"] = voice
 
-        print(return_data)
         return return_data
 
     def _restore_audio(self, snapshot):

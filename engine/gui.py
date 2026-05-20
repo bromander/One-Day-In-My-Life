@@ -35,7 +35,6 @@ from arcade.gui import (
 )
 from pyglet.graphics import Batch
 
-from .saves import Saves_manager
 from .audio import AudioManager
 from .waiter import Waiter
 from .character import Attributes
@@ -456,8 +455,6 @@ class UISliderSavesUpdater(agui.UISlider):
     def __init__(
             self,
             type: str,
-            sm: Saves_manager,
-            am: AudioManager,
             value: float = 0,
             start_value: Optional[float] = None,
             min_value: float = 0,
@@ -486,8 +483,8 @@ class UISliderSavesUpdater(agui.UISlider):
              style = style,
              step = step)
 
-        self.sm = sm
-        self.am = am
+        self.sm = g.sm
+        self.am = g.am
         self.type = type
 
         self.start_value = start_value
@@ -643,8 +640,6 @@ class Managers:
 
                 music_volume_slider = UISliderSavesUpdater(
                     "music",
-                    g.sm,
-                    g.am,
                     value=volumes.music * 100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -665,8 +660,6 @@ class Managers:
 
                 sound_volume_slider = UISliderSavesUpdater(
                     "sound",
-                    g.sm,
-                    g.am,
                     value=volumes.sound * 100,  # начальное значение
                     min_value=0,
                     max_value=200,
@@ -707,8 +700,6 @@ class Managers:
                 self.settings_v_box_1.add(lps_label)
                 self.lps_slider = UISliderSavesUpdater(
                     "lps",
-                    g.sm,
-                    g.am,
                     value=volumes.lps,  # начальное значение
                     min_value=0.1,
                     max_value=3,
@@ -728,8 +719,6 @@ class Managers:
                 self.settings_v_box_1.add(fade_speed_label)
                 self.fade_speed_slider = UISliderSavesUpdater(
                     "fade_speed",
-                    g.sm,
-                    g.am,
                     value=volumes.fade_speed,  # начальное значение
                     min_value=0,
                     max_value=2.0,
