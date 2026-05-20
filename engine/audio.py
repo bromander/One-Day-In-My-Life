@@ -44,8 +44,11 @@ class AudioChannel:
         self._fade_modifier = value
         if hasattr(self, "player"):
             if self.player:
-                self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+                self.player.volume = self._get_volume()
                 # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
+
+    def _get_volume(self):
+        return min(max(round(self.default_volume * self.modifier * self._fade_modifier * self._local_modifier, 2), 0.0), 1.0)
 
     def play(self, file: Union[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None, streaming: bool = False) -> None:
         """
@@ -74,7 +77,7 @@ class AudioChannel:
         else:
             raise TypeError("Sound type is not the desired data type")
 
-        volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+        volume = self._get_volume()
         self.player = file_sound.play(volume=volume, loop=loop, speed=speed)
         self.paused = False
 
@@ -117,14 +120,14 @@ class AudioChannel:
             if is_global:
                 self.modifier = vol
                 if self.player:
-                    self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+                    self.player.volume = self._get_volume()
 
                 # Сохраняем значения
                 self.sm.Volume.__setattr__(self.volume_type, self.modifier)
             else:
                 self._local_modifier = vol
                 if self.player:
-                    self.player.volume = self.default_volume * self.modifier * self._fade_modifier * self._local_modifier
+                    self.player.volume = self._get_volume()
 
     def is_playing(self) -> bool:
         if hasattr(self, "player"):
