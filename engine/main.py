@@ -1621,7 +1621,7 @@ class Views:
                 self.fade_speed_slider = UISliderSavesUpdater(
                     "fade_speed",
                     value=volumes["fade_speed"],  # начальное значение
-                    min_value=0.1,
+                    min_value=0.0,
                     max_value=2.0,
                     width=300,
                     height=20,

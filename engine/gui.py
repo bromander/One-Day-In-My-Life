@@ -546,7 +546,7 @@ class UISliderSavesUpdater(agui.UISlider):
                 case "lps":
                     self.sm.Volume.lps = self.value
                 case "fade_speed":
-                    self.sm.Volume.fade_speed = self.value / 10
+                    self.sm.Volume.fade_speed = self.value
             self.sm.Volume._save_data()
 
 class Managers:
@@ -699,7 +699,7 @@ class Managers:
                     "lps",
                     value=volumes.lps,  # начальное значение
                     min_value=0.1,
-                    max_value=3,
+                    max_value=3.0,
                     width=300,
                     height=20,
                     start_value=g.DEFAULT_OPTIONS_PARAM["lps"]
@@ -717,7 +717,7 @@ class Managers:
                 self.fade_speed_slider = UISliderSavesUpdater(
                     "fade_speed",
                     value=volumes.fade_speed,  # начальное значение
-                    min_value=0,
+                    min_value=0.0,
                     max_value=2.0,
                     width=300,
                     height=20,
