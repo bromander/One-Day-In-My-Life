@@ -147,6 +147,10 @@ class Globals:
         return logger
 
     @property
+    def TOPICAL_SAVES_VERSION(self):
+        return 0
+
+    @property
     def DEFAULT_OPTIONS_PARAM(self):
         return {
                     "volume": {

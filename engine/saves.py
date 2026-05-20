@@ -20,18 +20,31 @@ class Saves_manager:
         save_folder = self.get_save_path()
         if not os.path.exists(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME)):
             logger.warning("Создаём файл сохранения!")
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
+            self._create_save()
+        else:
+            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
+                file = json.load(file)
 
-                data = {
-                    "saves": b64encode(zlib.compress(json.dumps({}, ensure_ascii=False).encode('utf-8'), 9)).decode('ascii'),
-                    "persistent" : {},
-                    "options": g.DEFAULT_OPTIONS_PARAM
-                }
-                json.dump(data, file, indent=4, ensure_ascii=False)
+            if ("saves_version" not in file) or (file["saves_version"] != g.TOPICAL_SAVES_VERSION):
+                logger.warning("НЕВЕРНАЯ ВЕРСИЯ СОХРАНЕНИЯ! Пересоздаём файл сохранений!")
+                self._create_save()
+
 
         self.Persistent = self.Persistent()
         self.Volume = self.Volume()
         self.Save = self.Save()
+
+    def _create_save(self):
+        save_folder = self.get_save_path()
+        with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
+            data = {
+                "saves_version": g.TOPICAL_SAVES_VERSION,
+                "saves": b64encode(zlib.compress(json.dumps({}, ensure_ascii=False).encode('utf-8'), 9)).decode(
+                    'ascii'),
+                "persistent": {},
+                "options": g.DEFAULT_OPTIONS_PARAM
+            }
+            json.dump(data, file, indent=4, ensure_ascii=False)
 
     @staticmethod
     def get_save_path():
