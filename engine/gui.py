@@ -7,35 +7,28 @@ from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider
 from typing import Optional, List, Tuple, Union
 from arcade import (
-    Window,
     uicolor,
     Scene,
     load_texture,
     Sprite,
     color,
-    View,
     draw_lrbt_rectangle_filled,
     draw_circle_filled,
     draw_circle_outline,
-    draw_polygon_filled, Texture,
-    check_for_collision_with_list,
-    sprite_list, get_sprites_at_point, get_sprites_in_rect,
-    SpriteList, draw_sprite, draw_lbwh_rectangle_outline, draw_rect_filled, LBWH,
+    Texture,
+    get_sprites_at_point,
+    LBWH,
     Text, get_window
 )
-from arcade.gui.events import UIMousePressEvent, UIMouseReleaseEvent, UIMouseMovementEvent, UIMouseDragEvent, UIOnUpdateEvent
+from arcade.gui.events import UIMousePressEvent, UIMouseReleaseEvent, UIMouseMovementEvent, UIOnUpdateEvent
 from arcade.gui import (
     Surface,
     UIEvent,
-    UIMouseDragEvent, UIOnChangeEvent, UIOnClickEvent,
-    UIWidget, UIInteractiveWidget, UISpriteWidget
+    UIMouseDragEvent,
+    UIWidget
 )
-from pyglet.graphics import Batch
 
-from .audio import AudioManager
 from .waiter import Waiter
-from .character import Attributes
-from .files_manager import FilesManager
 
 from .globals import g
 

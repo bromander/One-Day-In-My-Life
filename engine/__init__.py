@@ -1,5 +1,5 @@
 from .scene import Scene
-from .lore_viewer import Wwl
+from .lore_manager import LoreManager
 from .waiter import Waiter
 from .main import Views
 from .saves import Saves_manager

@@ -15,7 +15,7 @@ from pyglet.gl.lib import GLException
 
 from .gui import UISliderVertical, Managers, UISliderSavesUpdater, MovableBlock, MovableBlockFalling, ItemsNotifText, ClickableSprite
 from .scene import Scene
-from .lore_viewer import Wwl
+from .lore_manager import LoreManager
 from .lore_logger import LoreLogger
 from .waiter import Waiter
 from .saves import Saves_manager
@@ -382,11 +382,11 @@ class Views:
                 else:
                     logger.info(f"Открытие сохранения {session_id}")
 
-                    wwl = g.wwl
+                    lm = g.lm
                     self.session_id = str(uuid.uuid4())
                     save = g.sm.Save.get_save(session_id)
-                    wwl.label = save["label"]
-                    wwl.pose = save["position"]
+
+                    lm.jump(save["label"], save["position"])
 
                     for i, o in save["defines"].items():
                         self.NAMESPACE["Define"].__setattr__(i, o)
@@ -399,11 +399,6 @@ class Views:
 
                     #while thread.is_alive():
                     #    continue
-
-                    wwl._preload_assets(wwl.label)
-                    if wwl.label in wwl.graf:
-                        for i in wwl.graf[wwl.label]:
-                            wwl._preload_assets(i)
 
                     old_scene = save["scene"]
                     g.scene.characters_slice = old_scene["characters_slice"]
@@ -509,7 +504,7 @@ class Views:
             game = Views.GameMenu(show_lc=True)
             self.window.show_view(game)
 
-        def talk_manager(self, pos_offset: Optional[int] = None, clicked: bool = True, do_snapshot: bool = True) -> None:
+        def talk_manager(self, pos_offset: int = 0, clicked: bool = True, do_snapshot: bool = True) -> None:
             """
             Получает инструкции сценария и запускает функцию talk(), обрабатывая её результаты
             """
@@ -541,10 +536,10 @@ class Views:
                 return
 
             g.attributes.reset()
-            now = g.wwl.get_thing(pos_offset)
+            now = g.lm.get_thing(pos_offset)
 
             if now['action'] == "EXECUTE":
-                logger.log(5, str(now['data']))
+                logger.log(5, repr(str(now['data'])))
 
             res = self.talk(now)
 
@@ -663,8 +658,6 @@ class Views:
             if key == arcade.key.S or key == arcade.key.ESCAPE:
                 self.settings_manager.turn_visibl()
             if key == arcade.key.B:
-                wwl = g.wwl
-                fm = g.fm
 
                 self.window.set_size(-558, 65165)
 
@@ -673,15 +666,13 @@ class Views:
                 Данные на текущий момент игры:
                 
                 ===== ЛЕЙБЛ =====
-                - Лейбл: {wwl.label}
-                - Позиция: {wwl.pose}
-                - Граф сюжета: {wwl.graf}
-                - Текущий файл сценария: {wwl.now_file}
-                - Найдено файлов сценария: {len(wwl.files)}
+                - Лейбл: {g.lm.label}
+                - Позиция: {g.lm.pose}
+                - Граф сюжета: {g.lm.graf}
                 
                 ===== АССЕТЫ =====
-                - Текстуры: ЗАГРУЖЕНО: {len(fm.textures)}, НЕ ЗАГРУЖЕНО: {len(fm.textures_paths) - len(fm.textures)}
-                - Аудио: ЗАГРУЖЕНО: {len(fm.audios)}, НЕ ЗАГРУЖЕНО: {len(fm.audio_paths) - len(fm.audios)}
+                - Текстуры: ЗАГРУЖЕНО: {len(g.fm.textures)}, НЕ ЗАГРУЖЕНО: {len(g.fm.textures_paths) - len(g.fm.textures)}
+                - Аудио: ЗАГРУЖЕНО: {len(g.fm.audios)}, НЕ ЗАГРУЖЕНО: {len(g.fm.audio_paths) - len(g.fm.audios)}
                 - Активные спрайты: {g.scene.len_loaded_textures}
                 \n
                 """
@@ -2500,12 +2491,12 @@ def init_file() -> None:
     g.am = AudioManager()
     logger.debug("Инициализация [4/8]: Scene")
     g.scene = Scene()
-    logger.debug("Инициализация [5/8]: WorkWithLore")
-    g.wwl = Wwl()
+    logger.debug("Инициализация [5/8]: LoreManager")
+    g.lm = LoreManager()
     logger.debug("Инициализация [6/8]: DiscordActor")
     g.da = Discord_act()
     logger.debug("Инициализация [7/8]: Attributes")
     g.attributes = Attributes()
     logger.debug("Инициализация [8/8]: ListCharacters")
     g.ListCharacters = ListCharacters()
-    logger.info(f"Инициализация завершена за {round(time.time() - timee, 2)} сек")
+    logger.info(f"Инициализация завершена за {round(time.time() - timee, 3)} сек")

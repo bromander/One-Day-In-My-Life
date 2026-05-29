@@ -288,8 +288,8 @@ class Saves_manager:
             saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
 
             saves[g.main.session_id] = {
-                "position": g.wwl.pose - 1,
-                "label": g.wwl.label,
+                "position": g.lm.pose - 1,
+                "label": g.lm.label,
                 "defines": defines,
                 "scene": scene,
                 "files_manager" : files_manager,

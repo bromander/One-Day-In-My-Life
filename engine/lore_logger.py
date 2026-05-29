@@ -366,18 +366,14 @@ class LoreLogger:
     ### ==== WWL ===
 
     def _snapshot_lore(self):
-        wwl = g.wwl
+        lm = g.lm
         return copy.deepcopy({
-            "pose": wwl.pose,
-            "label": wwl.label,
-            "file": wwl.now_file
+            "pose": lm.pose,
+            "label": lm.label
         })
 
     def _restore_lore(self, data):
-        wwl = g.wwl
-        wwl.pose = data["pose"]
-        wwl.label = data["label"]
-        wwl.now_file = data["file"]
+        g.lm.jump(data["label"], data["pose"])
 
     ### ==== Main functions ===
 

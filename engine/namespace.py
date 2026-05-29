@@ -16,7 +16,6 @@ class Namespace:
 
         self.Game_view = g.main
         self.ListCharacters = g.ListCharacters
-        self.Wwl = g.wwl
         self.AudioManager = g.am
         self.SavesManager = g.sm
 
@@ -138,7 +137,7 @@ class Namespace:
             self.namespace = namespace
             self.Game_view = g.main
             self.ListCharacters = g.ListCharacters
-            self.Wwl = g.wwl
+            self.lm = g.lm
             self.AudioManager = g.am
             self.PIL = PIL
 
@@ -146,7 +145,7 @@ class Namespace:
                 "Сладкие блинчики": (frozenset(["milk.png", "eggs.png", "puki.png", "pineapple.png"]), "cooking_bliny"),  # молоко+яйца+мука+ананас
                 "Омлет" : (frozenset(["milk.png", "eggs.png"]), "cooking_omlet"), # Молоко и яица
                 "Салат" : (frozenset(["tomatoes.png"]), "cooking_salad") # Помедорчеки
-                #"Пирог" : (frozenset(["milk.png", "eggs.png", "puki.png"]), "blinyyy") # Яица, молоко  и муки
+                #"Пирог" : (frozenset(["milk.png", "eggs.png", "puki.png"]), "blinyyy") # Яица, молоко  и пуки
             }
 
         def format_time_seconds(self):
@@ -618,8 +617,7 @@ class Namespace:
             :param label: Название лейбла
             :param position: На какой строке сценария
             """
-            g.wwl.pose = position
-            g.wwl.label = label
+            g.lm.jump(label, position)
 
     class Screen:
 
@@ -719,8 +717,7 @@ class Namespace:
         g.main.actions.start_action("wait", {"time": duration}, stream)
 
     def end(self):
-        g.wwl.label = "main"
-        g.wwl.pose = 0
+        g.lm.jump(g.DEFAULT_START_LABEL, 0)
         g.main.chanel()
 
     def talk(self, character: str, text: str):

@@ -5,14 +5,9 @@ from typing import Union, Optional, Dict, Literal
 from threading import Thread
 from arcade import (
 load_sound,
-load_texture,
 Texture,
 Sound,
-Sprite,
-TextureAnimationSprite,
-TextureKeyframe,
-TextureAnimation,
-SpriteSheet#, load_animated_gif
+TextureAnimationSprite
 
 )
 from PIL import Image, ImageSequence
@@ -64,12 +59,9 @@ class FilesManager:
         self.music_path = Path(paths["music"]).absolute()
         self.sounds_path = Path(paths["sounds"]).absolute()
 
-        self.image_extensions = [".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"]
-        self.audio_extensions = [".mp3", ".wav", ".ogg"]
-
-        self.textures_paths: dict[str : Path] = find_files(self.image_extensions, self.images_path) # Пути к текстурам всех спрайтов {Название файла : полный путь}
-        self.audio_paths: dict[str : Path] = (find_files(self.audio_extensions, self.music_path, ["voice"]) |
-                                              find_files(self.audio_extensions, self.sounds_path, ["voice"])) # Пути ко всем звуковым файлам {Название файла : полный путь}
+        self.textures_paths: dict[str: Path] = find_files(g.SUPPORTED_IMAGE_FORMATS, self.images_path) # Пути к текстурам всех спрайтов {Название файла : полный путь}
+        self.audio_paths: dict[str : Path] = (find_files(g.SUPPORTED_AUDIO_FORMATS, self.music_path, ["voice"]) |
+                                              find_files(g.SUPPORTED_AUDIO_FORMATS, self.sounds_path, ["voice"])) # Пути ко всем звуковым файлам {Название файла : полный путь}
         self.loaded_labels: list[str] = [] # Лейблы которые уже были загружены
 
         self.textures: dict[str : Texture] = {} # Уже загруженные текстуры {Название файла : текстура}
@@ -123,8 +115,6 @@ class FilesManager:
 
                     audios[i] = load_sound(path, streaming=streaming)
 
-            default_texture_cache.flush(True, True, True, True)
-
         textures = list(filenames)
         n = min(32, len(textures), (os.cpu_count() * 4) + 1)  # во сколько потоков будут загружаться текстуры
 
@@ -145,6 +135,7 @@ class FilesManager:
             threads.append(thread)
 
         logger.warning(f"Подгрузка ассетов: {n} потоков, {length} текстур")
+        default_texture_cache.flush(True, True, True, True)
 
         return threads
 
@@ -154,7 +145,9 @@ class FilesManager:
         :param sprite: Название спрайта
         """
         textures = {}
-        for key, texture_data in self.textures.items():
+        character_textures = self.textures.copy()
+
+        for key, texture_data in character_textures.items():
             if key.startswith(sprite):
                 texture = texture_data[0].copy()
                 texture = Texture(texture)

@@ -13,19 +13,34 @@ from .tk_error_inform import show_error, has_internet
 class Globals:
     def __init__(self):
         self._handlers = self._create_handlers()
+        self.hawk = self._get_hawk()
 
-    @staticmethod
-    def get_save_path():
-        if os.name == 'nt':  # Windows
-            # Используем %APPDATA% (C:\Users\Имя\AppData\Roaming\Название_игры)
-            app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
-            save_dir = os.path.join(app_data, 'OneDay')
+    def notice_crash(self, e: Exception):
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        text = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+
+        logger = self.get_logger("__main__")
+
+        logger.critical(text)
+        show_error(exc_type, self.sm.Volume.telemetry)
+
+        save_folder = self.get_save_path()
+
+        file = os.path.join(save_folder, "latest_full.log")
+
+        def get_full_logs():
+            with open(file, "r", encoding="UTF-8") as logs:
+                logs = logs.read()
+            return [i for i in logs.split("\n")]
+
+        custom_data = {
+            "logs": str(get_full_logs())
+        }
+
+        if g.sm.Volume.telemetry and has_internet:
+            self.hawk.send(e, context=custom_data)
         else:
-            # Linux/Mac
-            save_dir = os.path.join(os.path.expanduser('~'), '.local', 'share', 'OneDay')
-
-        os.makedirs(save_dir, exist_ok=True)
-        return save_dir
+            logger.error("Не получилось отправить лог! Отсутствует подключение к интернету или отключена телеметрия...")
 
     def _create_handlers(self):
 
@@ -67,8 +82,6 @@ class Globals:
         sys.stdout = tee
         sys.stderr = tee
 
-
-
         class CustomLogger(logging.Logger):
             def event(self, message, *args, **kwargs):
                 if self.isEnabledFor(5):
@@ -99,6 +112,29 @@ class Globals:
         ))
 
         return [console_handler, file_handler]
+
+    def get_logger(self, name):
+        logger = colorlog.getLogger(name)
+
+        if not logger.handlers:
+            for handler in self.handlers:
+                logger.addHandler(handler)
+
+        logger.setLevel(5)
+        return logger
+
+    @staticmethod
+    def get_save_path():
+        if os.name == 'nt':  # Windows
+            # Используем %APPDATA% (C:\Users\Имя\AppData\Roaming\Название_игры)
+            app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
+            save_dir = os.path.join(app_data, 'OneDay')
+        else:
+            # Linux/Mac
+            save_dir = os.path.join(os.path.expanduser('~'), '.local', 'share', 'OneDay')
+
+        os.makedirs(save_dir, exist_ok=True)
+        return save_dir
 
     @staticmethod
     def _get_hawk():
@@ -135,16 +171,6 @@ class Globals:
     @property
     def handlers(self):
         return self._handlers
-
-    def get_logger(self, name):
-        logger = colorlog.getLogger(name)
-
-        if not logger.handlers:
-            for handler in self.handlers:
-                logger.addHandler(handler)
-
-        logger.setLevel(5)
-        return logger
 
     @property
     def TOPICAL_SAVES_VERSION(self):
@@ -220,40 +246,27 @@ class Globals:
     def DEFAULT_DATA_FILE_NAME(self):
         return "data.json"
 
-    def notice_crash(self, e: Exception):
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        text = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    @property
+    def DEFAULT_LORE_FILE_EXT(self):
+        return ".jpy"
 
-        logger = self.get_logger("__main__")
+    @property
+    def DEFAULT_START_LABEL(self):
+        return "main"
 
-        logger.critical(text)
-        show_error(exc_type, self.sm.Volume.telemetry)
+    @property
+    def SUPPORTED_AUDIO_FORMATS(self):
+        return frozenset((".mp3", ".wav", ".ogg"))
 
-        save_folder = self.get_save_path()
-
-        file = os.path.join(save_folder, "latest_full.log")
-
-        def get_full_logs():
-            with open(file, "r", encoding="UTF-8") as logs:
-                logs = logs.read()
-            return [i for i in logs.split("\n")]
-
-        custom_data = {
-            "logs": str(get_full_logs())
-        }
-
-        if g.sm.Volume.telemetry and has_internet:
-            self.hawk.send(e, context=custom_data)
-        else:
-            logger.error("Не получилось отправить лог! Отсутствует подключение к интернету или отключена телеметрия...")
-
-    hawk = _get_hawk()
+    @property
+    def SUPPORTED_IMAGE_FORMATS(self):
+        return frozenset((".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"))
 
     fm = None  # Files manager
     sm = None  # Saves manager
     am = None  # Audio manager
     scene = None  # Scene
-    wwl = None  # Work with lore
+    lm = None  # Lore Manager
     da = None  # Discord actor
 
     All_views = None
