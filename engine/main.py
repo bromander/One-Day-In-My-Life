@@ -475,6 +475,8 @@ class Views:
             self.in_game_manager.enable()
             #self.in_game_manager.return_button.on_click = self.LoreLogger.return_back
 
+            g.lm.jump(g.DEFAULT_START_LABEL, 0)
+
             self.talk_manager(clicked=False)
 
             self.on_resize(int(self.width), int(self.height))

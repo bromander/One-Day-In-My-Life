@@ -18,6 +18,8 @@ class Discord_act:
 
         self.thread: Optional[Thread] = None
 
+        self.start_time = time.time()
+
         self._connect()
 
     def _connect(self, details: str = "", state: str = "В главном меню"):
@@ -31,14 +33,14 @@ class Discord_act:
                         activity_type=ActivityType.PLAYING,
                         details=details,
                         state=state,
-                        start=time.time()
+                        start=self.start_time
                     )
                 else:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
                         activity_type=ActivityType.PLAYING,
                         state=state,
-                        start=time.time()
+                        start=self.start_time
                     )
 
             except DiscordNotFound:
@@ -63,19 +65,19 @@ class Discord_act:
                         status_display_type=StatusDisplayType.NAME,
                         details=name,
                         state=description,
-                        start=time.time()
+                        start=self.start_time
                     )
                 elif not description:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
                         details=name,
-                        start=time.time()
+                        start=self.start_time
                     )
                 else:
                     self.RPC.update(
                         status_display_type=StatusDisplayType.NAME,
                         state=description,
-                        start=time.time()
+                        start=self.start_time
                     )
             else:
                 raise PipeClosed

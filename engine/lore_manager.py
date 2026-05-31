@@ -85,10 +85,12 @@ class LoreManager:
         for label, assets in assets_pack.items():
             g.fm.load_assets(assets, label)
 
-
-    def jump(self, label: str,  pose: int):
+    def jump(self, label: str, pose: int):
         self.label = label
         self.pose = pose
+
+        if self.lore[label]["caption"]:
+            g.main.NAMESPACE.execute(f"Lore.set_part({self.lore[label]["caption"]})")
 
         self.load_assets(label)
 

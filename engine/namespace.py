@@ -314,7 +314,7 @@ class Namespace:
             :param size: Размер спрайта
             :param angle: поворот спрайта
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
-            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             """
             window = get_window()
 
@@ -367,7 +367,7 @@ class Namespace:
             Удаляет спрайт со сцены
             :param filename: Название файла
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
-            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             """
 
             def target():
@@ -395,7 +395,7 @@ class Namespace:
             :param at: Положение персонажа
             :param size: Размер спрайта
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
-            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             """
 
             window = get_window()
@@ -444,7 +444,7 @@ class Namespace:
             Удаляет спрайт персонажа со сцены
             :param character: Айди персонажа
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
-            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             """
             def target(scene):
                 scene.delete_sprite("sprites", character)
@@ -472,7 +472,7 @@ class Namespace:
             :param size: Размер
             :param layer: Слой
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
-            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             :raises ValueError: Если layer < 0
             :raises FileNotFoundError: Если файл сцены не был найден
             """
@@ -572,7 +572,7 @@ class Namespace:
             :param sprite: Название спрайта
             :param position: Положение
             :param speed: Скорость передвижения
-            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             """
             now = {"character": sprite, "pos": position, "speed": speed}
             g.main.actions.start_action("move_sprite", now, stream=stream)
@@ -584,7 +584,7 @@ class Namespace:
             Создаёт эффект фейдинга на экране
             :param type: Тип фейда "fadein" или "fadeout"
             :param duration: Продолжительность анимации
-            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             :raises ActionNotFoundError: Если type не существует
             """
             match type:
@@ -619,6 +619,26 @@ class Namespace:
             """
             g.lm.jump(label, position)
 
+        def set_part(self, name: str, description: str, show_splash: bool = False, speed: float = 1.0,
+                     stream: Literal["consistently", "consistently_async", "together"] = "together") -> None:
+            """
+            Позволяет указать то, в какой точке сюжета находится игрок.
+            Ещё, позволяет запустить сплеш.
+            По умолчанию, всегда вызывается в начале каждого лейбла
+            :param name: Название текущей главы/части игры
+            :param description: Описание
+            :param show_splash: Если True, то при переключении на лейбл будет показан сплеш
+            :param speed: Скорость появления сплеша и его пропадания (пропадает со скоростью в два раза меньше speed)
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
+            """
+
+            g.main.session_data["description"] = description
+            g.main.session_data["name"] = name
+            g.da.update(name, description)
+
+            if show_splash:
+                g.main.actions.start_action("show_splash", {"name" : name, "description": description, "duration" : speed}, stream)
+
     class Screen:
 
         def call_view(self, view_name: str):
@@ -648,7 +668,7 @@ class Namespace:
             :param volume: Громкость
             :param loop: Если True, музыка будет играть циклично
             :param effect: Название эффекта
-            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             :raises ChannelDoesNotExistError: Если channel не существует
             """
             match channel:
@@ -670,7 +690,7 @@ class Namespace:
             Останавливает проигрывание канала
             :param channel: Канал ("music" / "sound")
             :param effect: Название эффекта
-            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится
+            :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             :raises ChannelDoesNotExistError: Если channel не существует
             """
             match channel:
