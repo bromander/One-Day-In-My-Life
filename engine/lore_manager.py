@@ -4,6 +4,7 @@ import re
 import ast
 from typing import Optional, Literal, Tuple, Union
 from functools import lru_cache
+from arcade import Texture, Sound
 
 from .globals import g
 
@@ -14,21 +15,19 @@ class LoreManager:
         self.lore_files = self._find_files(g.DEFAULT_LORE_FILE_EXT)
 
         reorganizer = Reorganizer()
-        self.lore = reorganizer.reorganize_files(self.lore_files) # {"labe_name" : {"caption" : "", "assets" : [], "lore" : [""]}}
+        self.lore = reorganizer.reorganize_files(self.lore_files) # {"labe_name" : {"caption" : "", "assets" : set(), "lore" : [""]}}
         reorganizer.check_for_character.cache_clear()
+
+        print(self.lore)
 
         logger.debug(f"Обнаружено Файлов сценария: {len(self.lore_files)}, Лейблов: {len(self.lore)}")
 
-        print(g.fm.audio_paths)
-
         self.graf = self._create_graf(self.lore)
-        print(self.graf)
 
         self.pose = 0
         self.label = g.DEFAULT_START_LABEL
 
-        self.load_assets(self.label, load_last=False)
-
+        self.load_assets(self.label)
 
     def _find_files(self, extension: str, start_path: Union[str] = "./game") -> list[Path]:
 
@@ -62,13 +61,48 @@ class LoreManager:
                             graf[label_name].append(label_jump)
         return graf
 
-    def load_assets(self, label, load_now: bool = True, load_next: bool = True, load_last = True):
+    @lru_cache(1024)
+    def _can_unload_asset(self, filename: str, label: str, scan_now: bool = True, scan_next: bool = True, scan_last = True) -> bool:
+
+        if filename in g.IGNORE_FILES_FOR_UNLOADING:
+            return False
+
+        # ассеты текущего лейбла
+        if scan_now:
+            if filename in self.lore[label]['assets']:
+                return False
+
+        # ассеты прошлого лейбла
+        if scan_last:
+            last_labels = {node for node, neighbors in self.graf.items() if label in neighbors}
+            for last_label in last_labels:
+                if filename in self.lore[last_label]['assets']:
+                    return False
+
+        # ассеты следующего лейла
+        if scan_next:
+            if label in self.graf:
+                for graf_label in self.graf[label]:
+                    if filename in self.lore[graf_label]['assets']:
+                        return False
+
+        return True
+
+    def unload_assets(self, label):
+
+        loaded_textures = set(g.fm.textures.copy().keys())
+
+        files_pack = [file_name for file_name in loaded_textures if self._can_unload_asset(file_name, label)]
+
+        g.fm.unload_assets(files_pack, label)
+
+    def _get_assets_pack(self, label, load_now: bool = True, load_next: bool = True, load_last = True):
 
         assets_pack = {}
 
         if load_last:
-            # ссеты с прошлого лейбла
-            last_labels = [node for node, neighbors in self.graf.items() if label in neighbors]
+            # асеты с прошлого лейбла
+            last_labels = {node for node, neighbors in self.graf.items() if label in neighbors}
             for last_label in last_labels:
                 assets_pack[last_label] = self.lore[last_label]["assets"]
 
@@ -82,8 +116,16 @@ class LoreManager:
                 for graf_label in self.graf[label]:
                     assets_pack[graf_label] = self.lore[graf_label]["assets"]
 
+        return assets_pack
+
+    def load_assets(self, label):
+
+        assets_pack = self._get_assets_pack(label)
+
         for label, assets in assets_pack.items():
             g.fm.load_assets(assets, label)
+
+        self.unload_assets(label)
 
     def jump(self, label: str, pose: int):
         self.label = label
@@ -166,7 +208,7 @@ class Reorganizer:
                 label_name = line.replace("label ", "").split("(")[0]
                 label_data = re.split(r'[()]', line)[1]
 
-                paths[label_name] = {"caption" : label_data, "assets" : [], "lore" : [], "unsplit_lore" : ""}
+                paths[label_name] = {"caption" : label_data, "assets" : set(), "lore" : [], "unsplit_lore" : ""}
 
                 point_start = (label_name, index+1)
 
@@ -219,7 +261,7 @@ class Reorganizer:
                 if check_for_character:
                     founded_assets.append(check_for_character)
 
-        return founded_assets
+        return set(founded_assets)
 
 
     def reorganize_files(self, files: list[Path]):

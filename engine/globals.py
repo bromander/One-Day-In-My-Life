@@ -15,6 +15,11 @@ class Globals:
         self._handlers = self._create_handlers()
         self.hawk = self._get_hawk()
 
+        self.cant_unload = []
+        self.cant_unload += os.listdir("./game/images/moving_shop_assets") + os.listdir("./game/images/bying_shop_assets") + ["box_office_3.png", "golub_click.png", "golub.png"]
+
+        self.cant_unload = frozenset(self.cant_unload)
+
     def notice_crash(self, e: Exception):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         text = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
@@ -261,6 +266,10 @@ class Globals:
     @property
     def SUPPORTED_IMAGE_FORMATS(self):
         return frozenset((".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"))
+
+    @property
+    def IGNORE_FILES_FOR_UNLOADING(self):
+        return self.cant_unload
 
     fm = None  # Files manager
     sm = None  # Saves manager

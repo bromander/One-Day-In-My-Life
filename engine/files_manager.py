@@ -7,6 +7,7 @@ from arcade import (
 load_sound,
 Texture,
 Sound,
+Sprite,
 TextureAnimationSprite
 
 )
@@ -64,10 +65,10 @@ class FilesManager:
                                               find_files(g.SUPPORTED_AUDIO_FORMATS, self.sounds_path, ["voice"])) # Пути ко всем звуковым файлам {Название файла : полный путь}
         self.loaded_labels: list[str] = [] # Лейблы которые уже были загружены
 
-        self.textures: dict[str : Texture] = {} # Уже загруженные текстуры {Название файла : текстура}
+        self.textures: dict[str : Image.Image] = {} # Уже загруженные текстуры {Название файла : текстура}
         self.audios: dict[str : Sound] = {} # Уже загруженные звуки {Название файла : Звук}
 
-    def load_assets(self, filenames: list[str], label: str) -> Optional[list[Thread]]:
+    def load_assets(self, filenames: Union[list[str], set[str]], label: str) -> Optional[list[Thread]]:
         """
         Загружает текстуры пачками в другом потоке
         :param filenames: список названий файлов
@@ -135,9 +136,38 @@ class FilesManager:
             threads.append(thread)
 
         logger.warning(f"Подгрузка ассетов: {n} потоков, {length} текстур")
-        default_texture_cache.flush(True, True, True, True)
 
         return threads
+
+    def unload_assets(self, filenames: Union[list[str], set[str]], label: str):
+
+        if label in self.loaded_labels:
+            self.loaded_labels.remove(label)
+
+            for file in filenames:
+                if file in self.textures:
+                    texture = self.textures[file]
+
+                    if isinstance(texture, (tuple, set)):
+                        texture = texture[0]
+
+                    if isinstance(texture, (Sprite, TextureAnimationSprite)):
+                        texture.stop()
+                        texture.kill()
+                        del texture.textures
+                        del texture
+                        del self.textures[file]
+
+                    elif isinstance(texture, Texture):
+                        del texture
+                        del self.textures[file]
+
+                    elif isinstance(texture, Image.Image):
+                        texture.close()
+                        del texture
+                        del self.textures[file]
+
+            default_texture_cache.flush(True, True, True)
 
     def get_character_textures(self, sprite: str) ->  dict[str : Texture]:
         """
@@ -155,6 +185,9 @@ class FilesManager:
                 texture.file_path = texture_data[2]
                 new_key = key.rsplit(".", 1)[0]
                 textures[new_key] = texture
+
+        default_texture_cache.flush(True, True, True)
+
         return textures
 
     def get_texture(self, filename: str) -> Optional[Union[Texture, TextureAnimationSprite]]:
@@ -173,6 +206,9 @@ class FilesManager:
         texture = Texture(texture)
         texture.file_path = texture_data[2]
         texture.size = texture_data[1]
+
+        default_texture_cache.flush(True, True, True)
+
         return texture
 
 '''
