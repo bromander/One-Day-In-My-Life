@@ -4,19 +4,22 @@ import re
 import ast
 from typing import Optional, Literal, Tuple, Union
 from functools import lru_cache
-from arcade import Texture, Sound
 
 from .globals import g
 
 logger = g.get_logger(__name__)
 
 class LoreManager:
+    """
+    Отвечает за всю работу с файлами сценария.
+    Парсит, обрабатывает и всему тому подобное...
+    """
     def __init__(self):
         self.lore_files = self._find_files(g.DEFAULT_LORE_FILE_EXT)
 
-        reorganizer = Reorganizer()
-        self.lore = reorganizer.reorganize_files(self.lore_files) # {"labe_name" : {"caption" : "", "assets" : set(), "lore" : [""]}}
-        reorganizer.check_for_character.cache_clear()
+        reorganize = Reorganize()
+        self.lore = reorganize.reorganize_files(self.lore_files) # {"labe_name" : {"caption" : "", "assets" : set(), "lore" : [""]}}
+        reorganize.check_for_character.cache_clear()
 
         print(self.lore)
 
@@ -42,7 +45,11 @@ class LoreManager:
                     results.append(full_path)
         return results
 
-    def _create_graf(self, lore_data: dict):
+    def _create_graf(self, lore_data: dict) -> dict[str: list[str]]:
+        """
+        Создаёт граф всего сюжета
+        """
+
         graf = {}
 
         for label_name in lore_data.keys():
@@ -61,8 +68,17 @@ class LoreManager:
                             graf[label_name].append(label_jump)
         return graf
 
-    @lru_cache(1024)
     def _can_unload_asset(self, filename: str, label: str, scan_now: bool = True, scan_next: bool = True, scan_last = True) -> bool:
+        """
+        Проверяет, можно ли выгрузить ассет из файлов игры.
+        Смотрит, требуется ли ассет в прошлом, текущем и следующем лейбле. Если нету - True
+        :param filename: Название файла
+        :param label: Лейбл
+        :param scan_now: Проверяет по текущему лейблу
+        :param scan_next: Проверяет по следующему лейблу
+        :param scan_last: Проверяет по прошлому лейблу
+        :return: Булевое значение, можно ли выгрузить ассет
+        """
 
         if filename in g.IGNORE_FILES_FOR_UNLOADING:
             return False
@@ -88,7 +104,11 @@ class LoreManager:
 
         return True
 
-    def unload_assets(self, label):
+    def unload_assets(self, label) -> None:
+        """
+        Выгружает ненужные ассеты из памяти
+        :param label: Название текущего лейбла
+        """
 
         loaded_textures = set(g.fm.textures.copy().keys())
 
@@ -96,7 +116,15 @@ class LoreManager:
 
         g.fm.unload_assets(files_pack, label)
 
-    def _get_assets_pack(self, label, load_now: bool = True, load_next: bool = True, load_last = True):
+    def _get_assets_pack(self, label, load_now: bool = True, load_next: bool = True, load_last = True) -> dict[str : list[str]]:
+        """
+        Создаёт пак с ассетами, которые используются в текущих, прошлых и следующих лейблах
+        :param label: Текущий лейбл
+        :param load_now: Смотреть ли ассеты в текущем лейбле
+        :param load_next: Смотреть ли ассеты в следующем лейбле
+        :param load_last: Смотреть ли ассеты в прошлом лейбле
+        :return: словарь название {лейбла : список ассетов}
+        """
 
         assets_pack = {}
 
@@ -118,7 +146,11 @@ class LoreManager:
 
         return assets_pack
 
-    def load_assets(self, label):
+    def load_assets(self, label) -> None:
+        """
+        Загружает ассеты текущих, прошлых и следующих лейблов в память
+        :param label: Название текущего лейбла
+        """
 
         assets_pack = self._get_assets_pack(label)
 
@@ -127,7 +159,13 @@ class LoreManager:
 
         self.unload_assets(label)
 
-    def jump(self, label: str, pose: int):
+    def jump(self, label: str, pose: int) -> None:
+        """
+        Перемещает нас в сюжете.
+        Также, загружает ассеты и выгружает ненужные
+        :param label: Лейбл, куда нужно перенестись
+        :param pose: Позиция в сюжете
+        """
         self.label = label
         self.pose = pose
 
@@ -136,7 +174,10 @@ class LoreManager:
 
         self.load_assets(label)
 
-    def get_thing(self, pos_offset = 0):
+    def get_thing(self, pos_offset = 0) -> dict:
+        """
+        Возвращает инструкцию для текущего момента сюжета и двигает его дальше
+        """
 
         self.pose += pos_offset
 
@@ -148,7 +189,10 @@ class LoreManager:
         return lore
 
 
-class Reorganizer:
+class Reorganize:
+    """
+    "Реорганизует", парсит и обрабатывает файл сюжета для дальнейшей работы
+    """
 
     def __init__(self):
 
@@ -161,6 +205,10 @@ class Reorganizer:
         self.quotation_pattern = re.compile(r'["\'](.*?)["\']')
 
     def _del_trash(self, text: str) -> str:
+        """
+        Удаляет пустые и закомментированные строки, а также убирает лишнюю табуляцию
+        :param text: Текст файла сюжета
+        """
         lines = text.splitlines()
 
         def delete(line: str):
@@ -176,6 +224,11 @@ class Reorganizer:
         return text
 
     def _replace_characters_call(self, text: str) -> str:
+        """
+        Заменяет вызовы персонажей на функцию talk()
+        :param text: Текст файла сюжета
+        """
+
         text = re.sub(r'<\s*>', '<narr>', text) # Заменяем пустые значения айди персонажа на narrator-а
 
         lines = text.splitlines()
@@ -194,6 +247,11 @@ class Reorganizer:
         return text
 
     def _structure(self, text: str) -> dict:
+        """
+        На основе уже подготовленного файла сюжета, собирает его в структурируемый и удобный словарь
+        :param text: Текст файла сюжета
+        """
+
         lines = text.splitlines()
 
         paths = {}
@@ -225,6 +283,9 @@ class Reorganizer:
         return paths
 
     def _split_code(self, unsplitted_lore: str) -> list:
+        """
+        Разделяет код на строки, на основе python-синтаксиса
+        """
 
         try:
             tree = ast.parse(unsplitted_lore)
@@ -236,7 +297,10 @@ class Reorganizer:
         return statements
 
     @lru_cache(1024)
-    def check_for_character(self, name: str):
+    def check_for_character(self, name: str) -> Optional[str]:
+        """
+        Проверяет потенциальное название файла персонажа, на то, является ли оно им
+        """
 
         for format in g.SUPPORTED_IMAGE_FORMATS:
             potential_asset = name + format
@@ -244,8 +308,12 @@ class Reorganizer:
             if potential_asset in g.fm.textures_paths:
                 return potential_asset
 
-    def _guess_assets(self, unsplit_lore: str):
+        return None
 
+    def _guess_assets(self, unsplit_lore: str) -> set[str]:
+        """
+        Смотрит строку кода и парсит все строки в кавычках, пытаясь найти в них файлы с ассетами.
+        """
 
         potential_assets = set(i for i in re.findall(r'["\'](.*?)["\']', unsplit_lore) if not bool(re.search('[а-яА-ЯёЁ]', i)))
         founded_assets = []
@@ -264,7 +332,11 @@ class Reorganizer:
         return set(founded_assets)
 
 
-    def reorganize_files(self, files: list[Path]):
+    def reorganize_files(self, files: list[Path]) -> dict:
+        """
+        Полностью организует и обрабатывает файлы сюжета, возвращая готовый материал для работы
+        :param files: Список путей к файлам сюжета
+        """
 
         lore_file_data = ""
 

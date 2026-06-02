@@ -140,6 +140,10 @@ class FilesManager:
         return threads
 
     def unload_assets(self, filenames: Union[list[str], set[str]], label: str):
+        """
+        Выгружает ассеты из памяти игры
+        :param filenames: Список названий файлов
+        """
 
         if label in self.loaded_labels:
             self.loaded_labels.remove(label)

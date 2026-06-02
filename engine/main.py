@@ -661,8 +661,6 @@ class Views:
                 self.settings_manager.turn_visibl()
             if key == arcade.key.B:
 
-                self.window.set_size(-558, 65165)
-
                 text = f"""
                 \n
                 Данные на текущий момент игры:
