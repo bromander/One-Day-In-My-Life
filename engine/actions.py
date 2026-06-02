@@ -16,6 +16,12 @@ class Actions:
         self.active_generators = ListActiveGenerators()
         self.dt_accumulator = 0.0
 
+    def _effect(self, t):
+        if t < 0.5:
+            return 4 * t ** 3
+        else:
+            return 1 - pow(-2 * t + 2, 3) / 2
+
     def _fadein(self, now: dict):
 
         duration = max(now["time"] * g.sm.Volume.fade_speed, 0.001)
@@ -31,7 +37,8 @@ class Actions:
                 continue
 
             progress = min(progress + dt / duration, 1.0)
-            new_alpha = int(progress * 255)
+            progress_ease = self._effect(progress)
+            new_alpha = round(progress_ease * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
                 fade_sprite.alpha = new_alpha
@@ -55,7 +62,8 @@ class Actions:
                 continue
 
             progress = min(progress + dt / duration, 1.0)
-            new_alpha = 255 - int(progress * 255)
+            progress_ease = self._effect(progress)
+            new_alpha = 255 - round(progress_ease * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
                 fade_sprite.alpha = new_alpha
@@ -148,7 +156,8 @@ class Actions:
                 continue
 
             progress = min(progress + dt / duration, 1.0)
-            new_alpha = int(progress * 255)
+            progress_ease = self._effect(progress)
+            new_alpha = round(progress_ease * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
                 splash_manager.children[0][0].update_font(
@@ -183,7 +192,8 @@ class Actions:
                 continue
 
             progress = min(progress + dt / duration, 1.0)
-            new_alpha = 255 - int(progress * 255)
+            progress_ease = self._effect(progress)
+            new_alpha = 255 - round(progress_ease * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
                 splash_manager.children[0][0].update_font(

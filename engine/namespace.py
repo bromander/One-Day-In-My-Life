@@ -5,6 +5,8 @@ from typing import Optional, Literal, Tuple, Union
 import PIL
 from arcade import Sprite, get_window, TextureAnimationSprite
 
+from .effects import Ease
+
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
 from .globals import g
@@ -477,8 +479,19 @@ class Namespace:
             else:
                 sprite.alpha = 255
 
+            new_char_name_sprite = f"{character.split(" ")[0]}_new"
+
             def target():
-                g.scene.add_sprite("sprites", character.split(" ")[0], sprite)
+                if effect is not None:
+                    g.scene.add_sprite("sprites", new_char_name_sprite, sprite)
+                else:
+                    g.scene.add_sprite("sprites", character.split(" ")[0], sprite)
+                yield
+
+            def rename():
+                sprite = g.scene["sprites"][new_char_name_sprite]
+                del g.scene["sprites"][new_char_name_sprite]
+                g.scene["sprites"][character.split(" ")[0]] = sprite
                 yield
 
             g.main.actions.active_generators.add_generator(
@@ -486,8 +499,17 @@ class Namespace:
             )
             if effect is not None:
                 g.main.actions.active_generators.add_generator(
-                    stream, effect.effect(sprite), "show_sprite_effect"
+                    stream,
+                    effect.effect_show_sprite(sprite, character.split(" ")[0]),
+                    "show_sprite_effect"
                 )
+                g.main.actions.active_generators.add_generator(
+                    stream,
+                    rename(),
+                    "rename_sprite_effect"
+                )
+
+            # effect_show_sprite(self, new_sprite: Sprite, old_sprite: Sprite)
 
         def hide_character(
             self,
@@ -833,13 +855,20 @@ class Namespace:
 
     class SpriteEffects:
         class Dissolve:
-            def __init__(self, duration: float = 1.0) -> None:
+            def __init__(self, duration: float = 1.0, additional_effect: Optional[str] = "ease_in_out_cubic") -> None:
                 """
                 Отвечает эа эффект растворения
                 :param duration: Продолжительность эффекта
                 """
                 self.name = "DISSOLVE"
                 self.duration = duration
+                self.additional_effect = additional_effect
+
+            def _effect(self, t):
+                if self.additional_effect:
+                    return Ease.prepare_effect(self.additional_effect, t)
+                else:
+                    return t
 
             def effect(self, sprite: Sprite, target_alpha: int = 255):
 
@@ -855,11 +884,51 @@ class Namespace:
                         continue
 
                     progress = min(progress + dt / duration, 1.0)
+                    progress_ease = self._effect(progress)
 
-                    new_alpha = int(
-                        start_alpha + (target_alpha - start_alpha) * progress
+                    new_alpha = round(
+                        start_alpha + (target_alpha - start_alpha) * progress_ease
                     )
                     sprite.alpha = new_alpha
+
+            def effect_show_sprite(self, new_sprite: Sprite, old_sprite_name: str):
+
+                no_old = False
+
+                if old_sprite_name in g.scene["sprites"]:
+                    old_sprite = g.scene.get_scene_sprite(old_sprite_name, "sprites")
+                else:
+                    no_old = True
+
+                duration = max(self.duration * g.sm.Volume.fade_speed, 0.001)
+                start_new_alpha = new_sprite.alpha
+
+                if not no_old:
+                    start_old_alpha = old_sprite.alpha
+
+                progress = 0.0
+
+                while progress < 1.0:
+                    dt = yield
+
+                    if dt is None or dt <= 0:
+                        continue
+
+                    progress = min(progress + dt / duration, 1.0)
+                    progress_ease = self._effect(progress)
+
+                    new_alpha = round(
+                        start_new_alpha + (255 - start_new_alpha) * progress_ease
+                    )
+                    new_sprite.alpha = new_alpha
+
+                    if not no_old:
+                        old_alpha = round(
+                            start_old_alpha + (0 - start_old_alpha) * progress_ease
+                        )
+                        old_sprite.alpha = old_alpha
+
+
 
     def wait(
         self,
