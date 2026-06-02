@@ -3,7 +3,7 @@ from arcade import SpriteList, View
 from pyglet.event import EVENT_HANDLE_STATE
 import arcade.gui as agui
 import arcade.gui.widgets.layout
-from typing import Optional, Literal, Tuple, Union
+from typing import Optional
 import time
 import os
 import random
@@ -25,7 +25,6 @@ from .audio import AudioManager
 from .presence import Discord_act
 from .files_manager import FilesManager
 from .character import ListCharacters, Attributes
-from .Exceptions import VolumeDoesNotExistError
 
 from .globals import g
 
@@ -395,7 +394,7 @@ class Views:
 
                     assets = list(_files_manager["loaded_textures"].keys()) + list(_files_manager["loaded_audios"].keys())
 
-                    thread = g.fm.load_assets(assets, "loading_ponn")
+                    g.fm.load_assets(assets, "loading_ponn")
 
                     #while thread.is_alive():
                     #    continue
@@ -447,7 +446,7 @@ class Views:
                         g.scene.clear_layer("animated_sprites")
                         g.scene.add_sprite("animated_sprites", i["id"], cutscene)
 
-                    logger.info(f"Сохранение было успешно открыто!")
+                    logger.info("Сохранение было успешно открыто!")
 
                     self.session_data["name"] = save["session_data"]["name"]
                     self.session_data["description"] = save["session_data"]["description"]
@@ -1453,7 +1452,6 @@ class Views:
         def show_main_windows(self) -> None:
 
             sm = g.sm
-            am = g.am
 
             def create_menu_buttons():
                 save_folder = sm.get_save_path()
@@ -2348,7 +2346,7 @@ class Views:
             self.return_button_manager.enable()
 
             self.should_money_manager = agui.UIManager()
-            self.should_money_text = agui.UILabel(f"Внешний долг ЖАКЛИН:", font_name=g.FONT_NAME, font_size=40, bold=True, text_color=arcade.color.BLACK)
+            self.should_money_text = agui.UILabel("Внешний долг ЖАКЛИН:", font_name=g.FONT_NAME, font_size=40, bold=True, text_color=arcade.color.BLACK)
 
             text = f"{self.NAMESPACE["Define"].should_money} Путинкоинов"
 

@@ -1,13 +1,11 @@
 import unittest
 import os
-import time
 import random
 from mimesis import Person, File, Text
 from mimesis.locales import Locale
 from arcade import Sprite
 from scipy.io.wavfile import write
 from uuid import uuid4
-from pathlib import Path
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
@@ -47,7 +45,7 @@ class TestFilesManager(unittest.TestCase):
 
         self.assertListEqual(list(fm.textures_paths.keys()),
                              os.listdir(paths["images"]),
-                             f"Error when loading images!"
+                             "Error when loading images!"
                              )
 
         del fm
@@ -76,7 +74,7 @@ class TestFilesManager(unittest.TestCase):
 
         self.assertListEqual(list(fm.audio_paths.keys()),
                              os.listdir(paths["music"]),
-                             f"Error when loading music!")
+                             "Error when loading music!")
 
         del fm
 
@@ -104,7 +102,7 @@ class TestFilesManager(unittest.TestCase):
 
         self.assertListEqual(list(fm.audio_paths.keys()),
                              os.listdir(paths["sounds"]),
-                             f"Error loading sounds!")
+                             "Error loading sounds!")
 
         del fm
 

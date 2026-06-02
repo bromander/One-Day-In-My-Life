@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 import mutagen
-from typing import Union, Optional, Dict, Literal
+from typing import Union, Optional
 from threading import Thread
 from arcade import (
 load_sound,
@@ -11,7 +11,7 @@ Sprite,
 TextureAnimationSprite
 
 )
-from PIL import Image, ImageFilter
+from PIL import Image
 from arcade.texture import default_texture_cache
 
 from .load_animated_gif import load_animated_gif

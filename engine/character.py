@@ -1,6 +1,5 @@
 from typing import Optional, Literal, Union
-from arcade import color, load_sound, Sprite, Texture
-from arcade import color
+from arcade import color, Sprite, Texture
 import os
 import random
 import re

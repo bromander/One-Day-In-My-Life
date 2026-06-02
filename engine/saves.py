@@ -1,10 +1,11 @@
 import copy
 import pathlib
 import zlib
-import json, os
+import json
+import os
 from base64 import b64encode, b64decode
 from .Exceptions import SaveDoesNotExistError
-from arcade import Sprite, TextureAnimationSprite
+from arcade import TextureAnimationSprite
 
 from .globals import g
 

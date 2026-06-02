@@ -3,7 +3,7 @@ pyglet.options['audio'] = ('openal', 'directsound', 'silent') # устанавл
 
 import time
 import platform
-import os, sys
+import os
 import arcade
 import random
 import json

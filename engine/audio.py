@@ -1,4 +1,4 @@
-from typing import Optional, Literal, Tuple, Union
+from typing import Optional, Literal, Union
 from pathlib import Path
 from arcade import load_sound, sound, Sound
 import random

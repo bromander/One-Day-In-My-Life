@@ -113,7 +113,7 @@ class ErrorWindow(tk.Toplevel):
         contacts_frame.pack(side="left", padx=(20, 0))
 
 
-        error_log_email_text = f"""
+        error_log_email_text = """
         ===============================
         Пожалуйста, вставьте сюда логи игры, скопировав их на кнопку "Копировать логи":
         """
@@ -127,7 +127,7 @@ class ErrorWindow(tk.Toplevel):
             cursor="hand2"
         )
         email_link.pack(side="left", padx=(0, 10))
-        email_link.bind("<Button-1>", lambda e: open_email_client("romat3422@gmail.com", f"Error log", error_log_email_text))
+        email_link.bind("<Button-1>", lambda e: open_email_client("romat3422@gmail.com", "Error log", error_log_email_text))
 
         # Telegram ссылка
         telegram_link = tk.Label(

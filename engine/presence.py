@@ -2,7 +2,7 @@ from pypresence import Presence
 from pypresence.exceptions import DiscordNotFound, PipeClosed, InvalidPipe
 from pypresence.types import ActivityType, StatusDisplayType
 from threading import Thread
-from typing import Optional, Literal, Tuple, Union
+from typing import Optional
 import json
 import time
 

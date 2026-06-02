@@ -1,6 +1,6 @@
 import copy
-from arcade import Sprite, draw_sprite, Texture, load_texture, get_window, TextureAnimationSprite
-from typing import Optional, List, Union, Literal
+from arcade import Sprite, draw_sprite, Texture, get_window, TextureAnimationSprite
+from typing import Optional, Union, Literal
 from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError, SpriteIsNotLoadedError
 from .files_manager import FilesManager
 

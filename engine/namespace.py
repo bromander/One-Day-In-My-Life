@@ -1,8 +1,9 @@
-import time, datetime
+import time
+import datetime
 import re
 from typing import Optional, Literal, Tuple, Union
 import PIL
-from arcade import Sprite, Texture, load_image, get_window, load_animated_gif, TextureAnimationSprite
+from arcade import Sprite, get_window, TextureAnimationSprite
 
 from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
@@ -527,7 +528,7 @@ class Namespace:
                 scene.clear_layer("animated_sprites")
                 if hide_scene:
                     scene.clear_layer("bg")
-                scene.add_sprite(f"bg", bg_id, sprite)
+                scene.add_sprite("bg", bg_id, sprite)
                 g.main.set_bg_by_scene_bg()
                 g.scene.on_resize(*get_window().get_size())
                 yield

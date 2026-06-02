@@ -2,10 +2,10 @@ import arcade.cache
 import arcade.gui as agui
 import warnings
 import random
-from PIL import Image, ImageFilter, ImageDraw
+from PIL import Image
 from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider
-from typing import Optional, List, Tuple, Union
+from typing import Optional
 from arcade import (
     uicolor,
     Scene,
@@ -1031,7 +1031,7 @@ class Managers:
             image = image.convert("RGBA")
             width, height = image.size
 
-            cx, cy = width // 2, height // 2
+            cx, _cy = width // 2, height // 2
 
             alpha = Image.new("L", (width, height), 0)
             pixels = alpha.load()

@@ -2,7 +2,7 @@ import copy
 from pathlib import Path
 import types
 
-from arcade import Sprite, TextureAnimationSprite
+from arcade import Sprite
 
 from .namespace import Namespace
 from .load_animated_gif import load_animated_gif
