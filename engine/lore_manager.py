@@ -83,6 +83,9 @@ class LoreManager:
         if filename in g.IGNORE_FILES_FOR_UNLOADING:
             return False
 
+        if filename not in g.fm.textures and filename not in g.fm.audios:
+            return False
+
         # ассеты текущего лейбла
         if scan_now:
             if filename in self.lore[label]['assets']:
@@ -110,11 +113,12 @@ class LoreManager:
         :param label: Название текущего лейбла
         """
 
-        loaded_textures = set(g.fm.textures.copy().keys())
+        loaded_assets = set(g.fm.textures.copy().keys()).union(set(g.fm.audios.copy().keys()))
 
-        files_pack = [file_name for file_name in loaded_textures if self._can_unload_asset(file_name, label)]
+        files_pack = [file_name for file_name in loaded_assets if self._can_unload_asset(file_name, label)]
 
-        g.fm.unload_assets(files_pack, label)
+        if files_pack:
+            g.fm.unload_assets(files_pack, label)
 
     def _get_assets_pack(self, label, load_now: bool = True, load_next: bool = True, load_last = True) -> dict[str : list[str]]:
         """
@@ -187,7 +191,6 @@ class LoreManager:
         self.pose += 1
 
         return lore
-
 
 class Reorganize:
     """

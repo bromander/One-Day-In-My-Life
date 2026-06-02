@@ -8,7 +8,7 @@ TextureAnimation
 )
 from PIL import Image
 
-def load_animated_gif(resource_name: str | Path) -> tuple[TextureAnimationSprite, (int, int)]:
+def load_animated_gif(resource_name: str | Path, size_modif: float = 1.0) -> tuple[TextureAnimationSprite, (int, int)]:
 
     file_name = Path(resource_name)
     image_object = Image.open(file_name)
@@ -24,7 +24,7 @@ def load_animated_gif(resource_name: str | Path) -> tuple[TextureAnimationSprite
         image_object.seek(frame)
         frame_duration = image_object.info["duration"]
         image = image_object.convert("RGBA")
-        size_resiz = (int(image.size[0] * 0.8), int(image.size[1] * 0.8))
+        size_resiz = (int(image.size[0] * size_modif), int(image.size[1] * size_modif))
         image = image.resize(size_resiz, Image.Resampling.LANCZOS, reducing_gap=3.0)
 
         texture = Texture(image)

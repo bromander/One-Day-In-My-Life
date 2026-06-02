@@ -11,7 +11,7 @@ Sprite,
 TextureAnimationSprite
 
 )
-from PIL import Image, ImageSequence
+from PIL import Image, ImageFilter
 from arcade.texture import default_texture_cache
 
 from .load_animated_gif import load_animated_gif
@@ -66,7 +66,11 @@ class FilesManager:
         self.loaded_labels: list[str] = [] # Лейблы которые уже были загружены
 
         self.textures: dict[str : Image.Image] = {} # Уже загруженные текстуры {Название файла : текстура}
-        self.audios: dict[str : Sound] = {} # Уже загруженные звуки {Название файла : Звук}
+        self.audios: dict[str : Sound] = {} # Уже загруженные звуки {Название файла : Звук} 348,9
+
+        self.RESAMPLING = Image.Resampling.BILINEAR
+        self.SIZE_MODIF = 0.8
+        self.REDUCING_GAP = 3.0
 
     def load_assets(self, filenames: Union[list[str], set[str]], label: str) -> Optional[list[Thread]]:
         """
@@ -80,10 +84,6 @@ class FilesManager:
 
         self.loaded_labels.append(label)
 
-        RESAMPLING = Image.Resampling.BILINEAR
-        SIZE_MODIF = 0.8
-        REDUCING_GAP = 3.0
-
         def load(filenames):
             textures_paths = self.textures_paths
             audio_paths = self.audio_paths
@@ -92,14 +92,14 @@ class FilesManager:
 
             for i in filenames:
                 if i in textures_paths and i not in textures:
-                    path = str(textures_paths[i])
+                    path = str(textures_paths.get(i))
                     if path.endswith(".gif"):
-                        textures[i] = load_animated_gif(path)
+                        textures[i] = load_animated_gif(path, self.SIZE_MODIF)
                     else:
                         with Image.open(path) as im:
                             original_size = tuple(im.size)
-                            size_resiz = (int(im.size[0] * SIZE_MODIF), int(im.size[1] * SIZE_MODIF))
-                            im = im.resize(size_resiz, RESAMPLING, reducing_gap=REDUCING_GAP)
+                            size_resiz = (int(im.size[0] * self.SIZE_MODIF), int(im.size[1] * self.SIZE_MODIF))
+                            im = im.resize(size_resiz, self.RESAMPLING, reducing_gap=self.REDUCING_GAP)
 
                             if im.mode != "RGBA":
                                 im = im.convert("RGBA")
@@ -116,13 +116,13 @@ class FilesManager:
 
                     audios[i] = load_sound(path, streaming=streaming)
 
-        textures = list(filenames)
-        n = min(32, len(textures), (os.cpu_count() * 4) + 1)  # во сколько потоков будут загружаться текстуры
+        filenames = list(filenames)
+        n = min(32, len(filenames), int((os.cpu_count() * 4)/2) + 1)  # во сколько потоков будут загружаться текстуры
 
         if n == 0:
             return None
 
-        length = len(textures)
+        length = len(filenames)
         part_size = length // n
         remainder = length % n
         threads = []
@@ -130,48 +130,74 @@ class FilesManager:
         for i in range(n):
             start = i * part_size + min(i, remainder)
             end = start + part_size + (1 if i < remainder else 0)
-            part = textures[start:end]
+            part = filenames[start:end]
             thread = Thread(target=load, args=(part,), daemon=True)
             thread.start()
             threads.append(thread)
 
-        logger.warning(f"Подгрузка ассетов: {n} потоков, {length} текстур")
+        logger.warning(f"+ Подгрузка ассетов: {n} потоков, {length} текстур")
 
         return threads
 
-    def unload_assets(self, filenames: Union[list[str], set[str]], label: str):
+    def unload_assets(self, filenames: Union[list[str], set[str]], label: str) -> list[Thread]:
         """
         Выгружает ассеты из памяти игры
         :param filenames: Список названий файлов
         """
 
-        if label in self.loaded_labels:
-            self.loaded_labels.remove(label)
+        filenames = list(filenames)
+        n = min(32, len(filenames), int((os.cpu_count() * 4)/2) + 1)  # во сколько потоков будут выгружаться текстуры
 
-            for file in filenames:
-                if file in self.textures:
-                    texture = self.textures[file]
+        length = len(filenames)
+        part_size = length // n
+        remainder = length % n
+        threads = []
 
-                    if isinstance(texture, (tuple, set)):
-                        texture = texture[0]
+        logger.warning(f"- Выгрузка ассетов: {n} потоков, {length} текстур")
 
-                    if isinstance(texture, (Sprite, TextureAnimationSprite)):
-                        texture.stop()
-                        texture.kill()
-                        del texture.textures
-                        del texture
-                        del self.textures[file]
+        def unload(label : str, filenames: list):
+            if label in self.loaded_labels:
+                self.loaded_labels.remove(label)
 
-                    elif isinstance(texture, Texture):
-                        del texture
-                        del self.textures[file]
+                for file in filenames:
+                    if file in self.textures:
+                        asset = self.textures.get(file)
 
-                    elif isinstance(texture, Image.Image):
-                        texture.close()
-                        del texture
-                        del self.textures[file]
+                        if isinstance(asset, (tuple, set)):
+                            asset = asset[0]
 
-            default_texture_cache.flush(True, True, True)
+
+                        if isinstance(asset, Image.Image):
+                            asset.close()
+                            del asset
+                            del self.textures[file]
+
+                        elif isinstance(asset, Sound):
+                            del asset
+                            del self.audios[file]
+
+                        elif isinstance(asset, (Sprite, TextureAnimationSprite)):
+                            asset.stop()
+                            asset.kill()
+                            del asset.textures
+                            del asset
+                            del self.textures[file]
+
+                        elif isinstance(asset, Texture):
+                            del asset
+                            del self.textures[file]
+
+        for i in range(n):
+            start = i * part_size + min(i, remainder)
+            end = start + part_size + (1 if i < remainder else 0)
+            part = filenames[start:end]
+            thread = Thread(target=unload, args=(label, part), daemon=True)
+            thread.start()
+            threads.append(thread)
+
+        default_texture_cache.flush(True, True, True)
+
+        return threads
 
     def get_character_textures(self, sprite: str) ->  dict[str : Texture]:
         """
