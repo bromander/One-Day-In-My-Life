@@ -11,8 +11,9 @@ from .globals import g
 
 logger = g.get_logger(__name__)
 
+
 class Saves_manager:
-    def  __init__(self):
+    def __init__(self):
         """
         Отвечает за работу с сохранением различных данных.
         """
@@ -21,15 +22,22 @@ class Saves_manager:
             logger.warning("Создаём файл сохранений!")
             self._create_save()
         else:
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "r",
+                encoding="UTF-8",
+            ) as file:
                 file = json.load(file)
 
-            if ("saves_version" not in file) or (file["saves_version"] != g.TOPICAL_SAVES_VERSION):
-                logger.warning("НЕВЕРНАЯ ВЕРСИЯ ФАЙЛА СОХРАНЕНИЙ! Пересоздаём файл сохранений!")
+            if ("saves_version" not in file) or (
+                file["saves_version"] != g.TOPICAL_SAVES_VERSION
+            ):
+                logger.warning(
+                    "НЕВЕРНАЯ ВЕРСИЯ ФАЙЛА СОХРАНЕНИЙ! Пересоздаём файл сохранений!"
+                )
                 self._create_save()
             else:
                 logger.info("С файлом сохранений всё впорядке!")
-
 
         self.Persistent = self.Persistent()
         self.Volume = self.Volume()
@@ -37,25 +45,30 @@ class Saves_manager:
 
     def _create_save(self):
         save_folder = self.get_save_path()
-        with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
+        with open(
+            os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8"
+        ) as file:
             data = {
                 "saves_version": g.TOPICAL_SAVES_VERSION,
-                "saves": b64encode(zlib.compress(json.dumps({}, ensure_ascii=False).encode('utf-8'), 9)).decode(
-                    'ascii'),
+                "saves": b64encode(
+                    zlib.compress(json.dumps({}, ensure_ascii=False).encode("utf-8"), 9)
+                ).decode("ascii"),
                 "persistent": {},
-                "options": g.DEFAULT_OPTIONS_PARAM
+                "options": g.DEFAULT_OPTIONS_PARAM,
             }
             json.dump(data, file, indent=4, ensure_ascii=False)
 
     @staticmethod
     def get_save_path():
-        if os.name == 'nt':  # Windows
+        if os.name == "nt":  # Windows
             # Используем %APPDATA% (C:\Users\Имя\AppData\Roaming\Название_игры)
-            app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
-            save_dir = os.path.join(app_data, 'OneDay')
+            app_data = os.environ.get("APPDATA", os.path.expanduser("~"))
+            save_dir = os.path.join(app_data, "OneDay")
         else:
             # Linux/Mac
-            save_dir = os.path.join(os.path.expanduser('~'), '.local', 'share', 'OneDay')
+            save_dir = os.path.join(
+                os.path.expanduser("~"), ".local", "share", "OneDay"
+            )
 
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
@@ -65,20 +78,33 @@ class Saves_manager:
         Отвечает за работу с Persistent-переменными.
         Они отличаются тем, что сохраняются для всей игры и не  привязываются к определённой точке
         """
-        def  __init__(self):
+
+        def __init__(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "r",
+                encoding="UTF-8",
+            ) as file:
                 file = dict(json.load(file))
             self.file = file
 
         def _save_data(self) -> None:
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "w",
+                encoding="UTF-8",
+            ) as file:
                 json.dump(self.file, file)
 
         def _get_data(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "r",
+                encoding="UTF-8",
+            ) as file:
                 file = dict(json.load(file))
             self.file = file
 
@@ -89,17 +115,17 @@ class Saves_manager:
             """
             self._get_data()
             if name not in self.file["persistent"]:
-                raise AttributeError(f"Persistent \"{name}\" does not exist!")
+                raise AttributeError(f'Persistent "{name}" does not exist!')
 
             return self.file["persistent"].get(name, None)
 
-        def get_all_persistents(self) -> dict[str : any]:
+        def get_all_persistents(self) -> dict[str:any]:
             """
             Возвращает все persistent переменные, что есть
             :return: Словарь переменных со значениями {Название переменной : Значение}
             """
             self._get_data()
-            params = {name : value for name, value in self.file["persistent"].items()}
+            params = {name: value for name, value in self.file["persistent"].items()}
             return params
 
         def set_persistent(self, name: str, data: any) -> None:
@@ -119,7 +145,7 @@ class Saves_manager:
             """
             self._get_data()
             if name not in self.file["persistent"]:
-                raise AttributeError(f"Persistent \"{name}\" does not exist!")
+                raise AttributeError(f'Persistent "{name}" does not exist!')
 
             del self.file["persistent"][name]
 
@@ -127,9 +153,14 @@ class Saves_manager:
         """
         Отвечает за работу с различными параметрами и ползунками из файлов сохранения
         """
-        def  __init__(self):
+
+        def __init__(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "r",
+                encoding="UTF-8",
+            ) as file:
                 file = dict(json.load(file))
 
             super().__setattr__("file", file)
@@ -171,12 +202,20 @@ class Saves_manager:
             file = super().__getattribute__("file")
 
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as data_file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "w",
+                encoding="UTF-8",
+            ) as data_file:
                 json.dump(file, data_file)
 
         def _update_data(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as data_file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "r",
+                encoding="UTF-8",
+            ) as data_file:
                 data_file = dict(json.load(data_file))
             super().__setattr__("file", data_file)
 
@@ -184,23 +223,35 @@ class Saves_manager:
         """
         Отвечает за работу с сохранениями игры
         """
-        def  __init__(self):
+
+        def __init__(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "r",
+                encoding="UTF-8",
+            ) as file:
                 file = dict(json.load(file))
             self.file = file
 
         def _save_data(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8") as file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "w",
+                encoding="UTF-8",
+            ) as file:
                 json.dump(self.file, file)
 
         def _get_data(self):
             save_folder = Saves_manager.get_save_path()
-            with open(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "r", encoding="UTF-8") as file:
+            with open(
+                os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
+                "r",
+                encoding="UTF-8",
+            ) as file:
                 file = dict(json.load(file))
             self.file = file
-
 
         def create_save(self) -> None:
             """
@@ -211,79 +262,80 @@ class Saves_manager:
                 music_file = g.am.music.now_playing_path
                 music_volume = g.am.music._local_modifier
             else:
-                music_file =  None
+                music_file = None
                 music_volume = 1.0
-
 
             sprites = [
                 {
                     "id": str(i),
                     "path": str(o.texture.file_path),
                     "size": o.size,
-                    "pos": o.position
+                    "pos": o.position,
                 }
                 for i, o in g.scene["sprites"].items()
             ]
-
 
             animated_sprites = [
                 {
                     "id": str(str(pathlib.Path(i).name)),
                     "path": str(o.texture.file_path),
                     "size": o.size,
-                    "pos": o.position
+                    "pos": o.position,
                 }
                 for i, o in g.scene["animated_sprites"].items()
             ]
-
 
             defines = {}
             for name, value in g.main.NAMESPACE["Define"].get_all_variables().items():
                 if not name.startswith("__") and not name.endswith("__"):
                     defines[name] = copy.deepcopy(value)
 
-
             bg = [
                 {
                     "layer": 0,
                     "path": str(i.texture.file_path),
                     "size": i.size,
-                    "pos": i.position
+                    "pos": i.position,
                 }
                 for i in g.scene["bg"].values()
             ]
 
             bg_parallax = [
                 {
-                    'path': i["sprite"].texture.file_path.name,
-                    'speed': i["speed"],
-                    'original_x': i["original_x"],
-                    'original_y': i["original_y"],
-                    "scale": i["scale"]
+                    "path": i["sprite"].texture.file_path.name,
+                    "speed": i["speed"],
+                    "original_x": i["original_x"],
+                    "original_y": i["original_y"],
+                    "scale": i["scale"],
                 }
                 for i in g.scene["bg_parallax"]
             ]
 
             files_manager = {
-                "loaded_lables" : copy.copy(g.fm.loaded_labels),
-                "loaded_textures" : {
-                    filename : str(texture[2]) for filename, texture in g.fm.textures.items() if type(texture[0]) is not TextureAnimationSprite
+                "loaded_lables": copy.copy(g.fm.loaded_labels),
+                "loaded_textures": {
+                    filename: str(texture[2])
+                    for filename, texture in g.fm.textures.items()
+                    if type(texture[0]) is not TextureAnimationSprite
                 },
-                "loaded_audios" : {
-                    filename: str(sound.file_name) for filename, sound in g.fm.audios.items()
-                }
+                "loaded_audios": {
+                    filename: str(sound.file_name)
+                    for filename, sound in g.fm.audios.items()
+                },
             }
             for filename, sprite in g.fm.textures.items():
                 if type(sprite[0]) is TextureAnimationSprite:
-                    files_manager["loaded_textures"][filename] = str(sprite[0].texture.file_path.absolute())
+                    files_manager["loaded_textures"][filename] = str(
+                        sprite[0].texture.file_path.absolute()
+                    )
 
             scene = {
                 "bg": bg,
-                "bg_parallax" : bg_parallax,
+                "bg_parallax": bg_parallax,
                 "sprites": sprites,
-                "animated_sprites" : animated_sprites,
-                "music": {"volume" : music_volume, "path" : music_file},
-                "characters_slice": g.scene.characters_slice
+                "animated_sprites": animated_sprites,
+                "music": {"volume": music_volume, "path": music_file},
+                "characters_slice": g.scene.characters_slice,
             }
 
             saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
@@ -293,11 +345,13 @@ class Saves_manager:
                 "label": g.lm.label,
                 "defines": defines,
                 "scene": scene,
-                "files_manager" : files_manager,
-                "session_data" : g.main.session_data
+                "files_manager": files_manager,
+                "session_data": g.main.session_data,
             }
 
-            self.file["saves"] = b64encode(zlib.compress(json.dumps(saves, ensure_ascii=False).encode('utf-8'), 9)).decode('ascii')
+            self.file["saves"] = b64encode(
+                zlib.compress(json.dumps(saves, ensure_ascii=False).encode("utf-8"), 9)
+            ).decode("ascii")
 
             self._save_data()
 
@@ -312,7 +366,7 @@ class Saves_manager:
             saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
 
             if session_id not in saves:
-                raise SaveDoesNotExistError(f"Save \"{session_id}\" does not exist!")
+                raise SaveDoesNotExistError(f'Save "{session_id}" does not exist!')
 
             return saves[session_id]
 
@@ -333,6 +387,8 @@ class Saves_manager:
 
             del saves[session_id]
 
-            self.file["saves"] = b64encode(zlib.compress(json.dumps(saves, ensure_ascii=False).encode('utf-8'), 9)).decode('ascii')
+            self.file["saves"] = b64encode(
+                zlib.compress(json.dumps(saves, ensure_ascii=False).encode("utf-8"), 9)
+            ).decode("ascii")
 
             self._save_data()

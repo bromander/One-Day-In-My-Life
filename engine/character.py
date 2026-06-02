@@ -6,6 +6,7 @@ import re
 
 from .globals import g
 
+
 class Attributes:
     def __init__(self):
         self.character_name = ""
@@ -25,18 +26,18 @@ class Attributes:
 
         self.text_anchor = "left"
 
+
 class Character:
-
-    def __init__(self,
-                 name: str,
-                 char_id: Optional[str] = None,
-                 colour: str = "",
-                 name_colour: str = "",
-                 c_scale: float = 1.0,
-                 text_anchor: Union[int, float, Literal["left", "right", "center"]] = "left",
-                 lps: int = 60
-                 ) -> None:
-
+    def __init__(
+        self,
+        name: str,
+        char_id: Optional[str] = None,
+        colour: str = "",
+        name_colour: str = "",
+        c_scale: float = 1.0,
+        text_anchor: Union[int, float, Literal["left", "right", "center"]] = "left",
+        lps: int = 60,
+    ) -> None:
         """
         Создаёт персонажа.
         :param name: Имя персонажа
@@ -79,7 +80,7 @@ class Character:
         self.last_text = " "
 
         self.talk_sounds = []
-        #find_sounds()
+        # find_sounds()
 
         self.char_id = char_id
 
@@ -95,15 +96,14 @@ class Character:
         def replace_char_by_index(text, index, new_char):
             if index < 0 or index >= len(text):
                 return text
-            return text[:index] + new_char + text[index + 1:]
+            return text[:index] + new_char + text[index + 1 :]
 
         now_lps = self.lps * self.sm.Volume.lps
 
         dialog_text_text_alt = [" "]
         string_index_alt = 0
         _text_alt = []
-        for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', repr(text).strip(r"'")):
-
+        for char in re.findall(r"\\n |\{[^}]*\}|\S|\s", repr(text).strip(r"'")):
             char = str(char)
 
             if char == r"\n ":
@@ -117,11 +117,12 @@ class Character:
                         _text_alt.append(" ")
                     else:
                         _text_alt.append(" ")
-                    if len(dialog_text_text_alt)-1 != string_index_alt:
-                        dialog_text_text_alt.insert(string_index_alt, "".join(_text_alt))
+                    if len(dialog_text_text_alt) - 1 != string_index_alt:
+                        dialog_text_text_alt.insert(
+                            string_index_alt, "".join(_text_alt)
+                        )
                     else:
                         dialog_text_text_alt[string_index_alt] = "".join(_text_alt)
-
 
         self.attributes.text_anchor = self.text_anchor
 
@@ -150,7 +151,7 @@ class Character:
 
                 _text = []
                 index = 0
-                for char in re.findall(r'\\n |\{[^}]*\}|\S|\s', repr(text).strip(r"'")):
+                for char in re.findall(r"\\n |\{[^}]*\}|\S|\s", repr(text).strip(r"'")):
                     i += 1
                     char = str(char)
 
@@ -165,11 +166,20 @@ class Character:
                     if not char.startswith("{") and not str(char).endswith("}"):
                         if char != r"\n ":
                             _text.append(char)
-                            self.attributes.character_text[string_index] = replace_char_by_index(self.attributes.character_text[string_index], i, char)
+                            self.attributes.character_text[string_index] = (
+                                replace_char_by_index(
+                                    self.attributes.character_text[string_index],
+                                    i,
+                                    char,
+                                )
+                            )
 
                     index += 1
 
-                    if ((index % 4 == 0 and char not in (",", ".", "!", "&", "?")) or index == 1) and self.char_id is not None:
+                    if (
+                        (index % 4 == 0 and char not in (",", ".", "!", "&", "?"))
+                        or index == 1
+                    ) and self.char_id is not None:
                         if os.path.isfile(f"./game/sounds/voice/{self.char_id}"):
                             self.am.play_voice(random.choice(self.talk_sounds))
 
@@ -233,13 +243,16 @@ class Character:
         textures = self.fm.get_character_textures(sprite)
 
         if sprite not in textures:
-            raise FileNotFoundError(f"Character sprite \"{sprite}\" was not found in \"./game/images/characters/{self.char_id}/{sprite}\"")
+            raise FileNotFoundError(
+                f'Character sprite "{sprite}" was not found in "./game/images/characters/{self.char_id}/{sprite}"'
+            )
 
         texture: Texture = textures[sprite]
         sprite = Sprite(texture)
         sprite.scale = self.c_scale
 
         return sprite
+
 
 class ListCharacters:
     def __init__(self) -> None:
@@ -248,16 +261,16 @@ class ListCharacters:
         """
 
         self.characters = {
-            "narr" : Character(" ", None, text_anchor="center"),
-            "unk1" : Character("???", None, text_anchor="center", colour="#f0c4c0"),
-            "unk2" : Character("???", None, text_anchor="center", colour="#d5dbf0"),
-            "shak" : Character("Жаклин", "shak", "#f5a889", "#f0855b"),
-            "lshak" : Character("Жаклин", "lshak", "#f5a889", "#f0855b"),
-            "masorubka" : Character("Кассир", "masorubka", "#E0FFFF", "#7FFFD4"),
-            "ed" : Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
-            "oz": Character("Ms. Ф. ОЗИНАД", "oz", "#12d3da","#a44aff", c_scale=1.5),
+            "narr": Character(" ", None, text_anchor="center"),
+            "unk1": Character("???", None, text_anchor="center", colour="#f0c4c0"),
+            "unk2": Character("???", None, text_anchor="center", colour="#d5dbf0"),
+            "shak": Character("Жаклин", "shak", "#f5a889", "#f0855b"),
+            "lshak": Character("Жаклин", "lshak", "#f5a889", "#f0855b"),
+            "masorubka": Character("Кассир", "masorubka", "#E0FFFF", "#7FFFD4"),
+            "ed": Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
+            "oz": Character("Ms. Ф. ОЗИНАД", "oz", "#12d3da", "#a44aff", c_scale=1.5),
             "del": Character("Доставщик", "del", "#7290b0"),
         }
 
-    def __getitem__(self, item) -> dict[str : Character]:
+    def __getitem__(self, item) -> dict[str:Character]:
         return self.characters[item]

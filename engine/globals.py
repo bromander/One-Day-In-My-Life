@@ -10,13 +10,18 @@ from hawk_python_sdk import Hawk
 import hawk_python_sdk.core as hawk_core
 from .tk_error_inform import show_error, has_internet
 
+
 class Globals:
     def __init__(self):
         self._handlers = self._create_handlers()
         self.hawk = self._get_hawk()
 
         self.cant_unload = []
-        self.cant_unload += os.listdir("./game/images/moving_shop_assets") + os.listdir("./game/images/bying_shop_assets") + ["box_office_3.png", "golub_click.png", "golub.png"]
+        self.cant_unload += (
+            os.listdir("./game/images/moving_shop_assets")
+            + os.listdir("./game/images/bying_shop_assets")
+            + ["box_office_3.png", "golub_click.png", "golub.png"]
+        )
 
         self.cant_unload = frozenset(self.cant_unload)
 
@@ -38,19 +43,20 @@ class Globals:
                 logs = logs.read()
             return [i for i in logs.split("\n")]
 
-        custom_data = {
-            "logs": str(get_full_logs())
-        }
+        custom_data = {"logs": str(get_full_logs())}
 
         if g.sm.Volume.telemetry and has_internet:
             self.hawk.send(e, context=custom_data)
         else:
-            logger.error("Не получилось отправить лог! Отсутствует подключение к интернету или отключена телеметрия...")
+            logger.error(
+                "Не получилось отправить лог! Отсутствует подключение к интернету или отключена телеметрия..."
+            )
 
     def _create_handlers(self):
 
         if sys.platform == "win32":
             import ctypes
+
             kernel32 = ctypes.windll.kernel32
             kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
@@ -61,16 +67,14 @@ class Globals:
                 self.stdout = sys.stdout
                 self.stderr = sys.stderr
 
-                self.ANSI_ESCAPE = re.compile(
-                    r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])'
-                )
+                self.ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
             def write(self, data):
                 # В консоль — как есть
                 self.stdout.write(data)
 
                 # В файл — без ANSI
-                clean = self.ANSI_ESCAPE.sub('', data)
+                clean = self.ANSI_ESCAPE.sub("", data)
                 self.file.write(clean)
 
                 self.stdout.flush()
@@ -96,25 +100,31 @@ class Globals:
         logging.setLoggerClass(CustomLogger)
 
         console_handler = colorlog.StreamHandler()
-        console_handler.setFormatter(colorlog.ColoredFormatter(
-            '%(log_color)s%(asctime)s - [%(name)s] - [%(levelname)s]: %(message)s',
-            datefmt='%H:%M:%S',
-            log_colors={
-                "DEBUG": "white",
-                "EXECUTE": "cyan",
-                "INFO": "green",
-                "WARNING": "yellow",
-                "ERROR": "red",
-                "CRITICAL": "bold_red",
-            }
-        ))
+        console_handler.setFormatter(
+            colorlog.ColoredFormatter(
+                "%(log_color)s%(asctime)s - [%(name)s] - [%(levelname)s]: %(message)s",
+                datefmt="%H:%M:%S",
+                log_colors={
+                    "DEBUG": "white",
+                    "EXECUTE": "cyan",
+                    "INFO": "green",
+                    "WARNING": "yellow",
+                    "ERROR": "red",
+                    "CRITICAL": "bold_red",
+                },
+            )
+        )
 
         save_folder = self.get_save_path()
-        file_handler = logging.FileHandler(os.path.join(save_folder, "latest.log"), "w", encoding="utf-8")
-        file_handler.setFormatter(logging.Formatter(
-            '%(asctime)s - [%(name)s] - [%(levelname)s]: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        ))
+        file_handler = logging.FileHandler(
+            os.path.join(save_folder, "latest.log"), "w", encoding="utf-8"
+        )
+        file_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s - [%(name)s] - [%(levelname)s]: %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        )
 
         return [console_handler, file_handler]
 
@@ -130,13 +140,15 @@ class Globals:
 
     @staticmethod
     def get_save_path():
-        if os.name == 'nt':  # Windows
+        if os.name == "nt":  # Windows
             # Используем %APPDATA% (C:\Users\Имя\AppData\Roaming\Название_игры)
-            app_data = os.environ.get('APPDATA', os.path.expanduser('~'))
-            save_dir = os.path.join(app_data, 'OneDay')
+            app_data = os.environ.get("APPDATA", os.path.expanduser("~"))
+            save_dir = os.path.join(app_data, "OneDay")
         else:
             # Linux/Mac
-            save_dir = os.path.join(os.path.expanduser('~'), '.local', 'share', 'OneDay')
+            save_dir = os.path.join(
+                os.path.expanduser("~"), ".local", "share", "OneDay"
+            )
 
         os.makedirs(save_dir, exist_ok=True)
         return save_dir
@@ -157,10 +169,8 @@ class Globals:
             lines = content[start:end]
 
             pon = [
-                {
-                    'line': array_line + 1,
-                    'content': lines[array_line - start]
-                } for array_line in range(start, end)
+                {"line": array_line + 1, "content": lines[array_line - start]}
+                for array_line in range(start, end)
             ]
 
             return pon
@@ -184,17 +194,13 @@ class Globals:
     @property
     def DEFAULT_OPTIONS_PARAM(self):
         return {
-                    "volume": {
-                        "music": 1.0,
-                        "sound": 1.0,
-                        "voice": 1.0
-                    },
-                    "lps" : 1.0,
-                    "fade_speed" : 1.0,
-                    "show_fps" : False,
-                    "window_mode" : "full-screen",
-                    "telemetry" : True
-                }
+            "volume": {"music": 1.0, "sound": 1.0, "voice": 1.0},
+            "lps": 1.0,
+            "fade_speed": 1.0,
+            "show_fps": False,
+            "window_mode": "full-screen",
+            "telemetry": True,
+        }
 
     @property
     def DEFAULT_IN_GAME_WINDOW_SIZE(self):
@@ -221,7 +227,7 @@ class Globals:
                 font_color=arcade.color.BLACK,
                 bg=(225, 184, 1, 255),
                 border=(79, 67, 13, 255),
-                border_width=5
+                border_width=5,
             ),
             "hover": arcade.gui.UIFlatButton.UIStyle(
                 font_size=16,
@@ -229,7 +235,7 @@ class Globals:
                 font_color=arcade.color.BLACK,
                 bg=(163, 134, 5, 255),
                 border=(79, 67, 13, 255),
-                border_width=5
+                border_width=5,
             ),
             "press": arcade.gui.UIFlatButton.UIStyle(
                 font_size=16,
@@ -237,14 +243,14 @@ class Globals:
                 font_color=arcade.color.BLACK,
                 bg=(191, 161, 25, 255),
                 border=(79, 67, 13, 255),
-                border_width=5
+                border_width=5,
             ),
             "disabled": arcade.gui.UIFlatButton.UIStyle(
                 font_size=16,
                 font_name=(self.FONT_NAME,),
                 font_color=arcade.color.LIGHT_STEEL_BLUE,
-                bg=(66, 71, 77)
-            )
+                bg=(66, 71, 77),
+            ),
         }
 
     @property

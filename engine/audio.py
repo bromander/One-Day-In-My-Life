@@ -10,30 +10,29 @@ from .globals import g
 
 
 class AudioChannel:
-    def __init__(self, default_volume: float=1.0, volume_type: Optional[str] = None):
-        '''
+    def __init__(self, default_volume: float = 1.0, volume_type: Optional[str] = None):
+        """
         Отвечает за отдельный канал аудио
         :param default_volume: Громкость по умолчанию
         :param volume_type: Тип звука ("music"/"sound"/"voice")
-        '''
+        """
 
         self.player: Optional[pyglet.media.player.Player] = None
-        self.default_volume: float = default_volume # Громкость по умолчанию
-        self.volume_type: Optional[str] = volume_type # Тип канала
+        self.default_volume: float = default_volume  # Громкость по умолчанию
+        self.volume_type: Optional[str] = volume_type  # Тип канала
         self.now_playing_path: Optional[str] = None
 
         modifier = 1.0
         if volume_type:
             modifier = g.sm.Volume.__getattr__(volume_type)
 
-        self.modifier = modifier # Модификатор громкости. Предназначен для управления громкостью ползунками из настроек
-        self._fade_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью во время плавных переходов (FADEIN/FADEOUT)
-        self._local_modifier: float = 1.0 # Модификатор громкости. Предназначен для управления громкостью текущего трека. Сбрасывается при запуске нового трека
+        self.modifier = modifier  # Модификатор громкости. Предназначен для управления громкостью ползунками из настроек
+        self._fade_modifier: float = 1.0  # Модификатор громкости. Предназначен для управления громкостью во время плавных переходов (FADEIN/FADEOUT)
+        self._local_modifier: float = 1.0  # Модификатор громкости. Предназначен для управления громкостью текущего трека. Сбрасывается при запуске нового трека
 
         self.paused = False
 
         self.sm = g.sm
-
 
     @property
     def fade_modifier(self) -> float:
@@ -48,9 +47,28 @@ class AudioChannel:
                 # Обновляем громкость проигрывателя, если параметр self._fade_modifier был изменён
 
     def _get_volume(self):
-        return min(max(round(self.default_volume * self.modifier * self._fade_modifier * self._local_modifier, 2), 0.0), 1.0)
+        return min(
+            max(
+                round(
+                    self.default_volume
+                    * self.modifier
+                    * self._fade_modifier
+                    * self._local_modifier,
+                    2,
+                ),
+                0.0,
+            ),
+            1.0,
+        )
 
-    def play(self, file: Union[str, sound.Sound], loop=False, speed=1.0, local_volume: Optional[float]=None, streaming: bool = False) -> None:
+    def play(
+        self,
+        file: Union[str, sound.Sound],
+        loop=False,
+        speed=1.0,
+        local_volume: Optional[float] = None,
+        streaming: bool = False,
+    ) -> None:
         """
         Начинает проигрывать звук
         :param file: Путь к файлу/уже готовый саунд
@@ -135,6 +153,7 @@ class AudioChannel:
                 return self.player.playing
         return False
 
+
 class AudioManager:
     def __init__(self):
         """
@@ -145,7 +164,14 @@ class AudioManager:
         self.sound = AudioChannel(volume_type="sound")
         self.voice = AudioChannel(volume_type="voice", default_volume=2.0)
 
-    def play_music_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[str] = None, streaming: bool = True):
+    def play_music_gen(
+        self,
+        path: str,
+        loop: bool = False,
+        volume: float = 1.0,
+        effect: Optional[str] = None,
+        streaming: bool = True,
+    ):
         """
         Отличается от play_music тем, что поддерживает эффекты
         :return: генератор
@@ -156,32 +182,50 @@ class AudioManager:
 
         match effect.lower():
             case "fade":
+
                 def fadeout_music():
                     self.music.fade_modifier = 0.0
-                    self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
+                    self.music.play(
+                        path, loop=loop, local_volume=volume, streaming=streaming
+                    )
                     dt = yield
                     while True:
                         step = 0.5 * dt if dt is not None else 0.5
-                        self.music.fade_modifier = round(self.music.fade_modifier + step, 3)
+                        self.music.fade_modifier = round(
+                            self.music.fade_modifier + step, 3
+                        )
                         if self.music.fade_modifier >= 1.0:
                             break
                         dt = yield
                     self.music.fade_modifier = 1.0
+
                 return fadeout_music()
 
             case _:
+
                 def music():
-                    self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
+                    self.music.play(
+                        path, loop=loop, local_volume=volume, streaming=streaming
+                    )
                     yield
+
                 return music()
 
-    def play_music(self, path: str, loop: bool = False, volume: float = 1.0, streaming: bool = True) -> None:
+    def play_music(
+        self, path: str, loop: bool = False, volume: float = 1.0, streaming: bool = True
+    ) -> None:
 
         if path in self.fm.audios:
             path: sound.Sound = self.fm.audios[path]
         self.music.play(path, loop=loop, local_volume=volume, streaming=streaming)
 
-    def play_sound_gen(self, path: str, loop: bool = False, volume: float = 1.0, effect: Optional[Literal["fade"]] = None):
+    def play_sound_gen(
+        self,
+        path: str,
+        loop: bool = False,
+        volume: float = 1.0,
+        effect: Optional[Literal["fade"]] = None,
+    ):
         """
         Отличается от play_sound тем, что поддерживает эффекты
         :return: генератор
@@ -191,13 +235,16 @@ class AudioManager:
 
         match effect:
             case "fade":
+
                 def fadeout_sound():
                     self.sound.fade_modifier = 0.0
                     self.sound.play(path, loop=loop, local_volume=volume)
                     dt = yield
                     while True:
                         step = 0.5 * dt if dt is not None else 0.5
-                        self.sound.fade_modifier = round(self.sound.fade_modifier + step, 3)
+                        self.sound.fade_modifier = round(
+                            self.sound.fade_modifier + step, 3
+                        )
                         if self.sound.fade_modifier >= 1.0:
                             break
                         dt = yield
@@ -206,9 +253,11 @@ class AudioManager:
                 return fadeout_sound()
 
             case _:
+
                 def sound():
                     self.sound.play(path, loop=loop, local_volume=volume)
                     yield
+
                 return sound()
 
     def play_sound(self, path: str, loop: bool = False, volume: float = 1.0) -> None:
@@ -223,7 +272,9 @@ class AudioManager:
         if path in self.fm.audios:
             path = self.fm.audios[path]
 
-        self.voice.play(path, loop=loop, speed=random.randint(99, 101) / 100, streaming=False)
+        self.voice.play(
+            path, loop=loop, speed=random.randint(99, 101) / 100, streaming=False
+        )
 
     def stop_music_gen(self, effect: Optional[Literal["fade"]] = None):
         """
@@ -232,11 +283,14 @@ class AudioManager:
         """
         match effect:
             case "fade":
+
                 def fadeout_music():
                     dt = yield
                     while True:
                         step = 0.5 * dt if dt is not None else 0.5
-                        self.music.fade_modifier = round(self.music.fade_modifier - step, 3)
+                        self.music.fade_modifier = round(
+                            self.music.fade_modifier - step, 3
+                        )
                         if self.music.fade_modifier <= 0.0:
                             break
                         dt = yield
@@ -244,12 +298,15 @@ class AudioManager:
                     self.music.pause()
                     self.music.stop()
                     self.music.fade_modifier = 1.0
+
                 return fadeout_music()
             case _:
+
                 def music():
                     self.music.pause()
                     self.music.stop()
                     yield
+
                 return music()
 
     def stop_music(self) -> None:
@@ -263,11 +320,14 @@ class AudioManager:
         """
         match effect:
             case "FADE":
+
                 def fadeout_sound():
                     dt = yield
                     while True:
                         step = 0.5 * dt if dt is not None else 0.5
-                        self.sound.fade_modifier = round(self.sound.fade_modifier - step, 3)
+                        self.sound.fade_modifier = round(
+                            self.sound.fade_modifier - step, 3
+                        )
                         if self.sound.fade_modifier <= 0.0:
                             break
                         dt = yield
@@ -279,10 +339,12 @@ class AudioManager:
                 return fadeout_sound()
 
             case _:
+
                 def sound():
                     self.sound.pause()
                     self.sound.stop()
                     yield
+
                 return sound()
 
     def stop_sound(self):

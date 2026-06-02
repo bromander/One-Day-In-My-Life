@@ -22,15 +22,15 @@ class LoreLogger:
 
         if g.am.music.player:
             music = {
-                "path" : str(g.am.music.now_playing_path),
+                "path": str(g.am.music.now_playing_path),
                 "loop": g.am.music.player.loop,
                 "pitch": g.am.music.player.pitch,
-                #"paused": g.am.music.paused,
+                # "paused": g.am.music.paused,
                 "streaming": True,
                 "default_volume": g.am.music.default_volume,
-                "local_modifier" : g.am.music._local_modifier,
+                "local_modifier": g.am.music._local_modifier,
                 "modifier": g.am.music.modifier,
-                "fade_modifier": 1.0
+                "fade_modifier": 1.0,
             }
             return_data["music"] = music
 
@@ -39,12 +39,12 @@ class LoreLogger:
                 "path": str(g.am.sound.now_playing_path),
                 "loop": g.am.sound.player.loop,
                 "pitch": g.am.sound.player.pitch,
-                #"paused": g.am.sound.paused,
+                # "paused": g.am.sound.paused,
                 "streaming": False,
                 "default_volume": g.am.sound.default_volume,
                 "local_modifier": g.am.sound._local_modifier,
                 "modifier": g.am.sound.modifier,
-                "fade_modifier": 1.0
+                "fade_modifier": 1.0,
             }
             return_data["sound"] = sound
 
@@ -53,12 +53,12 @@ class LoreLogger:
                 "path": str(g.am.voice.now_playing_path),
                 "loop": g.am.voice.player.loop,
                 "pitch": g.am.voice.player.pitch,
-                #"paused": g.am.voice.paused,
+                # "paused": g.am.voice.paused,
                 "streaming": False,
                 "default_volume": g.am.voice.default_volume,
                 "local_modifier": g.am.voice._local_modifier,
                 "modifier": g.am.voice.modifier,
-                "fade_modifier": 1.0
+                "fade_modifier": 1.0,
             }
             return_data["voice"] = voice
 
@@ -79,15 +79,20 @@ class LoreLogger:
             if str(music_player.now_playing_path) == str(music_data["path"]):
                 continue
 
-            music_player.play(music_data["path"], music_data["loop"], music_data["pitch"], music_data["local_modifier"], music_data["streaming"])
+            music_player.play(
+                music_data["path"],
+                music_data["loop"],
+                music_data["pitch"],
+                music_data["local_modifier"],
+                music_data["streaming"],
+            )
 
-            #if music_data["paused"]:
+            # if music_data["paused"]:
             #    music_player.pause()
 
             music_player.default_volume = music_data["default_volume"]
             music_player.modifier = music_data["modifier"]
             music_player._local_modifier = music_data["local_modifier"]
-
 
     ### ==== SCENE ===
 
@@ -103,53 +108,59 @@ class LoreLogger:
             # --- dict слои ---
             if layer == "bg_parallax":
                 for item in container:
-                    snapshot.append({
-                        "type": "parallax",
-                        "layer": layer,
-                        "data": {
-                            "texture": str(item["sprite"].texture.file_path.name),
-                            "speed": item["speed"],
-                            "original_x": item["original_x"],
-                            "original_y": item["original_y"],
+                    snapshot.append(
+                        {
+                            "type": "parallax",
+                            "layer": layer,
+                            "data": {
+                                "texture": str(item["sprite"].texture.file_path.name),
+                                "speed": item["speed"],
+                                "original_x": item["original_x"],
+                                "original_y": item["original_y"],
+                            },
                         }
-                    })
+                    )
             elif layer == "animated_sprites":
                 for name, sprite in container.items():
-                    snapshot.append({
-                        "type": "animated_sprite",
-                        "layer": layer,
-                        "name": name,
-                        "data": {
-                            "texture": sprite.texture.file_path,
-                            "center_x": sprite.center_x,
-                            "center_y": sprite.center_y,
-                            "width": sprite.width,
-                            "height": sprite.height,
-                            "angle": sprite.angle,
-                            "alpha": sprite.alpha,
-                            "visible": sprite.visible,
+                    snapshot.append(
+                        {
+                            "type": "animated_sprite",
+                            "layer": layer,
+                            "name": name,
+                            "data": {
+                                "texture": sprite.texture.file_path,
+                                "center_x": sprite.center_x,
+                                "center_y": sprite.center_y,
+                                "width": sprite.width,
+                                "height": sprite.height,
+                                "angle": sprite.angle,
+                                "alpha": sprite.alpha,
+                                "visible": sprite.visible,
+                            },
                         }
-                    })
+                    )
             else:
                 for name, sprite in container.items():
-                    snapshot.append({
-                        "type": "sprite",
-                        "layer": layer,
-                        "name": name,
-                        "data": {
-                            "texture": sprite.texture.file_path,
-                            "center_x": sprite.center_x,
-                            "center_y": sprite.center_y,
-                            "width": sprite.width,
-                            "height": sprite.height,
-                            "angle": sprite.angle,
-                            "alpha": 255, # при возврате назад, если к спрайтам применялся эффект растворения, то их 'растворяющиеся' версии остаются на сцене.
-                                          # Пока оставлю значение 255 как заглушку, но это надо в будущем пофиксить
-                            "visible": sprite.visible,
+                    snapshot.append(
+                        {
+                            "type": "sprite",
+                            "layer": layer,
+                            "name": name,
+                            "data": {
+                                "texture": sprite.texture.file_path,
+                                "center_x": sprite.center_x,
+                                "center_y": sprite.center_y,
+                                "width": sprite.width,
+                                "height": sprite.height,
+                                "angle": sprite.angle,
+                                "alpha": 255,  # при возврате назад, если к спрайтам применялся эффект растворения, то их 'растворяющиеся' версии остаются на сцене.
+                                # Пока оставлю значение 255 как заглушку, но это надо в будущем пофиксить
+                                "visible": sprite.visible,
+                            },
                         }
-                    })
+                    )
 
-        return {"snapshot" : snapshot, "characters_slice" : int(g.scene.characters_slice)}
+        return {"snapshot": snapshot, "characters_slice": int(g.scene.characters_slice)}
 
     def _check_sprite_in_scene(self, sprite_data: dict):
         scene = g.scene
@@ -169,13 +180,20 @@ class LoreLogger:
                     break
 
             if same_old_sprite:
-                if (same_old_sprite.center_x == sprite_data["center_x"] and same_old_sprite.center_y == sprite_data["center_y"]) and \
-                        (same_old_sprite.width == sprite_data["width"] and same_old_sprite.height == sprite_data["height"]) and \
-                        (same_old_sprite.angle == sprite_data["angle"]) and \
-                        (same_old_sprite.alpha == sprite_data["alpha"]) and \
-                        (same_old_sprite.visible == sprite_data["visible"]):
+                if (
+                    (
+                        same_old_sprite.center_x == sprite_data["center_x"]
+                        and same_old_sprite.center_y == sprite_data["center_y"]
+                    )
+                    and (
+                        same_old_sprite.width == sprite_data["width"]
+                        and same_old_sprite.height == sprite_data["height"]
+                    )
+                    and (same_old_sprite.angle == sprite_data["angle"])
+                    and (same_old_sprite.alpha == sprite_data["alpha"])
+                    and (same_old_sprite.visible == sprite_data["visible"])
+                ):
                     return same_old_sprite
-
 
         return None
 
@@ -191,14 +209,12 @@ class LoreLogger:
             t = entry["type"]
 
             if t == "sprite":
-
                 d = entry["data"]
 
                 same_old_sprite = self._check_sprite_in_scene(d)
                 if same_old_sprite:
                     new_scene.add_sprite(entry["layer"], entry["name"], same_old_sprite)
                     continue
-
 
                 sprite = Sprite(d["texture"])
                 sprite.center_x = d["center_x"]
@@ -212,7 +228,6 @@ class LoreLogger:
                 new_scene.add_sprite(entry["layer"], entry["name"], sprite)
 
             elif t == "animated_sprite":
-
                 d = entry["data"]
 
                 same_old_sprite = self._check_sprite_in_scene(d)
@@ -233,10 +248,7 @@ class LoreLogger:
                 d = entry["data"]
 
                 new_scene.add_parallax_bg(
-                    d["texture"],
-                    d["speed"],
-                    d["original_x"],
-                    d["original_y"]
+                    d["texture"], d["speed"], d["original_x"], d["original_y"]
                 )
 
         new_scene["fade"]["splash"].alpha = 0
@@ -257,18 +269,16 @@ class LoreLogger:
         defines = {}
         persistents = {}
 
-        find_last_unnecessary_object = False # (__builtins__)
+        find_last_unnecessary_object = False  # (__builtins__)
 
         for name, value in g.main.NAMESPACE.NAMESPACE.items():
-
             if not find_last_unnecessary_object and str(name) != "__builtins__":
                 # Скипаем все стартовые функции т.к. они нам не нужны. __builtins__ - всегда самая последняя
                 continue
             else:
                 find_last_unnecessary_object = True
 
-
-            if name.startswith('__') and name.endswith('__'):
+            if name.startswith("__") and name.endswith("__"):
                 continue
             if isinstance(value, type):
                 classes[name] = copy.copy(value)
@@ -289,14 +299,14 @@ class LoreLogger:
             "variables": variables,
             "functions": functions,
             "classes": classes,
-            "modules" : modules,
+            "modules": modules,
             "defines": defines,
-            "persistents" : persistents
+            "persistents": persistents,
         }
 
         return return_data
 
-    def _restore_namespace(self, data: dict[str : dict]):
+    def _restore_namespace(self, data: dict[str:dict]):
 
         new_namespace = Namespace()
         g.main.NAMESPACE = new_namespace
@@ -313,7 +323,6 @@ class LoreLogger:
         for name, value in data["modules"].items():
             new_namespace.NAMESPACE[name] = value
 
-
         for name, value in data["defines"].items():
             new_namespace["Define"].__setattr__(name, value)
 
@@ -326,10 +335,11 @@ class LoreLogger:
         gens = g.main.actions.active_generators
         return {
             "consistently": [
-                g for g in gens.active_generators_consistently
+                g
+                for g in gens.active_generators_consistently
                 if not g[0].startswith("talk")
             ],
-            "together": copy.copy(gens.active_generators_together)
+            "together": copy.copy(gens.active_generators_together),
         }
 
     def _restore_generators(self, data):
@@ -346,13 +356,15 @@ class LoreLogger:
 
     def _snapshot_attributes(self):
         a = g.attributes
-        return copy.deepcopy({
-            "character_name": a.character_name,
-            "character_text": a.character_text,
-            "character_name_colour": a.character_name_colour,
-            "character_text_colour": a.character_text_colour,
-            "text_anchor": a.text_anchor
-        })
+        return copy.deepcopy(
+            {
+                "character_name": a.character_name,
+                "character_text": a.character_text,
+                "character_name_colour": a.character_name_colour,
+                "character_text_colour": a.character_text_colour,
+                "text_anchor": a.text_anchor,
+            }
+        )
 
     def _restore_attributes(self, data):
         a = g.attributes
@@ -367,10 +379,7 @@ class LoreLogger:
 
     def _snapshot_lore(self):
         lm = g.lm
-        return copy.deepcopy({
-            "pose": lm.pose,
-            "label": lm.label
-        })
+        return copy.deepcopy({"pose": lm.pose, "label": lm.label})
 
     def _restore_lore(self, data):
         g.lm.jump(data["label"], data["pose"])
@@ -388,7 +397,7 @@ class LoreLogger:
             "generators": self._snapshot_generators(),
             "attributes": self._snapshot_attributes(),
             "lore": self._snapshot_lore(),
-            "audio": self._snapshot_audio()
+            "audio": self._snapshot_audio(),
         }
 
         self.logs.append(snapshot)

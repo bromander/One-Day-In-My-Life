@@ -6,6 +6,7 @@ from .Exceptions import ActionNotFoundError
 
 from .globals import g
 
+
 class Actions:
     def __init__(self) -> None:
         """
@@ -111,7 +112,7 @@ class Actions:
             dx = target_x - current_x
             dy = target_y - current_y
 
-            distance = (dx ** 2 + dy ** 2) ** 0.5
+            distance = (dx**2 + dy**2) ** 0.5
             step = speed * dt
 
             if distance <= step:
@@ -146,13 +147,16 @@ class Actions:
             if dt is None or dt <= 0:
                 continue
 
-
             progress = min(progress + dt / duration, 1.0)
             new_alpha = int(progress * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
-                splash_manager.children[0][0].update_font(font_color=(255, 255, 255, new_alpha))
-                splash_manager.children[0][1].update_font(font_color=(255, 255, 255, new_alpha))
+                splash_manager.children[0][0].update_font(
+                    font_color=(255, 255, 255, new_alpha)
+                )
+                splash_manager.children[0][1].update_font(
+                    font_color=(255, 255, 255, new_alpha)
+                )
 
                 g.scene["fade"]["splash"].alpha = new_alpha
                 last_alpha = new_alpha
@@ -182,8 +186,12 @@ class Actions:
             new_alpha = 255 - int(progress * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
-                splash_manager.children[0][0].update_font(font_color=(255, 255, 255, new_alpha))
-                splash_manager.children[0][1].update_font(font_color=(255, 255, 255, new_alpha))
+                splash_manager.children[0][0].update_font(
+                    font_color=(255, 255, 255, new_alpha)
+                )
+                splash_manager.children[0][1].update_font(
+                    font_color=(255, 255, 255, new_alpha)
+                )
 
                 g.scene["fade"]["splash"].alpha = new_alpha
                 last_alpha = new_alpha
@@ -193,13 +201,15 @@ class Actions:
                 splash_manager.children[0][0].update_font(font_color=(255, 255, 255, 0))
                 return
 
-
     def update(self, delta_time: float) -> None:
         self.active_generators.update(delta_time)
 
-    def start_action(self, name: Literal["fadein", "fadeout", "move_sprite", "wait", "show_splash"],
-                     now: dict,
-                     stream: Literal["consistently", "together", "consistently_async"]) -> None:
+    def start_action(
+        self,
+        name: Literal["fadein", "fadeout", "move_sprite", "wait", "show_splash"],
+        now: dict,
+        stream: Literal["consistently", "together", "consistently_async"],
+    ) -> None:
         """
         Запускает нужный генератор
         :param name: Название генератора
@@ -213,10 +223,10 @@ class Actions:
             "fadeout": self._fadeout,
             "move_sprite": self._move,
             "wait": self._wait,
-            "show_splash" : self._show_splash
+            "show_splash": self._show_splash,
         }
 
         if name not in method_map:
-            raise ActionNotFoundError(f"Action \"{name}\" now found!")
+            raise ActionNotFoundError(f'Action "{name}" now found!')
 
         self.active_generators.add_generator(stream, method_map[name](now), name)

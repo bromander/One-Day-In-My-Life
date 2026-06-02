@@ -1,14 +1,11 @@
 from pathlib import Path
-from arcade import (
-Texture,
-TextureAnimationSprite,
-TextureKeyframe,
-TextureAnimation
-
-)
+from arcade import Texture, TextureAnimationSprite, TextureKeyframe, TextureAnimation
 from PIL import Image
 
-def load_animated_gif(resource_name: str | Path, size_modif: float = 1.0) -> tuple[TextureAnimationSprite, (int, int)]:
+
+def load_animated_gif(
+    resource_name: str | Path, size_modif: float = 1.0
+) -> tuple[TextureAnimationSprite, (int, int)]:
 
     file_name = Path(resource_name)
     image_object = Image.open(file_name)

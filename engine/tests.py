@@ -21,32 +21,45 @@ text_pr = Text(locale=Locale.RU)
 
 
 class TestFilesManager(unittest.TestCase):
-
     def test_init_images(self):
         self.maxDiff = None
 
         paths = {
             "images": "./test_datas/images",
             "music": "./test_datas/music",
-            "sounds": "./test_datas/sounds"
+            "sounds": "./test_datas/sounds",
         }
         for i in os.listdir(paths["images"]):
             os.remove(paths["images"] + "/" + str(i))
 
         for i in tqdm(range(100), "Creating images"):
-            arr = np.random.randint(0, 256,
-                                    size=(random.randint(1, 1000), random.randint(1, 1000), random.randint(3, 4)),
-                                    dtype=np.uint8)
+            arr = np.random.randint(
+                0,
+                256,
+                size=(
+                    random.randint(1, 1000),
+                    random.randint(1, 1000),
+                    random.randint(3, 4),
+                ),
+                dtype=np.uint8,
+            )
             im = Image.fromarray(arr).convert("RGB")
-            path = paths["images"] + "/" + str(uuid4()) + "." + str(random.choice(["jpg", "jpeg", "png"]))
+            path = (
+                paths["images"]
+                + "/"
+                + str(uuid4())
+                + "."
+                + str(random.choice(["jpg", "jpeg", "png"]))
+            )
             im.save(path)
 
         fm = FilesManager(paths)
 
-        self.assertListEqual(list(fm.textures_paths.keys()),
-                             os.listdir(paths["images"]),
-                             "Error when loading images!"
-                             )
+        self.assertListEqual(
+            list(fm.textures_paths.keys()),
+            os.listdir(paths["images"]),
+            "Error when loading images!",
+        )
 
         del fm
 
@@ -59,7 +72,7 @@ class TestFilesManager(unittest.TestCase):
         paths = {
             "images": "./test_datas/images",
             "music": "./test_datas/music",
-            "sounds": "./test_datas/sounds"
+            "sounds": "./test_datas/sounds",
         }
         for i in os.listdir(paths["music"]):
             os.remove(paths["music"] + "/" + str(i))
@@ -67,14 +80,18 @@ class TestFilesManager(unittest.TestCase):
         for i in tqdm(range(100), "Creating long audio files"):
             noise = np.random.normal(0, 0.2, 44100 * random.randint(30, 60))
             noise_int = (noise * 32767).astype(np.int16)
-            path = paths["music"] + "/" + str(uuid4()) + "." + str(random.choice(["wav"]))
+            path = (
+                paths["music"] + "/" + str(uuid4()) + "." + str(random.choice(["wav"]))
+            )
             write(path, 44100, noise_int)
 
         fm = FilesManager(paths)
 
-        self.assertListEqual(list(fm.audio_paths.keys()),
-                             os.listdir(paths["music"]),
-                             "Error when loading music!")
+        self.assertListEqual(
+            list(fm.audio_paths.keys()),
+            os.listdir(paths["music"]),
+            "Error when loading music!",
+        )
 
         del fm
 
@@ -87,7 +104,7 @@ class TestFilesManager(unittest.TestCase):
         paths = {
             "images": "./test_datas/images",
             "music": "./test_datas/music",
-            "sounds": "./test_datas/sounds"
+            "sounds": "./test_datas/sounds",
         }
         for i in os.listdir(paths["sounds"]):
             os.remove(paths["sounds"] + "/" + str(i))
@@ -95,14 +112,18 @@ class TestFilesManager(unittest.TestCase):
         for i in tqdm(range(100), "Creating short audio files"):
             noise = np.random.normal(0, 0.2, 44100 * random.randint(1, 10))
             noise_int = (noise * 32767).astype(np.int16)
-            path = paths["sounds"] + "/" + str(uuid4()) + "." + str(random.choice(["wav"]))
+            path = (
+                paths["sounds"] + "/" + str(uuid4()) + "." + str(random.choice(["wav"]))
+            )
             write(path, 44100, noise_int)
 
         fm = FilesManager(paths)
 
-        self.assertListEqual(list(fm.audio_paths.keys()),
-                             os.listdir(paths["sounds"]),
-                             "Error loading sounds!")
+        self.assertListEqual(
+            list(fm.audio_paths.keys()),
+            os.listdir(paths["sounds"]),
+            "Error loading sounds!",
+        )
 
         del fm
 
@@ -115,7 +136,7 @@ class TestFilesManager(unittest.TestCase):
         paths = {
             "images": "./test_datas/images",
             "music": "./test_datas/music",
-            "sounds": "./test_datas/sounds"
+            "sounds": "./test_datas/sounds",
         }
 
         # ------------- IMAGES
@@ -124,11 +145,24 @@ class TestFilesManager(unittest.TestCase):
             os.remove(paths["images"] + "/" + str(i))
 
         for i in tqdm(range(50), "Creating images"):
-            arr = np.random.randint(0, 256,
-                                    size=(random.randint(1, 1000), random.randint(1, 1000), random.randint(3, 4)),
-                                    dtype=np.uint8)
+            arr = np.random.randint(
+                0,
+                256,
+                size=(
+                    random.randint(1, 1000),
+                    random.randint(1, 1000),
+                    random.randint(3, 4),
+                ),
+                dtype=np.uint8,
+            )
             im = Image.fromarray(arr).convert("RGB")
-            path = paths["images"] + "/" + str(uuid4()) + "." + str(random.choice(["jpg", "jpeg", "png"]))
+            path = (
+                paths["images"]
+                + "/"
+                + str(uuid4())
+                + "."
+                + str(random.choice(["jpg", "jpeg", "png"]))
+            )
             im.save(path)
 
         # ------------- SOUNDS
@@ -139,7 +173,9 @@ class TestFilesManager(unittest.TestCase):
         for i in tqdm(range(50), "Creating short audio files"):
             noise = np.random.normal(0, 0.2, 44100 * random.randint(1, 10))
             noise_int = (noise * 32767).astype(np.int16)
-            path = paths["sounds"] + "/" + str(uuid4()) + "." + str(random.choice(["wav"]))
+            path = (
+                paths["sounds"] + "/" + str(uuid4()) + "." + str(random.choice(["wav"]))
+            )
             write(path, 44100, noise_int)
 
         # ------------- MUSIC
@@ -150,11 +186,12 @@ class TestFilesManager(unittest.TestCase):
         for i in tqdm(range(50), "Creating long audio files"):
             noise = np.random.normal(0, 0.2, 44100 * random.randint(30, 60))
             noise_int = (noise * 32767).astype(np.int16)
-            path = paths["music"] + "/" + str(uuid4()) + "." + str(random.choice(["wav"]))
+            path = (
+                paths["music"] + "/" + str(uuid4()) + "." + str(random.choice(["wav"]))
+            )
             write(path, 44100, noise_int)
 
         # -------------
-
 
         fm = FilesManager(paths)
 
@@ -182,8 +219,8 @@ class TestFilesManager(unittest.TestCase):
         for i in os.listdir(paths["images"]):
             os.remove(paths["images"] + "/" + str(i))
 
-class TestActiveGenerators(unittest.TestCase):
 
+class TestActiveGenerators(unittest.TestCase):
     def test_generator_CONSISTENTLY(self):
 
         lg = ListActiveGenerators()
@@ -191,6 +228,7 @@ class TestActiveGenerators(unittest.TestCase):
         numbers = []
 
         for i in range(100):
+
             def generator(numbers):
                 for i in range(100):
                     numbers.append(i)
@@ -201,9 +239,9 @@ class TestActiveGenerators(unittest.TestCase):
             lg.add_generator("consistently", gen, "TEST")
 
         for i in range(100000):
-            lg.update(1/random.randint(10, 120))
+            lg.update(1 / random.randint(10, 120))
 
-        self.assertListEqual(numbers, [i for i in range(100)]*100)
+        self.assertListEqual(numbers, [i for i in range(100)] * 100)
 
     def test_generator_TOGETHER(self):
 
@@ -212,6 +250,7 @@ class TestActiveGenerators(unittest.TestCase):
         numbers = []
 
         for i in range(100):
+
             def generator(numbers):
                 for i in range(100):
                     numbers.append(i)
@@ -222,7 +261,7 @@ class TestActiveGenerators(unittest.TestCase):
             lg.add_generator("together", gen, "TEST")
 
         for i in range(10000):
-            lg.update(1/random.randint(10, 120))
+            lg.update(1 / random.randint(10, 120))
 
         self.assertListEqual(numbers, [i for i in range(100) for _ in range(100)])
 
@@ -233,6 +272,7 @@ class TestActiveGenerators(unittest.TestCase):
         numbers = []
 
         for i in range(100):
+
             def generator(numbers):
                 for i in range(100):
                     numbers.append(i)
@@ -247,13 +287,13 @@ class TestActiveGenerators(unittest.TestCase):
 
         self.assertListEqual(numbers, [i for i in range(10)] * 100)
 
-class TestWorkWithLore(unittest.TestCase):
 
+class TestWorkWithLore(unittest.TestCase):
     def random_lore_generator(self):
         pass
 
-class TestWaiter(unittest.TestCase):
 
+class TestWaiter(unittest.TestCase):
     def test_state(self):
         params = [random.choice([True, False]) for i in range(100)]
         waiters = [Waiter(i) for i in params]
@@ -279,25 +319,38 @@ class TestWaiter(unittest.TestCase):
 
         self.assertListEqual([i.state for i in waiters], [False for i in range(100)])
 
-class TestScene(unittest.TestCase):
 
+class TestScene(unittest.TestCase):
     def test_add_sprite(self):
         self.maxDiff = None
 
         paths = {
             "images": "./test_datas/images",
             "music": "./test_datas/music",
-            "sounds": "./test_datas/sounds"
+            "sounds": "./test_datas/sounds",
         }
         for i in os.listdir(paths["images"]):
             os.remove(paths["images"] + "/" + str(i))
 
         for i in tqdm(range(50), "Creating images"):
-            arr = np.random.randint(0, 256,
-                                    size=(random.randint(1, 1000), random.randint(1, 1000), random.randint(3, 4)),
-                                    dtype=np.uint8)
+            arr = np.random.randint(
+                0,
+                256,
+                size=(
+                    random.randint(1, 1000),
+                    random.randint(1, 1000),
+                    random.randint(3, 4),
+                ),
+                dtype=np.uint8,
+            )
             im = Image.fromarray(arr).convert("RGB")
-            path = paths["images"] + "/" + str(uuid4()) + "." + str(random.choice(["jpg", "jpeg", "png"]))
+            path = (
+                paths["images"]
+                + "/"
+                + str(uuid4())
+                + "."
+                + str(random.choice(["jpg", "jpeg", "png"]))
+            )
             im.save(path)
 
         print("Loading sprites...")
@@ -326,4 +379,3 @@ class TestScene(unittest.TestCase):
 
         for i in os.listdir(paths["images"]):
             os.remove(paths["images"] + "/" + str(i))
-

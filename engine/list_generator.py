@@ -9,7 +9,9 @@ class ListActiveGenerators:
         Отвечает за управление всеми генераторами
         """
         self.active_generators_consistently: List[tuple[str, types.GeneratorType]] = []
-        self.active_generators_consistently_async: List[tuple[str, types.GeneratorType]] = []
+        self.active_generators_consistently_async: List[
+            tuple[str, types.GeneratorType]
+        ] = []
         self.active_generators_together: List[tuple[str, types.GeneratorType]] = []
         self.dt_accumulator = 0.0
         self._talk_description = "talk"  # Константа для описания
@@ -28,13 +30,17 @@ class ListActiveGenerators:
 
     def _remove_talk_generators(self):
         self.active_generators_consistently = [
-            item for item in self.active_generators_consistently
+            item
+            for item in self.active_generators_consistently
             if item[0] != self._talk_description
         ]
 
-    def add_generator(self, stream: Literal["together", "consistently", "consistently_async"],
-                      gen: types.GeneratorType,
-                      descr: str) -> None:
+    def add_generator(
+        self,
+        stream: Literal["together", "consistently", "consistently_async"],
+        gen: types.GeneratorType,
+        descr: str,
+    ) -> None:
         """
         Добавляет генератор
         :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
@@ -56,8 +62,9 @@ class ListActiveGenerators:
 
         target_list.append((descr, gen))
 
-    def _process_generator(self, gen_tuple: tuple[str, types.GeneratorType],
-                           delta_time: float) -> bool:
+    def _process_generator(
+        self, gen_tuple: tuple[str, types.GeneratorType], delta_time: float
+    ) -> bool:
 
         _, generator = gen_tuple
 

@@ -1,23 +1,28 @@
 import copy
 from arcade import Sprite, draw_sprite, Texture, get_window, TextureAnimationSprite
 from typing import Optional, Union, Literal
-from .Exceptions import LayerDoesNotExistError, SpriteDoesNotExistError, SpriteIsNotLoadedError
+from .Exceptions import (
+    LayerDoesNotExistError,
+    SpriteDoesNotExistError,
+    SpriteIsNotLoadedError,
+)
 from .files_manager import FilesManager
 
 from .globals import g
 
+
 class Scene:
-    def  __init__(self) -> None:
+    def __init__(self) -> None:
         """
         Отвечает за работу со спрайтами со всей сцены
         """
-        self.data: dict[str : dict[Union[dict[str : Sprite], str : Sprite]]] = {
+        self.data: dict[str : dict[Union[dict[str:Sprite], str:Sprite]]] = {
             "bg": {},
             "bg_parallax": [],
             "animated_sprites": {},
             "sprites": {},
             "gui": {},
-            "fade": {"fade" : Sprite(), "splash": Sprite()}
+            "fade": {"fade": Sprite(), "splash": Sprite()},
         }
 
         self.save_points = []
@@ -33,7 +38,9 @@ class Scene:
     def set_characters_slice(self, value):
         self.characters_slice = value
 
-    def get_texture(self, filename: str) -> Optional[Union[Texture, TextureAnimationSprite]]:
+    def get_texture(
+        self, filename: str
+    ) -> Optional[Union[Texture, TextureAnimationSprite]]:
         return self.fm.get_texture(filename)
 
     def has_texture(self, filename: str) -> bool:
@@ -61,7 +68,6 @@ class Scene:
 
             i.center_x = width / 2
             i.center_y = height / 2
-
 
     def get_scene_sprite(self, filename: str, layer: str) -> Optional[Sprite]:
         """
@@ -99,12 +105,15 @@ class Scene:
             "animated_sprites": {},
             "sprites": {},
             "gui": {},
-            "fade": copy.copy(self.data["fade"])
+            "fade": copy.copy(self.data["fade"]),
         }
 
-    def add_sprite(self, layer: Literal["bg", "sprites", "gui", "fade"],
-                   name: str,
-                   sprite: Union[Sprite, Texture, str]) -> None:
+    def add_sprite(
+        self,
+        layer: Literal["bg", "sprites", "gui", "fade"],
+        name: str,
+        sprite: Union[Sprite, Texture, str],
+    ) -> None:
         """
         Добавляет спрайт на сцену
         :param layer: Слой
@@ -113,7 +122,6 @@ class Scene:
         """
         if name in self.data[layer]:
             del self.data[layer][name]
-
 
         if isinstance(sprite, str):
             sprite_new = self.get_sprite(sprite)
@@ -128,7 +136,9 @@ class Scene:
 
         self.data[layer][name] = sprite_new
 
-    def delete_sprite(self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str], name: str) -> None:
+    def delete_sprite(
+        self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str], name: str
+    ) -> None:
         """
         Удаляет спрайт со сцены
         :param layer: Слой
@@ -143,7 +153,9 @@ class Scene:
         else:
             raise SpriteDoesNotExistError(name, layer)
 
-    def clear_layer(self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str]) -> None:
+    def clear_layer(
+        self, layer: Union[Literal["bg", "sprites", "gui", "fade"], str]
+    ) -> None:
         """
         Очищает слой
 
@@ -155,16 +167,15 @@ class Scene:
 
         self.data[layer].clear()
 
-    def update(self, delta_time = 1/60) -> None:
+    def update(self, delta_time=1 / 60) -> None:
         """Обновляет все спрайты"""
 
         len_sprites = 0
 
-
         for layer, layer_content in self.data.items():
             if layer == "animated_sprites":
                 for id, sprite in layer_content.items():
-                    sprite : TextureAnimationSprite = sprite
+                    sprite: TextureAnimationSprite = sprite
                     if sprite._current_keyframe_index == 100:
                         del self.data[layer][id]
                         break
@@ -184,7 +195,7 @@ class Scene:
             else:
                 len_sprites += 1
 
-        self.len_loaded_textures  = len_sprites
+        self.len_loaded_textures = len_sprites
 
     def add_parallax_bg(self, filename, speed, center_x, center_y):
         sprite = self.get_sprite(filename)
@@ -192,11 +203,11 @@ class Scene:
         sprite.scale_y = float(sprite.scale_y + 0.1 * speed)
 
         layer = {
-                'sprite' : sprite,
-                'speed': speed,
-                'original_x': center_x,
-                'original_y': center_y,
-                "scale" : sprite.scale
+            "sprite": sprite,
+            "speed": speed,
+            "original_x": center_x,
+            "original_y": center_y,
+            "scale": sprite.scale,
         }
         self.data["bg_parallax"].append(layer)
 
@@ -210,25 +221,25 @@ class Scene:
         normalized_x = (x - window.width // 2) / (window.width // 2)
         normalized_y = (y - window.height // 2) / (window.height // 2)
 
-        max_offset_x = 100 * layer['speed']
-        max_offset_y = 60 * layer['speed']
+        max_offset_x = 100 * layer["speed"]
+        max_offset_y = 60 * layer["speed"]
 
-        layer['sprite'].center_x = layer['original_x'] + normalized_x * max_offset_x
-        layer['sprite'].center_y = layer['original_y'] + normalized_y * max_offset_y
+        layer["sprite"].center_x = layer["original_x"] + normalized_x * max_offset_x
+        layer["sprite"].center_y = layer["original_y"] + normalized_y * max_offset_y
 
     def on_mouse_motion(self, x, y):
 
         for e, layer in enumerate(self.data["bg_parallax"]):
-            if hasattr(layer['sprite'], "clicked"):
-                if not layer['sprite'].clicked:
-                    if hasattr(layer['sprite'], "freezed"):
-                        if not layer['sprite'].freezed:
+            if hasattr(layer["sprite"], "clicked"):
+                if not layer["sprite"].clicked:
+                    if hasattr(layer["sprite"], "freezed"):
+                        if not layer["sprite"].freezed:
                             self._move_parallax(layer, x, y)
                     else:
                         self._move_parallax(layer, x, y)
                 else:
-                    self.data["bg_parallax"][e]['original_x'] = layer['sprite'].center_x
-                    self.data["bg_parallax"][e]['original_y'] = layer['sprite'].center_y
+                    self.data["bg_parallax"][e]["original_x"] = layer["sprite"].center_x
+                    self.data["bg_parallax"][e]["original_y"] = layer["sprite"].center_y
                     self.data["bg_parallax"].append(self.data["bg_parallax"].pop(e))
 
             else:
@@ -239,12 +250,12 @@ class Scene:
         data = self.data
 
         # Фон
-        if bg_items := data.get('bg'):
+        if bg_items := data.get("bg"):
             for layer in sorted(bg_items, reverse=True):
                 draw_sprite(bg_items[layer])
 
         # Параллакс
-        bg_parallax = data.get('bg_parallax', [])
+        bg_parallax = data.get("bg_parallax", [])
         slice_idx = self.characters_slice
 
         # Функция для слоя (избегаем дублирования кода)
@@ -263,11 +274,11 @@ class Scene:
             draw_sprite(sprite)
 
         # Передние слои
-        for layer in bg_parallax[slice_idx - 1:]:
+        for layer in bg_parallax[slice_idx - 1 :]:
             draw_layer(layer)
 
         # Остальное
-        skip_keys = {'bg', 'bg_parallax', 'sprites'}
+        skip_keys = {"bg", "bg_parallax", "sprites"}
         for key, value in data.items():
             if key in skip_keys:
                 continue

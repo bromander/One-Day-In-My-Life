@@ -9,6 +9,7 @@ from .Exceptions import ActionNotFoundError, ChannelDoesNotExistError
 
 from .globals import g
 
+
 class Namespace:
     def __init__(self) -> None:
         """
@@ -21,17 +22,17 @@ class Namespace:
         self.SavesManager = g.sm
 
         self.NAMESPACE = {
-            "Data" : self.Data(self),
+            "Data": self.Data(self),
             "Persistent": self.Persistent(),
             "Define": self.Define(),
             "Scene": self.Scene(),
-            "Screen" : self.Screen(),
+            "Screen": self.Screen(),
             "Audio": self.Audio(),
             "Lore": self.Lore(),
             "SpriteEffects": self.SpriteEffects(),
-            "wait" : lambda duration: self.wait(duration),
-            "talk" : self.talk,
-            "end" : lambda: self.end()
+            "wait": lambda duration: self.wait(duration),
+            "talk": self.talk,
+            "end": lambda: self.end(),
         }
         self.returning = None
 
@@ -47,8 +48,8 @@ class Namespace:
             exec(command, self.NAMESPACE)
         except SyntaxError as e:
             raise SyntaxError(
-                f"{e}:\n{"\n    ".join([str(num) + " " + str(i) for num, i in enumerate(str(command).split("\n"))])}")
-
+                f"{e}:\n{'\n    '.join([str(num) + ' ' + str(i) for num, i in enumerate(str(command).split('\n'))])}"
+            )
 
         old_ret = self.returning
         self.returning = None
@@ -62,19 +63,19 @@ class Namespace:
             """
             Отвечает за работу с переменными, которые сохраняются между сессиями
             """
-            super().__setattr__('sm', g.sm)
+            super().__setattr__("sm", g.sm)
 
         def __setattr__(self, name, value):
-            if 'sm' not in self.__dict__:
+            if "sm" not in self.__dict__:
                 super().__setattr__(name, value)
-            elif name == 'sm':
+            elif name == "sm":
                 super().__setattr__(name, value)
             else:
                 self.sm.Persistent.set_persistent(name, value)
                 super().__setattr__(name, value)
 
         def __getattribute__(self, item):
-            if item.startswith('__') and item.endswith('__') or item == 'sm':
+            if item.startswith("__") and item.endswith("__") or item == "sm":
                 return object.__getattribute__(self, item)
 
             return self.sm.Persistent.get_persistent(item)
@@ -88,31 +89,33 @@ class Namespace:
             """
             Отвечает за работку с переменными, которые сохраняются со всеми сохранениями
             """
-            super().__setattr__('defines', {})
+            super().__setattr__("defines", {})
 
         def __setattr__(self, name, value):
-            if name == 'defines':
+            if name == "defines":
                 super().__setattr__(name, value)
             else:
-                defines = super().__getattribute__('defines')
+                defines = super().__getattribute__("defines")
                 defines[name] = value
 
         def __getattribute__(self, name):
-            if name == 'defines':
+            if name == "defines":
                 return super().__getattribute__(name)
             try:
                 return super().__getattribute__(name)
             except AttributeError:
-                defines = super().__getattribute__('defines')
+                defines = super().__getattribute__("defines")
                 if name in defines:
                     return defines[name]
-                raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+                raise AttributeError(
+                    f"'{type(self).__name__}' object has no attribute '{name}'"
+                )
 
         def __delattr__(self, name):
-            if name == 'defines':
+            if name == "defines":
                 super().__delattr__(name)
             else:
-                defines = super().__getattribute__('defines')
+                defines = super().__getattribute__("defines")
                 if name in defines:
                     del defines[name]
                 else:
@@ -123,12 +126,14 @@ class Namespace:
 
         def get_all_variables(self):
             """Возвращает все пользовательские переменные"""
-            return self.defines.copy()  # Возвращаем копию, чтобы избежать случайных изменений
+            return (
+                self.defines.copy()
+            )  # Возвращаем копию, чтобы избежать случайных изменений
 
     class Data:
-        '''
+        """
         Предоставляет доступ к основным классам движка
-        '''
+        """
 
         def __init__(self, namespace):
             self.session_id = g.main.session_id
@@ -143,10 +148,16 @@ class Namespace:
             self.PIL = PIL
 
             self.mix = {
-                "Сладкие блинчики": (frozenset(["milk.png", "eggs.png", "puki.png", "pineapple.png"]), "cooking_bliny"),  # молоко+яйца+мука+ананас
-                "Омлет" : (frozenset(["milk.png", "eggs.png"]), "cooking_omlet"), # Молоко и яица
-                "Салат" : (frozenset(["tomatoes.png"]), "cooking_salad") # Помедорчеки
-                #"Пирог" : (frozenset(["milk.png", "eggs.png", "puki.png"]), "blinyyy") # Яица, молоко  и пуки
+                "Сладкие блинчики": (
+                    frozenset(["milk.png", "eggs.png", "puki.png", "pineapple.png"]),
+                    "cooking_bliny",
+                ),  # молоко+яйца+мука+ананас
+                "Омлет": (
+                    frozenset(["milk.png", "eggs.png"]),
+                    "cooking_omlet",
+                ),  # Молоко и яица
+                "Салат": (frozenset(["tomatoes.png"]), "cooking_salad"),  # Помедорчеки
+                # "Пирог" : (frozenset(["milk.png", "eggs.png", "puki.png"]), "blinyyy") # Яица, молоко  и пуки
             }
 
         def format_time_seconds(self):
@@ -161,7 +172,7 @@ class Namespace:
                 3: "четверг",
                 4: "пятница",
                 5: "суббота",
-                6: "воскресенье"
+                6: "воскресенье",
             }
 
             months = {
@@ -176,7 +187,7 @@ class Namespace:
                 9: "сентября",
                 10: "октября",
                 11: "ноября",
-                12: "декабря"
+                12: "декабря",
             }
 
             weekday = days[dt.weekday()]
@@ -188,13 +199,18 @@ class Namespace:
         def create_stamp(self):
             def stamp():
                 yield
-            self.Game_view.actions.active_generators.add_generator("continuous", stamp(), "stamp")
+
+            self.Game_view.actions.active_generators.add_generator(
+                "continuous", stamp(), "stamp"
+            )
 
         def trig_dialogue_window(self, state: Optional[bool]):
             if state:
                 self.Game_view.show_dialogue_bg_trigger = state
             else:
-                self.Game_view.show_dialogue_bg_trigger = not self.Game_view.show_dialogue_bg_trigger
+                self.Game_view.show_dialogue_bg_trigger = (
+                    not self.Game_view.show_dialogue_bg_trigger
+                )
 
         def get_food_root(self) -> list[tuple]:
             chosen = [i for i in self.namespace["Define"].collected_items.keys()]
@@ -218,9 +234,17 @@ class Namespace:
         def character_slice(self, value):
             g.scene.set_characters_slice(value)
 
-        def _get_norm(self,
-                      at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]],
-                      sprite_name: str):
+        def _get_norm(
+            self,
+            at: Optional[
+                Union[
+                    Literal["left", "right", "center"],
+                    tuple[int, int],
+                    tuple[float, float],
+                ]
+            ],
+            sprite_name: str,
+        ):
 
             window = get_window()
 
@@ -229,7 +253,9 @@ class Namespace:
             if sprite_name in g.scene["sprites"]:
                 sprite = g.scene["sprites"][sprite_name]
             else:
-                sprite = Sprite(center_x=window.width * x_norm, center_y=window.height * y_norm)
+                sprite = Sprite(
+                    center_x=window.width * x_norm, center_y=window.height * y_norm
+                )
 
             match at:
                 case "center":
@@ -239,7 +265,6 @@ class Namespace:
                 case "right":
                     x_norm = 0.8
                 case _ if isinstance(at, tuple) and len(at) == 2:
-
                     if at[0] == -1:
                         x_norm = sprite.position[0] / window.width
                     elif isinstance(at[0], int):
@@ -251,12 +276,11 @@ class Namespace:
                         else:
                             x_norm = at[0] / window.width
 
-
                     if at[1] == -1:
                         y_norm = sprite.position[1] / window.height
 
                     elif isinstance(at[1], int):
-                            y_norm = at[1] / window.height
+                        y_norm = at[1] / window.height
 
                     elif isinstance(at[1], float):
                         if 0 <= at[1] <= 1:
@@ -266,7 +290,11 @@ class Namespace:
 
             return x_norm, y_norm
 
-        def _get_size(self, size: Optional[Union[int, float, Tuple[int], Tuple[float]]], sprite_size: tuple) -> tuple:
+        def _get_size(
+            self,
+            size: Optional[Union[int, float, Tuple[int], Tuple[float]]],
+            sprite_size: tuple,
+        ) -> tuple:
             if size is None:
                 return sprite_size
 
@@ -300,14 +328,24 @@ class Namespace:
 
             return sprite_size
 
-
-        def add_sprite(self, filename_or_sprite: [str, Sprite, TextureAnimationSprite],
-                       at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
-                       size: Optional[Union[tuple[int, int], int]] = None,
-                       angle: int = 0.0,
-                       effect = None,
-                       stream: Literal["consistently", "consistently_async", "together"] = "consistently",
-                       layer: str = "sprites") -> None:
+        def add_sprite(
+            self,
+            filename_or_sprite: [str, Sprite, TextureAnimationSprite],
+            at: Optional[
+                Union[
+                    Literal["left", "right", "center"],
+                    tuple[int, int],
+                    tuple[float, float],
+                ]
+            ] = None,
+            size: Optional[Union[tuple[int, int], int]] = None,
+            angle: int = 0.0,
+            effect=None,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "consistently",
+            layer: str = "sprites",
+        ) -> None:
             """
             Добавляет спрайт на сцену
             :param filename_or_sprite: Название спрайта или сам спрайт
@@ -334,7 +372,6 @@ class Namespace:
                 sprite.angle = angle
 
             if at is not None:
-
                 x_norm, y_norm = self._get_norm(at, filename)
 
                 sprite.center_x = window.width * x_norm
@@ -353,17 +390,22 @@ class Namespace:
                 g.scene.add_sprite(layer, filename, sprite)
                 yield
 
-            g.main.actions.active_generators.add_generator(stream, target(), "show_sprite")
+            g.main.actions.active_generators.add_generator(
+                stream, target(), "show_sprite"
+            )
             if effect is not None:
                 g.main.actions.active_generators.add_generator(
-                    stream,
-                    effect.effect(sprite),
-                    "show_sprite_effect"
+                    stream, effect.effect(sprite), "show_sprite_effect"
                 )
 
-        def hide_sprite(self, filename: str,
-                        effect = None,
-                        stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
+        def hide_sprite(
+            self,
+            filename: str,
+            effect=None,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "consistently",
+        ) -> None:
             """
             Удаляет спрайт со сцены
             :param filename: Название файла
@@ -378,18 +420,28 @@ class Namespace:
             if effect is not None:
                 sprite = g.scene.get_scene_sprite(filename, "sprites")
                 g.main.actions.active_generators.add_generator(
-                    stream,
-                    effect.effect(sprite, 0),
-                    "hide_sprite_effect"
+                    stream, effect.effect(sprite, 0), "hide_sprite_effect"
                 )
-            g.main.actions.active_generators.add_generator(stream, target(), "hide_sprite")
+            g.main.actions.active_generators.add_generator(
+                stream, target(), "hide_sprite"
+            )
 
-
-        def show_character(self, character: str,
-                        at: Optional[Union[Literal["left", "right", "center"], tuple[int, int], tuple[float, float]]] = None,
-                        size: Optional[Union[int, float, Tuple[int], Tuple[float]]] = None,
-                        effect = None,
-                        stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
+        def show_character(
+            self,
+            character: str,
+            at: Optional[
+                Union[
+                    Literal["left", "right", "center"],
+                    tuple[int, int],
+                    tuple[float, float],
+                ]
+            ] = None,
+            size: Optional[Union[int, float, Tuple[int], Tuple[float]]] = None,
+            effect=None,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "consistently",
+        ) -> None:
             """
             Добавляет спрайт персонажа на сцену
             :param character: Айди персонажа
@@ -407,7 +459,6 @@ class Namespace:
             sprite.size = self._get_size(size, sprite.size)
 
             if at is not None:
-
                 x_norm, y_norm = self._get_norm(at, char_id)
 
                 sprite.center_x = window.width * x_norm
@@ -430,23 +481,29 @@ class Namespace:
                 g.scene.add_sprite("sprites", character.split(" ")[0], sprite)
                 yield
 
-            g.main.actions.active_generators.add_generator(stream, target(), "show_sprite")
+            g.main.actions.active_generators.add_generator(
+                stream, target(), "show_sprite"
+            )
             if effect is not None:
                 g.main.actions.active_generators.add_generator(
-                    stream,
-                    effect.effect(sprite),
-                    "show_sprite_effect"
+                    stream, effect.effect(sprite), "show_sprite_effect"
                 )
 
-        def hide_character(self, character: str,
-                        effect = None,
-                        stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
+        def hide_character(
+            self,
+            character: str,
+            effect=None,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "consistently",
+        ) -> None:
             """
             Удаляет спрайт персонажа со сцены
             :param character: Айди персонажа
             :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
             :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
             """
+
             def target(scene):
                 scene.delete_sprite("sprites", character)
                 yield
@@ -455,18 +512,22 @@ class Namespace:
                 sprite = g.scene.get_scene_sprite(character, "sprites")
                 effect = effect.effect(sprite, 0)
                 g.main.actions.active_generators.add_generator(
-                    stream,
-                    effect,
-                    "hide_sprite_effect"
+                    stream, effect, "hide_sprite_effect"
                 )
-            g.main.actions.active_generators.add_generator(stream, target(g.scene), "hide_sprite")
+            g.main.actions.active_generators.add_generator(
+                stream, target(g.scene), "hide_sprite"
+            )
 
-        def set_scene(self,
-                      file_name: Optional[Union[str, Sprite]],
-                      size: Optional[Union[tuple[int, int], int]] = None,
-                      layer: int = 0,
-                      effect = None,
-                      stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
+        def set_scene(
+            self,
+            file_name: Optional[Union[str, Sprite]],
+            size: Optional[Union[tuple[int, int], int]] = None,
+            layer: int = 0,
+            effect=None,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "consistently",
+        ) -> None:
             """
             Изменяет бекграунд
             :param file_name: Название файла
@@ -478,7 +539,7 @@ class Namespace:
             :raises FileNotFoundError: Если файл сцены не был найден
             """
 
-            #self.character_slice = -1
+            # self.character_slice = -1
 
             window = get_window()
             scene = g.scene
@@ -492,6 +553,7 @@ class Namespace:
                 bg_id = -1
 
             if file_name is None:
+
                 def del_layer():
                     scene.clear_layer("sprites")
                     scene.clear_layer("bg_parallax")
@@ -501,15 +563,17 @@ class Namespace:
 
                 if effect is not None:
                     sprite = scene.get_scene_sprite(file_name, "sprites")
-                    g.main.actions.active_generators.add_generator(stream, effect.effect(sprite),"set_scene_effect")
+                    g.main.actions.active_generators.add_generator(
+                        stream, effect.effect(sprite), "set_scene_effect"
+                    )
 
-                g.main.actions.active_generators.add_generator(stream, del_layer(), "set_scene")
+                g.main.actions.active_generators.add_generator(
+                    stream, del_layer(), "set_scene"
+                )
 
                 return None
 
-
             if isinstance(file_name, str):
-
                 sprite = scene.get_sprite(file_name)
                 if sprite is None:
                     raise FileNotFoundError(f"File {file_name} not found!")
@@ -517,7 +581,11 @@ class Namespace:
             elif isinstance(file_name, Sprite):
                 sprite = file_name
 
-            sprite.center_x, sprite.center_y, sprite.size = window.width * 0.5, window.height * 0.5, self._get_size(size, sprite.size)
+            sprite.center_x, sprite.center_y, sprite.size = (
+                window.width * 0.5,
+                window.height * 0.5,
+                self._get_size(size, sprite.size),
+            )
 
             if effect is not None:
                 sprite.alpha = 0
@@ -533,7 +601,6 @@ class Namespace:
                 g.scene.on_resize(*get_window().get_size())
                 yield
 
-
             def edit_layer_name_and_del_old(bg_id, layer):
                 old_bg = scene["bg"][bg_id]
                 scene.clear_layer("animated_sprites")
@@ -541,14 +608,26 @@ class Namespace:
                 scene["bg"][layer] = old_bg
                 yield
 
-            g.main.actions.active_generators.add_generator(stream, target(bg_id, effect is None), "set_scene")
+            g.main.actions.active_generators.add_generator(
+                stream, target(bg_id, effect is None), "set_scene"
+            )
             if effect is not None:
-                g.main.actions.active_generators.add_generator(stream, effect.effect(sprite), "set_scene_effect")
-                g.main.actions.active_generators.add_generator(stream, edit_layer_name_and_del_old(bg_id, layer), "edit_layer_name_and_del_old")
+                g.main.actions.active_generators.add_generator(
+                    stream, effect.effect(sprite), "set_scene_effect"
+                )
+                g.main.actions.active_generators.add_generator(
+                    stream,
+                    edit_layer_name_and_del_old(bg_id, layer),
+                    "edit_layer_name_and_del_old",
+                )
 
-        def set_scene_parallax(self,
-                      files: [tuple[str, float]],
-                      stream: Literal["consistently", "consistently_async", "together"] = "together") -> None:
+        def set_scene_parallax(
+            self,
+            files: [tuple[str, float]],
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "together",
+        ) -> None:
 
             window = get_window()
 
@@ -557,17 +636,26 @@ class Namespace:
             def target(file_name, speed):
                 g.scene.clear_layer("sprites")
                 g.scene.clear_layer("bg")
-                g.scene.add_parallax_bg(file_name, speed, window.center_x, window.center_y)
+                g.scene.add_parallax_bg(
+                    file_name, speed, window.center_x, window.center_y
+                )
                 g.main.set_bg_by_scene_bg()
                 yield
 
             for data in files:
-                g.main.actions.active_generators.add_generator(stream, target(data[0], data[1]), "set_scene")
+                g.main.actions.active_generators.add_generator(
+                    stream, target(data[0], data[1]), "set_scene"
+                )
 
-        def move(self, sprite: str,
-                 position: tuple[Tuple[int, float]],
-                 speed: float,
-                 stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
+        def move(
+            self,
+            sprite: str,
+            position: tuple[Tuple[int, float]],
+            speed: float,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "consistently",
+        ) -> None:
             """
             Перемещает персонажа из текущего положения в определённую координату
             :param sprite: Название спрайта
@@ -578,9 +666,14 @@ class Namespace:
             now = {"character": sprite, "pos": position, "speed": speed}
             g.main.actions.start_action("move_sprite", now, stream=stream)
 
-        def fade(self, type: Literal["fadein", "fadeout"],
-                 duration: float,
-                 stream: Literal["consistently", "consistently_async", "together"] = "consistently") -> None:
+        def fade(
+            self,
+            type: Literal["fadein", "fadeout"],
+            duration: float,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "consistently",
+        ) -> None:
             """
             Создаёт эффект фейдинга на экране
             :param type: Тип фейда "fadein" или "fadeout"
@@ -590,11 +683,15 @@ class Namespace:
             """
             match type:
                 case "fadein":
-                    g.main.actions.start_action("fadein", {"time": duration}, stream=stream)
+                    g.main.actions.start_action(
+                        "fadein", {"time": duration}, stream=stream
+                    )
                 case "fadeout":
-                    g.main.actions.start_action("fadeout", {"time": duration}, stream=stream)
+                    g.main.actions.start_action(
+                        "fadeout", {"time": duration}, stream=stream
+                    )
                 case _:
-                    raise ActionNotFoundError(f"Action \"{type}\" now found!")
+                    raise ActionNotFoundError(f'Action "{type}" now found!')
 
         def start_cutscene(self, path):
             cutscene: TextureAnimationSprite = g.scene.get_sprite(path)
@@ -620,8 +717,16 @@ class Namespace:
             """
             g.lm.jump(label, position)
 
-        def set_part(self, name: str, description: str, show_splash: bool = False, speed: float = 1.0,
-                     stream: Literal["consistently", "consistently_async", "together"] = "together") -> None:
+        def set_part(
+            self,
+            name: str,
+            description: str,
+            show_splash: bool = False,
+            speed: float = 1.0,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "together",
+        ) -> None:
             """
             Позволяет указать то, в какой точке сюжета находится игрок.
             Ещё, позволяет запустить сплеш.
@@ -638,17 +743,23 @@ class Namespace:
             g.da.update(name, description)
 
             if show_splash:
-                g.main.actions.start_action("show_splash", {"name" : name, "description": description, "duration" : speed}, stream)
+                g.main.actions.start_action(
+                    "show_splash",
+                    {"name": name, "description": description, "duration": speed},
+                    stream,
+                )
 
     class Screen:
-
         def call_view(self, view_name: str):
             def call():
                 g.main.waiting_autoskip.off()
                 view = getattr(g.All_views, view_name)()
                 get_window().show_view(view)
                 yield
-            g.main.actions.active_generators.add_generator("consistently", call(), "call_screen")
+
+            g.main.actions.active_generators.add_generator(
+                "consistently", call(), "call_screen"
+            )
 
     class Audio:
         def __init__(self) -> None:
@@ -656,12 +767,17 @@ class Namespace:
             Отвечает за работу с аудио
             """
 
-        def play(self, channel: Literal["music", "sound"],
-                 file_name: str,
-                 volume: float = 1.0,
-                 loop: Optional[bool] = None,
-                 effect: Optional[Literal["fade"]] = None,
-                 stream: Literal["consistently", "consistently_async", "together"] = "consistently_async") -> None:
+        def play(
+            self,
+            channel: Literal["music", "sound"],
+            file_name: str,
+            volume: float = 1.0,
+            loop: Optional[bool] = None,
+            effect: Optional[Literal["fade"]] = None,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "consistently_async",
+        ) -> None:
             """
             Запускает музыку
             :param channel: Канал ("music" / "sound")
@@ -676,17 +792,26 @@ class Namespace:
                 case "music":
                     loop = True if loop is None else loop
                     target = g.am.play_music_gen(file_name, loop, volume, effect)
-                    g.main.actions.active_generators.add_generator(stream, target, "play_music")
+                    g.main.actions.active_generators.add_generator(
+                        stream, target, "play_music"
+                    )
                 case "sound":
                     loop = False if loop is None else loop
                     target = g.am.play_sound_gen(file_name, loop, volume, effect)
-                    g.main.actions.active_generators.add_generator(stream, target, "play_sound")
+                    g.main.actions.active_generators.add_generator(
+                        stream, target, "play_sound"
+                    )
                 case _:
                     raise ChannelDoesNotExistError(f"Channel {channel} does not exist")
 
-        def stop(self, channel: Literal["music", "sound"],
-                 effect: Optional[Literal["fade"]] = None,
-                 stream: Literal["consistently", "consistently_async", "together"] = "consistently_async") -> None:
+        def stop(
+            self,
+            channel: Literal["music", "sound"],
+            effect: Optional[Literal["fade"]] = None,
+            stream: Literal[
+                "consistently", "consistently_async", "together"
+            ] = "consistently_async",
+        ) -> None:
             """
             Останавливает проигрывание канала
             :param channel: Канал ("music" / "sound")
@@ -696,14 +821,17 @@ class Namespace:
             """
             match channel:
                 case "music":
-                    g.main.actions.active_generators.add_generator(stream, g.am.stop_music_gen(effect), "stop_music")
+                    g.main.actions.active_generators.add_generator(
+                        stream, g.am.stop_music_gen(effect), "stop_music"
+                    )
                 case "sound":
-                    g.main.actions.active_generators.add_generator(stream, g.am.stop_sound_gen(effect), "stop_sound")
+                    g.main.actions.active_generators.add_generator(
+                        stream, g.am.stop_sound_gen(effect), "stop_sound"
+                    )
                 case N:
                     raise ChannelDoesNotExistError(f"Channel {N} does not exist")
 
     class SpriteEffects:
-
         class Dissolve:
             def __init__(self, duration: float = 1.0) -> None:
                 """
@@ -728,10 +856,18 @@ class Namespace:
 
                     progress = min(progress + dt / duration, 1.0)
 
-                    new_alpha = int(start_alpha + (target_alpha - start_alpha) * progress)
+                    new_alpha = int(
+                        start_alpha + (target_alpha - start_alpha) * progress
+                    )
                     sprite.alpha = new_alpha
 
-    def wait(self, duration: float, stream: Literal["consistently", "consistently_async", "together"] = "consistently"):
+    def wait(
+        self,
+        duration: float,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently",
+    ):
         """
         Заставляет игру... Ждать
         """
@@ -743,13 +879,19 @@ class Namespace:
 
     def talk(self, character: str, text: str):
         def format_text(text: str) -> str:
-            pattern = r'((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])'
+            pattern = r"((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])"
             text = re.split(pattern, str(text))
             for e, i in enumerate(text):
                 if i.startswith("[") and i.endswith("]"):
                     text[e] = str(self.get(i.strip("[]"), "NONE"))
-            text = "".join(text).replace("\\\\", "\\").replace("\[", "[").replace("\]", "]")
+            text = (
+                "".join(text)
+                .replace("\\\\", "\\")
+                .replace("\[", "[")
+                .replace("\]", "]")
+            )
             return text
+
         gen = g.ListCharacters[character].talk(format_text(text))
 
         g.main.actions.active_generators.add_generator("consistently", gen, "talk")

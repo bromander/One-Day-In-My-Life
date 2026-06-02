@@ -1,4 +1,3 @@
-
 class Waiter:
     def __init__(self, default=False):
         self.state = default

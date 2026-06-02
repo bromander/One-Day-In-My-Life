@@ -9,21 +9,27 @@ from .globals import g
 
 logger = g.get_logger(__name__)
 
+
 class LoreManager:
     """
     Отвечает за всю работу с файлами сценария.
     Парсит, обрабатывает и всему тому подобное...
     """
+
     def __init__(self):
         self.lore_files = self._find_files(g.DEFAULT_LORE_FILE_EXT)
 
         reorganize = Reorganize()
-        self.lore = reorganize.reorganize_files(self.lore_files) # {"labe_name" : {"caption" : "", "assets" : set(), "lore" : [""]}}
+        self.lore = reorganize.reorganize_files(
+            self.lore_files
+        )  # {"labe_name" : {"caption" : "", "assets" : set(), "lore" : [""]}}
         reorganize.check_for_character.cache_clear()
 
         print(self.lore)
 
-        logger.debug(f"Обнаружено Файлов сценария: {len(self.lore_files)}, Лейблов: {len(self.lore)}")
+        logger.debug(
+            f"Обнаружено Файлов сценария: {len(self.lore_files)}, Лейблов: {len(self.lore)}"
+        )
 
         self.graf = self._create_graf(self.lore)
 
@@ -32,7 +38,9 @@ class LoreManager:
 
         self.load_assets(self.label)
 
-    def _find_files(self, extension: str, start_path: Union[str] = "./game") -> list[Path]:
+    def _find_files(
+        self, extension: str, start_path: Union[str] = "./game"
+    ) -> list[Path]:
 
         if not isinstance(start_path, Path):
             start_path = Path(start_path)
@@ -45,7 +53,7 @@ class LoreManager:
                     results.append(full_path)
         return results
 
-    def _create_graf(self, lore_data: dict) -> dict[str: list[str]]:
+    def _create_graf(self, lore_data: dict) -> dict[str : list[str]]:
         """
         Создаёт граф всего сюжета
         """
@@ -53,22 +61,33 @@ class LoreManager:
         graf = {}
 
         for label_name in lore_data.keys():
-            for line in lore_data[label_name]['lore']:
+            for line in lore_data[label_name]["lore"]:
                 under_lines = [i.lstrip() for i in line.splitlines()]
 
                 for line in under_lines:
                     if "Lore.jump(" in line:
-                        label_jump = re.split(r'[()]', line)
-                        label_jump = label_jump[label_jump.index('Lore.jump')+1] # Ну вдург там скобки ещё поставит ктот
+                        label_jump = re.split(r"[()]", line)
+                        label_jump = label_jump[
+                            label_jump.index("Lore.jump") + 1
+                        ]  # Ну вдург там скобки ещё поставит ктот
                         label_jump = label_jump.strip("'")
 
                         if label_name not in graf:
-                            graf[label_name] = [label_jump, ]
+                            graf[label_name] = [
+                                label_jump,
+                            ]
                         else:
                             graf[label_name].append(label_jump)
         return graf
 
-    def _can_unload_asset(self, filename: str, label: str, scan_now: bool = True, scan_next: bool = True, scan_last = True) -> bool:
+    def _can_unload_asset(
+        self,
+        filename: str,
+        label: str,
+        scan_now: bool = True,
+        scan_next: bool = True,
+        scan_last=True,
+    ) -> bool:
         """
         Проверяет, можно ли выгрузить ассет из файлов игры.
         Смотрит, требуется ли ассет в прошлом, текущем и следующем лейбле. Если нету - True
@@ -88,21 +107,23 @@ class LoreManager:
 
         # ассеты текущего лейбла
         if scan_now:
-            if filename in self.lore[label]['assets']:
+            if filename in self.lore[label]["assets"]:
                 return False
 
         # ассеты прошлого лейбла
         if scan_last:
-            last_labels = {node for node, neighbors in self.graf.items() if label in neighbors}
+            last_labels = {
+                node for node, neighbors in self.graf.items() if label in neighbors
+            }
             for last_label in last_labels:
-                if filename in self.lore[last_label]['assets']:
+                if filename in self.lore[last_label]["assets"]:
                     return False
 
         # ассеты следующего лейла
         if scan_next:
             if label in self.graf:
                 for graf_label in self.graf[label]:
-                    if filename in self.lore[graf_label]['assets']:
+                    if filename in self.lore[graf_label]["assets"]:
                         return False
 
         return True
@@ -113,14 +134,22 @@ class LoreManager:
         :param label: Название текущего лейбла
         """
 
-        loaded_assets = set(g.fm.textures.copy().keys()).union(set(g.fm.audios.copy().keys()))
+        loaded_assets = set(g.fm.textures.copy().keys()).union(
+            set(g.fm.audios.copy().keys())
+        )
 
-        files_pack = [file_name for file_name in loaded_assets if self._can_unload_asset(file_name, label)]
+        files_pack = [
+            file_name
+            for file_name in loaded_assets
+            if self._can_unload_asset(file_name, label)
+        ]
 
         if files_pack:
             g.fm.unload_assets(files_pack, label)
 
-    def _get_assets_pack(self, label, load_now: bool = True, load_next: bool = True, load_last = True) -> dict[str : list[str]]:
+    def _get_assets_pack(
+        self, label, load_now: bool = True, load_next: bool = True, load_last=True
+    ) -> dict[str : list[str]]:
         """
         Создаёт пак с ассетами, которые используются в текущих, прошлых и следующих лейблах
         :param label: Текущий лейбл
@@ -134,7 +163,9 @@ class LoreManager:
 
         if load_last:
             # асеты с прошлого лейбла
-            last_labels = {node for node, neighbors in self.graf.items() if label in neighbors}
+            last_labels = {
+                node for node, neighbors in self.graf.items() if label in neighbors
+            }
             for last_label in last_labels:
                 assets_pack[last_label] = self.lore[last_label]["assets"]
 
@@ -174,23 +205,24 @@ class LoreManager:
         self.pose = pose
 
         if self.lore[label]["caption"]:
-            g.main.NAMESPACE.execute(f"Lore.set_part({self.lore[label]["caption"]})")
+            g.main.NAMESPACE.execute(f"Lore.set_part({self.lore[label]['caption']})")
 
         self.load_assets(label)
 
-    def get_thing(self, pos_offset = 0) -> dict:
+    def get_thing(self, pos_offset=0) -> dict:
         """
         Возвращает инструкцию для текущего момента сюжета и двигает его дальше
         """
 
         self.pose += pos_offset
 
-        block = self.lore[self.label]['lore'][self.pose]
+        block = self.lore[self.label]["lore"][self.pose]
         lore = {"action": "EXECUTE", "data": block}
 
         self.pose += 1
 
         return lore
+
 
 class Reorganize:
     """
@@ -204,7 +236,9 @@ class Reorganize:
         # \\. – любая escape-последовательность (например, \", \\, \n и т.д.)
         # (?: ... )* – незахватывающая группа, повторяющаяся ноль или более раз
         # Всё вместе захватывается в группу ((?:[^"\\]|\\.)*)
-        self.pattern = re.compile(r'^(\s*)<([^>]+)>\s*"((?:[^"\\]|\\.)*)"', flags=re.MULTILINE)
+        self.pattern = re.compile(
+            r'^(\s*)<([^>]+)>\s*"((?:[^"\\]|\\.)*)"', flags=re.MULTILINE
+        )
         self.quotation_pattern = re.compile(r'["\'](.*?)["\']')
 
     def _del_trash(self, text: str) -> str:
@@ -232,7 +266,9 @@ class Reorganize:
         :param text: Текст файла сюжета
         """
 
-        text = re.sub(r'<\s*>', '<narr>', text) # Заменяем пустые значения айди персонажа на narrator-а
+        text = re.sub(
+            r"<\s*>", "<narr>", text
+        )  # Заменяем пустые значения айди персонажа на narrator-а
 
         lines = text.splitlines()
 
@@ -265,16 +301,20 @@ class Reorganize:
             line = line.lstrip()
 
             if line.startswith("label"):
-
                 label_name = line.replace("label ", "").split("(")[0]
-                label_data = re.split(r'[()]', line)[1]
+                label_data = re.split(r"[()]", line)[1]
 
-                paths[label_name] = {"caption" : label_data, "assets" : set(), "lore" : [], "unsplit_lore" : ""}
+                paths[label_name] = {
+                    "caption": label_data,
+                    "assets": set(),
+                    "lore": [],
+                    "unsplit_lore": "",
+                }
 
-                point_start = (label_name, index+1)
+                point_start = (label_name, index + 1)
 
             elif "end(" in line or "Lore.jump(" in line:
-                lore_points[point_start[0]] = (point_start[1], index+1)
+                lore_points[point_start[0]] = (point_start[1], index + 1)
 
         for label_name, label_points in lore_points.items():
             unsplit = "\n".join(lines[label_points[0] : label_points[1]])
@@ -318,22 +358,27 @@ class Reorganize:
         Смотрит строку кода и парсит все строки в кавычках, пытаясь найти в них файлы с ассетами.
         """
 
-        potential_assets = set(i for i in re.findall(r'["\'](.*?)["\']', unsplit_lore) if not bool(re.search('[а-яА-ЯёЁ]', i)))
+        potential_assets = set(
+            i
+            for i in re.findall(r'["\'](.*?)["\']', unsplit_lore)
+            if not bool(re.search("[а-яА-ЯёЁ]", i))
+        )
         founded_assets = []
 
         for potential_asset in potential_assets:
             format = "." + potential_asset.split(".")[-1]
-            if format in g.SUPPORTED_IMAGE_FORMATS or format in g.SUPPORTED_AUDIO_FORMATS:
+            if (
+                format in g.SUPPORTED_IMAGE_FORMATS
+                or format in g.SUPPORTED_AUDIO_FORMATS
+            ):
                 founded_assets.append(potential_asset)
             else:
-
                 check_for_character = self.check_for_character(potential_asset)
 
                 if check_for_character:
                     founded_assets.append(check_for_character)
 
         return set(founded_assets)
-
 
     def reorganize_files(self, files: list[Path]) -> dict:
         """

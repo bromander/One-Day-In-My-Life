@@ -1,5 +1,10 @@
 import pyglet
-pyglet.options['audio'] = ('openal', 'directsound', 'silent') # устанавливаем менее потокозависимые драйвера
+
+pyglet.options["audio"] = (
+    "openal",
+    "directsound",
+    "silent",
+)  # устанавливаем менее потокозависимые драйвера
 
 import time
 import platform
@@ -12,10 +17,11 @@ import warnings
 
 from engine.globals import g
 
-#python -m nuitka --standalone --include-data-dir=./game/=game --windows-console-mode=attach --show-progress --assume-yes-for-downloads --jobs=12 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests --windows-icon-from-ico=Setuper/pineapple.ico --enable-plugin=tk-inter --output-filename=OneDay.exe start.py
+# python -m nuitka --standalone --include-data-dir=./game/=game --windows-console-mode=attach --show-progress --assume-yes-for-downloads --jobs=12 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests --windows-icon-from-ico=Setuper/pineapple.ico --enable-plugin=tk-inter --output-filename=OneDay.exe start.py
 
 
 logger = g.get_logger(__name__)
+
 
 def main():
 
@@ -38,16 +44,21 @@ def main():
         splashes = json.load(splashes)
     splash = str(random.choice(splashes))
     if splash.startswith(">"):
-        splash = splash.format(username=str(os.getenv("USERNAME") or os.getenv("USER")))[1:]
+        splash = splash.format(
+            username=str(os.getenv("USERNAME") or os.getenv("USER"))
+        )[1:]
 
-    window = Views.MainWindow(width=1024, height=786, title=f"{g.WINDOW_TITLE}: {splash}")
+    window = Views.MainWindow(
+        width=1024, height=786, title=f"{g.WINDOW_TITLE}: {splash}"
+    )
     game = Views.GameMenu()
     window.show_view(game)
     arcade.run()
 
+
 if __name__ == "__main__":
-    #profiler = cProfile.Profile()
-    #profiler.enable()  # Начинаем сбор данных
+    # profiler = cProfile.Profile()
+    # profiler.enable()  # Начинаем сбор данных
 
     try:
         main()  # Запускаем игру
@@ -56,10 +67,10 @@ if __name__ == "__main__":
     except Exception as e:
         g.notice_crash(e)
 
-    #profiler.disable()  # Останавливаем сбор
+    # profiler.disable()  # Останавливаем сбор
 
     # Анализируем и выводим результаты
-    #stats = pstats.Stats(profiler)
-    #stats.strip_dirs()  # Убираем лишние пути к файлам
-    #stats.sort_stats('cumulative')  # Сортируем по общему времени (cumulative time)
-    #stats.print_stats(10)
+    # stats = pstats.Stats(profiler)
+    # stats.strip_dirs()  # Убираем лишние пути к файлам
+    # stats.sort_stats('cumulative')  # Сортируем по общему времени (cumulative time)
+    # stats.print_stats(10)

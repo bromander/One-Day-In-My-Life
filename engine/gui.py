@@ -18,19 +18,21 @@ from arcade import (
     Texture,
     get_sprites_at_point,
     LBWH,
-    Text, get_window
+    Text,
+    get_window,
 )
-from arcade.gui.events import UIMousePressEvent, UIMouseReleaseEvent, UIMouseMovementEvent, UIOnUpdateEvent
-from arcade.gui import (
-    Surface,
-    UIEvent,
-    UIMouseDragEvent,
-    UIWidget
+from arcade.gui.events import (
+    UIMousePressEvent,
+    UIMouseReleaseEvent,
+    UIMouseMovementEvent,
+    UIOnUpdateEvent,
 )
+from arcade.gui import Surface, UIEvent, UIMouseDragEvent, UIWidget
 
 from .waiter import Waiter
 
 from .globals import g
+
 
 class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
     """A simple vertical slider.
@@ -112,22 +114,22 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
     So sliders with a step value do not show the steps visually."""
 
     def __init__(
-            self,
-            *,
-            value: float = 0,
-            min_value: float = 0,
-            max_value: float = 100,
-            x: float = 0,
-            y: float = 0,
-            width: float = 25,
-            height: float = 300,
-            size_hint=None,
-            size_hint_min=None,
-            size_hint_max=None,
-            style: dict[str, UISliderStyle] | None = None,
-            step: float | None = None,
-            thumb_edge_padding_factor: float = 1.0,  # Новый параметр
-            **kwargs,
+        self,
+        *,
+        value: float = 0,
+        min_value: float = 0,
+        max_value: float = 100,
+        x: float = 0,
+        y: float = 0,
+        width: float = 25,
+        height: float = 300,
+        size_hint=None,
+        size_hint_min=None,
+        size_hint_max=None,
+        style: dict[str, UISliderStyle] | None = None,
+        step: float | None = None,
+        thumb_edge_padding_factor: float = 1.0,  # Новый параметр
+        **kwargs,
     ):
         # Используем NO_STEP_STYLE если step не задан
         if step is None:
@@ -202,7 +204,9 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
     def _render_track(self, surface: Surface):
         style = self.get_current_style()
         if style is None:
-            warnings.warn(f"No style found for state {self.get_current_state()}", UserWarning)
+            warnings.warn(
+                f"No style found for state {self.get_current_state()}", UserWarning
+            )
             return
 
         bg_slider_color = style.unfilled_track
@@ -234,7 +238,7 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
                 right=slider_right,
                 bottom=slider_bottom - self.content_rect.bottom,
                 top=thumb_y - padding,  # Используем padding вместо cursor_radius
-                color=fg_slider_color
+                color=fg_slider_color,
             )
 
         # Рисуем незаполненную часть трека
@@ -244,7 +248,7 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
                 right=slider_right,
                 bottom=thumb_y + padding,  # Используем padding вместо cursor_radius
                 top=slider_top - self.content_rect.bottom,
-                color=bg_slider_color
+                color=bg_slider_color,
             )
 
     @override
@@ -254,7 +258,9 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
 
         style = self.get_current_style()
         if style is None:
-            warnings.warn(f"No style found for state {self.get_current_state()}", UserWarning)
+            warnings.warn(
+                f"No style found for state {self.get_current_state()}", UserWarning
+            )
             return
 
         unfilled_steps = style.unfilled_step
@@ -290,7 +296,9 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
     def _render_thumb(self, surface: Surface):
         style = self.get_current_style()
         if style is None:
-            warnings.warn(f"No style found for state {self.get_current_state()}", UserWarning)
+            warnings.warn(
+                f"No style found for state {self.get_current_state()}", UserWarning
+            )
             return
 
         border_width = style.border_width
@@ -313,18 +321,12 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
 
         # Рисуем ползунок
         draw_circle_filled(
-            slider_center_x,
-            cursor_center_y,
-            cursor_radius,
-            cursor_color
+            slider_center_x, cursor_center_y, cursor_radius, cursor_color
         )
 
         # Рисуем внутренний круг
         draw_circle_filled(
-            slider_center_x,
-            cursor_center_y,
-            cursor_radius // 2,
-            cursor_outline_color
+            slider_center_x, cursor_center_y, cursor_radius // 2, cursor_outline_color
         )
 
         # Рисуем обводку
@@ -347,8 +349,8 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
                 # Ручная проверка попадания точки в прямоугольник
                 if self.rect:
                     self.hovered = (
-                            self.rect.left <= event.x <= self.rect.right and
-                            self.rect.bottom <= event.y <= self.rect.top
+                        self.rect.left <= event.x <= self.rect.right
+                        and self.rect.bottom <= event.y <= self.rect.top
                     )
                 else:
                     self.hovered = False
@@ -366,7 +368,7 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
                     self.value = new_value
                     self.trigger_full_render()
                     # Вызываем событие on_change если есть подписчики
-                    if hasattr(self, 'on_change') and self.on_change:
+                    if hasattr(self, "on_change") and self.on_change:
                         self.on_change(self.value)
                 return True
 
@@ -375,8 +377,8 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
             is_over = False
             if self.rect:
                 is_over = (
-                        self.rect.left <= event.x <= self.rect.right and
-                        self.rect.bottom <= event.y <= self.rect.top
+                    self.rect.left <= event.x <= self.rect.right
+                    and self.rect.bottom <= event.y <= self.rect.top
                 )
 
             if is_over and not self.disabled:
@@ -389,7 +391,7 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
                     self.value = new_value
                     self.trigger_full_render()
                     # Вызываем событие on_change если есть подписчики
-                    if hasattr(self, 'on_change') and self.on_change:
+                    if hasattr(self, "on_change") and self.on_change:
                         self.on_change(self.value)
                 self.trigger_render()
                 return True
@@ -400,22 +402,22 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
                 # Обновляем состояние наведения после отпускания
                 if self.rect:
                     self.hovered = (
-                            self.rect.left <= event.x <= self.rect.right and
-                            self.rect.bottom <= event.y <= self.rect.top
+                        self.rect.left <= event.x <= self.rect.right
+                        and self.rect.bottom <= event.y <= self.rect.top
                     )
                 self.trigger_render()
                 return True
 
         elif isinstance(event, UIOnUpdateEvent):
             # Обновляем состояние наведения (только если не нажато)
-            if not self.pressed and hasattr(self, 'ui_manager') and self.ui_manager:
+            if not self.pressed and hasattr(self, "ui_manager") and self.ui_manager:
                 mouse_x, mouse_y = self.ui_manager.mouse_x, self.ui_manager.mouse_y
                 old_hovered = self.hovered
 
                 if self.rect:
                     self.hovered = (
-                            self.rect.left <= mouse_x <= self.rect.right and
-                            self.rect.bottom <= mouse_y <= self.rect.top
+                        self.rect.left <= mouse_x <= self.rect.right
+                        and self.rect.bottom <= mouse_y <= self.rect.top
                     )
                 else:
                     self.hovered = False
@@ -425,7 +427,7 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
 
             # Если слайдер нажат, продолжаем отслеживать движение мыши
             # даже если она за пределами слайдера
-            if self.pressed and hasattr(self, 'ui_manager') and self.ui_manager:
+            if self.pressed and hasattr(self, "ui_manager") and self.ui_manager:
                 mouse_x, mouse_y = self.ui_manager.mouse_x, self.ui_manager.mouse_y
                 # Обновляем значение независимо от позиции мыши
                 new_value = self._value_for_y(mouse_y)
@@ -436,42 +438,44 @@ class UISliderVertical(agui.style.UIStyledWidget[UISliderStyle], UIBaseSlider):
                     self.value = new_value
                     self.trigger_full_render()
                     # Вызываем событие on_change если есть подписчики
-                    if hasattr(self, 'on_change') and self.on_change:
+                    if hasattr(self, "on_change") and self.on_change:
                         self.on_change(self.value)
 
         return super().on_event(event)
 
+
 class UISliderSavesUpdater(agui.UISlider):
     def __init__(
-            self,
-            type: str,
-            value: float = 0,
-            start_value: Optional[float] = None,
-            min_value: float = 0,
-            max_value: float = 100,
-            x: float = 0,
-            y: float = 0,
-            width: float = 300,
-            height: float = 25,
-            size_hint=None,
-            size_hint_min=None,
-            size_hint_max=None,
-            style: dict[str, UISliderStyle] | None = None,
-            step: float | None = None
+        self,
+        type: str,
+        value: float = 0,
+        start_value: Optional[float] = None,
+        min_value: float = 0,
+        max_value: float = 100,
+        x: float = 0,
+        y: float = 0,
+        width: float = 300,
+        height: float = 25,
+        size_hint=None,
+        size_hint_min=None,
+        size_hint_max=None,
+        style: dict[str, UISliderStyle] | None = None,
+        step: float | None = None,
     ):
         super().__init__(
-             value = value,
-             min_value = min_value,
-             max_value = max_value,
-             x = x,
-             y = y,
-             width = width,
-             height = height,
-             size_hint = size_hint,
-             size_hint_min = size_hint_min,
-             size_hint_max = size_hint_max,
-             style = style,
-             step = step)
+            value=value,
+            min_value=min_value,
+            max_value=max_value,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            size_hint=size_hint,
+            size_hint_min=size_hint_min,
+            size_hint_max=size_hint_max,
+            style=style,
+            step=step,
+        )
 
         self.sm = g.sm
         self.am = g.am
@@ -516,14 +520,16 @@ class UISliderSavesUpdater(agui.UISlider):
             slider_bottom,
             rect_width,
             slider_height + 10,
-            start_color
+            start_color,
         )
 
     def on_event(self, event: UIEvent) -> bool | None:
         super().on_event(event)
 
         if UIMouseMovementEvent is type(event):
-            if self in [i for i in self.get_ui_manager().get_widgets_at((event.x, event.y))]:
+            if self in [
+                i for i in self.get_ui_manager().get_widgets_at((event.x, event.y))
+            ]:
                 self.directed = True
             else:
                 self.directed = False
@@ -542,8 +548,8 @@ class UISliderSavesUpdater(agui.UISlider):
                     self.sm.Volume.fade_speed = self.value
             self.sm.Volume._save_data()
 
-class Managers:
 
+class Managers:
     class SettingsManager(agui.UIManager):
         def __init__(self):
             super().__init__()
@@ -564,7 +570,7 @@ class Managers:
             self._create_settings()
 
         def update_size(self, width, height):
-            self.ui_anchor_layout.default_anchor_x = height*0.05
+            self.ui_anchor_layout.default_anchor_x = height * 0.05
 
         def _create_settings(self):
             texture = load_texture("game/images/gui/in_game_settings.png")
@@ -573,7 +579,7 @@ class Managers:
                 texture,
                 center_x=self.window.width * 0.5,
                 center_y=self.window.height * 0.5,
-                scale=1.0
+                scale=1.0,
             )
             self.settings_scene.add_sprite("in_game_settings", sprite)
             self.settings_scene["in_game_settings"].alpha = 0
@@ -604,15 +610,13 @@ class Managers:
                     text="Главное меню",
                     width=300,
                     height=50,
-                    style=g.STYLE_DEFAULT_BUTTON
+                    style=g.STYLE_DEFAULT_BUTTON,
                 )
                 return_button.on_click = return_to_main_menu
                 self.settings_v_box.add(return_button)
 
                 save_button = agui.UIFlatButton(
-                    text="Сохранить",
-                    width=200,
-                    style=g.STYLE_DEFAULT_BUTTON
+                    text="Сохранить", width=200, style=g.STYLE_DEFAULT_BUTTON
                 )
                 save_button.on_click = lambda action=None: g.sm.Save.create_save()
 
@@ -624,7 +628,7 @@ class Managers:
                     "Музыка",
                     text_color=color.WHITE,
                     font_size=20,
-                    font_name=g.FONT_NAME
+                    font_name=g.FONT_NAME,
                 )
                 self.settings_v_box.add(music_volume_label)
 
@@ -635,16 +639,13 @@ class Managers:
                     max_value=200,
                     width=300,
                     height=20,
-                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["music"]*100
+                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["music"] * 100,
                 )
                 self.settings_v_box.add(music_volume_slider)
                 self.settings_v_box.add(agui.UISpace(height=10))
 
                 sound_volume_label = agui.UILabel(
-                    "Звуки",
-                    text_color=color.WHITE,
-                    font_size=20,
-                    font_name=g.FONT_NAME
+                    "Звуки", text_color=color.WHITE, font_size=20, font_name=g.FONT_NAME
                 )
                 self.settings_v_box.add(sound_volume_label)
 
@@ -655,16 +656,13 @@ class Managers:
                     max_value=200,
                     width=300,
                     height=20,
-                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["sound"]*100
+                    start_value=g.DEFAULT_OPTIONS_PARAM["volume"]["sound"] * 100,
                 )
                 self.settings_v_box.add(sound_volume_slider)
                 self.settings_v_box.add(agui.UISpace(height=10))
 
                 voice_volume_label = agui.UILabel(
-                    "Голос",
-                    text_color=color.WHITE,
-                    font_size=20,
-                    font_name=g.FONT_NAME
+                    "Голос", text_color=color.WHITE, font_size=20, font_name=g.FONT_NAME
                 )
                 self.settings_v_box.add(voice_volume_label)
 
@@ -685,7 +683,7 @@ class Managers:
                     "Скорость появления букв",
                     text_color=color.WHITE,
                     font_size=20,
-                    font_name=g.FONT_NAME
+                    font_name=g.FONT_NAME,
                 )
                 self.settings_v_box_1.add(lps_label)
                 self.lps_slider = UISliderSavesUpdater(
@@ -695,7 +693,7 @@ class Managers:
                     max_value=3.0,
                     width=300,
                     height=20,
-                    start_value=g.DEFAULT_OPTIONS_PARAM["lps"]
+                    start_value=g.DEFAULT_OPTIONS_PARAM["lps"],
                 )
                 self.settings_v_box_1.add(self.lps_slider)
                 self.settings_v_box_1.add(agui.UISpace(height=20))
@@ -704,7 +702,7 @@ class Managers:
                     "Скорость переходов",
                     text_color=color.WHITE,
                     font_size=20,
-                    font_name=g.FONT_NAME
+                    font_name=g.FONT_NAME,
                 )
                 self.settings_v_box_1.add(fade_speed_label)
                 self.fade_speed_slider = UISliderSavesUpdater(
@@ -714,7 +712,7 @@ class Managers:
                     max_value=2.0,
                     width=300,
                     height=20,
-                    start_value=g.DEFAULT_OPTIONS_PARAM["fade_speed"]
+                    start_value=g.DEFAULT_OPTIONS_PARAM["fade_speed"],
                 )
                 self.settings_v_box_1.add(self.fade_speed_slider)
 
@@ -722,7 +720,11 @@ class Managers:
                 self.settings_h_box.add(self.settings_v_box)
 
                 window = get_window()
-                self.ui_anchor_layout.add(child=self.settings_h_box, anchor_x="left", align_x=window.height*0.05)
+                self.ui_anchor_layout.add(
+                    child=self.settings_h_box,
+                    anchor_x="left",
+                    align_x=window.height * 0.05,
+                )
 
                 self.add(self.ui_anchor_layout)
 
@@ -761,7 +763,6 @@ class Managers:
                     self.disable()
 
     class CharactersTextManager(agui.UIManager):
-
         def __init__(self):
             super().__init__()
 
@@ -786,7 +787,9 @@ class Managers:
             self.cname_text.update_pos(width, height)
             self.update_character_text(width, height)
 
-        def update_character_text(self, width: Optional[int] = None, height: Optional[int] = None):
+        def update_character_text(
+            self, width: Optional[int] = None, height: Optional[int] = None
+        ):
 
             if not (width and height):
                 window = get_window()
@@ -830,7 +833,7 @@ class Managers:
                         text_color=self.attributes.character_text_colour,
                         font_name=self.FONT_NAME,
                         width=width,
-                        align=self.attributes.text_anchor
+                        align=self.attributes.text_anchor,
                     )
                     line_counter += 1
 
@@ -853,7 +856,7 @@ class Managers:
                         current_line = []
 
                     for i in range(0, len(word), max_length):
-                        parts.append(word[i:i + max_length])
+                        parts.append(word[i : i + max_length])
                 else:
                     test_line = " ".join(current_line + [word])
                     if len(test_line) <= max_length:
@@ -876,9 +879,17 @@ class Managers:
 
             if self.attributes.character_name != self.last_character_name:
                 self.cname_text.update_text(self.attributes.character_name)
-                self.cname_text.update_font(font_color=self.attributes.character_name_colour)
+                self.cname_text.update_font(
+                    font_color=self.attributes.character_name_colour
+                )
 
-            if repr(self.attributes.character_name).strip("'") in [" ", "", "\t", "\n", " "]:
+            if repr(self.attributes.character_name).strip("'") in [
+                " ",
+                "",
+                "\t",
+                "\n",
+                " ",
+            ]:
                 self.cname_text.visible = None
             else:
                 self.cname_text.update_pos()
@@ -893,26 +904,26 @@ class Managers:
                 "normal": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
                     font_color=(255, 255, 255, 200),
-                    font_name = g.FONT_NAME,
+                    font_name=g.FONT_NAME,
                     border=(0, 0, 0, 0),
                     border_width=0,
-                    font_size=20
+                    font_size=20,
                 ),
                 "hover": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
                     font_color=(128, 128, 128, 200),
                     border=(0, 0, 0, 0),
                     border_width=0,
-                    font_name = g.FONT_NAME,
-                    font_size=20
+                    font_name=g.FONT_NAME,
+                    font_size=20,
                 ),
                 "press": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
                     font_color=(210, 210, 210, 200),
                     border=(0, 0, 0, 0),
                     border_width=0,
-                    font_name = g.FONT_NAME,
-                    font_size=20
+                    font_name=g.FONT_NAME,
+                    font_size=20,
                 ),
                 "disabled": agui.UIFlatButton.UIStyle(font_color=(90, 90, 90, 180)),
             }
@@ -920,30 +931,29 @@ class Managers:
                 "normal": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
                     font_color=(191, 161, 27, 255),
-                    font_name = g.FONT_NAME,
+                    font_name=g.FONT_NAME,
                     border=(255, 255, 255, 0),
                     border_width=0,
-                    font_size=20
+                    font_size=20,
                 ),
                 "hover": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
                     font_color=(128, 128, 128, 255),
                     border=(255, 255, 255, 0),
                     border_width=0,
-                    font_name = g.FONT_NAME,
-                    font_size=20
+                    font_name=g.FONT_NAME,
+                    font_size=20,
                 ),
                 "press": agui.UIFlatButton.UIStyle(
                     bg=(0, 0, 0, 0),
                     font_color=(210, 210, 210, 255),
                     border=(255, 255, 255, 0),
                     border_width=0,
-                    font_name = g.FONT_NAME,
-                    font_size=20
+                    font_name=g.FONT_NAME,
+                    font_size=20,
                 ),
                 "disabled": agui.UIFlatButton.UIStyle(font_color=(90, 90, 90, 180)),
             }
-
 
             self._create_buttons()
 
@@ -956,30 +966,24 @@ class Managers:
                 y=window.height * 0.02,
                 width=window.width,
                 vertical=False,
-                spacing=50
+                spacing=50,
             )
             hbox.width = window.width
 
             button_width = 60
 
             self.return_button = agui.UIFlatButton(
-                text="←",
-                style=self.BUTTONS_STYLE,
-                width=button_width
+                text="←", style=self.BUTTONS_STYLE, width=button_width
             )
             hbox.add(self.return_button)
 
             self.skip_button = agui.UIFlatButton(
-                text=">>",
-                style=self.BUTTONS_STYLE,
-                width=button_width
+                text=">>", style=self.BUTTONS_STYLE, width=button_width
             )
             hbox.add(self.skip_button)
 
             self.settings_button = agui.UIFlatButton(
-                text="☰",
-                style=self.BUTTONS_STYLE,
-                width=button_width
+                text="☰", style=self.BUTTONS_STYLE, width=button_width
             )
             hbox.add(self.settings_button)
 
@@ -1008,7 +1012,7 @@ class Managers:
                 y=window.height * 0.32,
                 font_size=40,
                 text_color=attributes.character_name_colour,
-                font_name=FONT_NAME
+                font_name=FONT_NAME,
             )
             self.attributes = attributes
             self.img = Image.open("./game/images/gui/name_window.png")
@@ -1055,25 +1059,51 @@ class Managers:
             return image
 
         def do_render_base(self, surface: Surface):
-            surface.limit(LBWH(self.rect.left - 25, self.rect.bottom, self.rect.width + 50, self.rect.height))
+            surface.limit(
+                LBWH(
+                    self.rect.left - 25,
+                    self.rect.bottom,
+                    self.rect.width + 50,
+                    self.rect.height,
+                )
+            )
 
             if self.attributes.character_name != self.last_text:
                 try:
                     self.last_text = str(self.attributes.character_name)
                     self.fit_content()
 
-                    self.img = self.img.resize((int(self.rect.size[0] + 50), int(self.rect.size[1])))
-                    img = self._alpha_smooth_img(self.img, self.width / 2, self.img.width / 2)
+                    self.img = self.img.resize(
+                        (int(self.rect.size[0] + 50), int(self.rect.size[1]))
+                    )
+                    img = self._alpha_smooth_img(
+                        self.img, self.width / 2, self.img.width / 2
+                    )
                     self._bg_tex = Texture(img)
                 except ValueError:
                     self.last_text = str(self.attributes.character_name)
 
             if self._bg_tex:
-                surface.draw_texture(x=0, y=0, width=self.width + 50, height=self.height, tex=self._bg_tex)
+                surface.draw_texture(
+                    x=0,
+                    y=0,
+                    width=self.width + 50,
+                    height=self.height,
+                    tex=self._bg_tex,
+                )
 
 
 class MovableBlock(Sprite):
-    def __init__(self, texture, center_x = 0, center_y = 0, angle=0, scale=1.0, collecting_zone: Optional[tuple] = None, collect: bool = False):
+    def __init__(
+        self,
+        texture,
+        center_x=0,
+        center_y=0,
+        angle=0,
+        scale=1.0,
+        collecting_zone: Optional[tuple] = None,
+        collect: bool = False,
+    ):
         super().__init__(path_or_texture=texture)
         self.start_x = center_x
         self.start_y = center_y
@@ -1082,12 +1112,7 @@ class MovableBlock(Sprite):
         self.center_y = int(center_y) + random.randint(-15, 30)
         color_rand = random.randint(230, 255)
         self.angle = int(self.start_angle)
-        self.color = (
-            color_rand,
-            color_rand,
-            color_rand,
-            255
-        )
+        self.color = (color_rand, color_rand, color_rand, 255)
         self.scale = scale
         self.scale_x = self.scale_x * random.randint(95, 105) / 100
         self.scale_y = self.scale_y * random.randint(95, 105) / 100
@@ -1102,10 +1127,15 @@ class MovableBlock(Sprite):
 
         if 1 in args[0]:
             if args[0][1]:
-                if self.left <= args[0]["x"] <= self.right and self.bottom <= args[0]["y"] <= self.top:
+                if (
+                    self.left <= args[0]["x"] <= self.right
+                    and self.bottom <= args[0]["y"] <= self.top
+                ):
                     list_children = []
                     for i in self.sprite_lists:
-                        list_children = list_children + list(get_sprites_at_point((args[0]["x"], args[0]["y"]), i))
+                        list_children = list_children + list(
+                            get_sprites_at_point((args[0]["x"], args[0]["y"]), i)
+                        )
                     if len(list_children) > 0:
                         if list_children[-1] is self:
                             self.clicked = True
@@ -1119,37 +1149,42 @@ class MovableBlock(Sprite):
             self.center_x = args[0]["x"]
             self.center_y = args[0]["y"]
 
-        if self.collecting_zone[0] <= self.center_x <= self.collecting_zone[1] and self.collecting_zone[2] <= self.center_y <= self.collecting_zone[3]:
+        if (
+            self.collecting_zone[0] <= self.center_x <= self.collecting_zone[1]
+            and self.collecting_zone[2] <= self.center_y <= self.collecting_zone[3]
+        ):
             if self.collect:
                 if not self.clicked:
                     if not self.freezed:
-                        self.center_x = random.randint(int(self.collecting_zone[0] + self.width/2), int(self.collecting_zone[1] - self.width/2))
-                        self.center_y = random.randint(int(self.collecting_zone[2] + self.height / 2), int(self.collecting_zone[3] - self.height / 2))
+                        self.center_x = random.randint(
+                            int(self.collecting_zone[0] + self.width / 2),
+                            int(self.collecting_zone[1] - self.width / 2),
+                        )
+                        self.center_y = random.randint(
+                            int(self.collecting_zone[2] + self.height / 2),
+                            int(self.collecting_zone[3] - self.height / 2),
+                        )
                     self.freezed = True
             else:
                 self.center_x = self.start_x
                 self.center_y = self.start_y
                 self.angle = self.start_angle
-                self.freezed=False
+                self.freezed = False
         else:
             if self.freezed:
                 self.freezed = False
 
+
 class MovableBlockFalling(Sprite):
-    def __init__(self, texture, center_x = 0, center_y = 0, scale=1.0):
+    def __init__(self, texture, center_x=0, center_y=0, scale=1.0):
         super().__init__(path_or_texture=texture)
         self.center_x = int(center_x) + random.randint(-30, 30)
         self.center_y = int(center_y) + random.randint(-15, 30)
-        #self.scale = scale
-        #self.scale_x = self.scale_x * random.randint(95, 105)/100
-        #self.scale_y = self.scale_y * random.randint(95, 105) / 100
+        # self.scale = scale
+        # self.scale_x = self.scale_x * random.randint(95, 105)/100
+        # self.scale_y = self.scale_y * random.randint(95, 105) / 100
         color_rand = random.randint(230, 255)
-        self.color = (
-            color_rand,
-            color_rand,
-            color_rand,
-            255
-        )
+        self.color = (color_rand, color_rand, color_rand, 255)
         self.clicked = False
         self.freeze = True
         self.falling_speed = 0.0
@@ -1158,10 +1193,15 @@ class MovableBlockFalling(Sprite):
 
         if 1 in args[0]:
             if args[0][1]:
-                if self.left <= args[0]["x"] <= self.right and self.bottom <= args[0]["y"] <= self.top:
+                if (
+                    self.left <= args[0]["x"] <= self.right
+                    and self.bottom <= args[0]["y"] <= self.top
+                ):
                     list_children = []
                     for i in self.sprite_lists:
-                        list_children = list_children + list(get_sprites_at_point((args[0]["x"], args[0]["y"]), i))
+                        list_children = list_children + list(
+                            get_sprites_at_point((args[0]["x"], args[0]["y"]), i)
+                        )
                     if len(list_children) > 0:
                         if list_children[-1] is self:
                             self.clicked = True
@@ -1186,40 +1226,37 @@ class MovableBlockFalling(Sprite):
 
 class ItemsNotifText(Text):
     def __init__(self, text, x, y, color, FONT_NAME):
-        super().__init__(text=text, x=x, y=y,  color=color, font_size=35, font_name=FONT_NAME)
+        super().__init__(
+            text=text, x=x, y=y, color=color, font_size=35, font_name=FONT_NAME
+        )
         self.velocity = 0.0
         self.color = (
-            self.color[0] + 10 if self.color[0] + 10  <= 255 else self.color[0],
-            self.color[1] + 10 if self.color[1] + 10  <= 255 else self.color[1],
-            self.color[2] + 10 if self.color[2] + 10  <= 255 else self.color[2],
-            225
+            self.color[0] + 10 if self.color[0] + 10 <= 255 else self.color[0],
+            self.color[1] + 10 if self.color[1] + 10 <= 255 else self.color[1],
+            self.color[2] + 10 if self.color[2] + 10 <= 255 else self.color[2],
+            225,
         )
         self.bold = True
 
         self.window = get_window()
 
     def update(self, delta_time: float = 1 / 60, *args, **kwargs) -> None:
-        self.velocity  = self.velocity + 200 * delta_time
+        self.velocity = self.velocity + 200 * delta_time
         self.y = self.y + self.velocity * delta_time
 
-        if self.y > self.window.height+300:
+        if self.y > self.window.height + 300:
             self.visible = False
 
 
 class ClickableSprite(Sprite):
-    def __init__(self, textures: list, center_x = 0, center_y = 0, angle=0, scale=1.0):
+    def __init__(self, textures: list, center_x=0, center_y=0, angle=0, scale=1.0):
         super().__init__(path_or_texture=textures[0])
         self.start_angle = angle + random.randint(-5, 5)
         self.center_x = int(center_x) + random.randint(-30, 30)
         self.center_y = int(center_y) + random.randint(-15, 30)
         color_rand = random.randint(230, 255)
         self.angle = int(self.start_angle)
-        self.color = (
-            color_rand,
-            color_rand,
-            color_rand,
-            255
-        )
+        self.color = (color_rand, color_rand, color_rand, 255)
         self.scale = scale
         self.scale_x = self.scale_x * random.randint(95, 105) / 100
         self.scale_y = self.scale_y * random.randint(95, 105) / 100
@@ -1231,10 +1268,15 @@ class ClickableSprite(Sprite):
 
         if 1 in args[0]:
             if args[0][1]:
-                if self.left <= args[0]["x"] <= self.right and self.bottom <= args[0]["y"] <= self.top:
+                if (
+                    self.left <= args[0]["x"] <= self.right
+                    and self.bottom <= args[0]["y"] <= self.top
+                ):
                     list_children = []
                     for i in self.sprite_lists:
-                        list_children = list_children + list(get_sprites_at_point((args[0]["x"], args[0]["y"]), i))
+                        list_children = list_children + list(
+                            get_sprites_at_point((args[0]["x"], args[0]["y"]), i)
+                        )
                     if len(list_children) > 0:
                         if list_children[-1] is self:
                             self.clicked = True

@@ -3,14 +3,7 @@ import os
 import mutagen
 from typing import Union, Optional
 from threading import Thread
-from arcade import (
-load_sound,
-Texture,
-Sound,
-Sprite,
-TextureAnimationSprite
-
-)
+from arcade import load_sound, Texture, Sound, Sprite, TextureAnimationSprite
 from PIL import Image
 from arcade.texture import default_texture_cache
 
@@ -20,18 +13,26 @@ from .globals import g
 
 logger = g.get_logger(__name__)
 
+
 class FilesManager:
     """
     Отвечает за работу со всеми ассетами игры.
     """
-    def __init__(self, paths: Optional[dict]=None):
+
+    def __init__(self, paths: Optional[dict] = None):
 
         if paths is None:
-            paths = {"images": "./game/images", "music": "./game/music", "sounds": "./game/sounds"}
+            paths = {
+                "images": "./game/images",
+                "music": "./game/music",
+                "sounds": "./game/sounds",
+            }
 
-        def find_files(extensions: list[str],
-                       start_path: Union[str, Path],
-                       exclude: Optional[list[str]] = None) -> dict:
+        def find_files(
+            extensions: list[str],
+            start_path: Union[str, Path],
+            exclude: Optional[list[str]] = None,
+        ) -> dict:
 
             if exclude is None:
                 exclude = []
@@ -55,24 +56,34 @@ class FilesManager:
 
             return results
 
-
         self.images_path = Path(paths["images"]).absolute()
         self.music_path = Path(paths["music"]).absolute()
         self.sounds_path = Path(paths["sounds"]).absolute()
 
-        self.textures_paths: dict[str: Path] = find_files(g.SUPPORTED_IMAGE_FORMATS, self.images_path) # Пути к текстурам всех спрайтов {Название файла : полный путь}
-        self.audio_paths: dict[str : Path] = (find_files(g.SUPPORTED_AUDIO_FORMATS, self.music_path, ["voice"]) |
-                                              find_files(g.SUPPORTED_AUDIO_FORMATS, self.sounds_path, ["voice"])) # Пути ко всем звуковым файлам {Название файла : полный путь}
-        self.loaded_labels: list[str] = [] # Лейблы которые уже были загружены
+        self.textures_paths: dict[str:Path] = find_files(
+            g.SUPPORTED_IMAGE_FORMATS, self.images_path
+        )  # Пути к текстурам всех спрайтов {Название файла : полный путь}
+        self.audio_paths: dict[str:Path] = find_files(
+            g.SUPPORTED_AUDIO_FORMATS, self.music_path, ["voice"]
+        ) | find_files(
+            g.SUPPORTED_AUDIO_FORMATS, self.sounds_path, ["voice"]
+        )  # Пути ко всем звуковым файлам {Название файла : полный путь}
+        self.loaded_labels: list[str] = []  # Лейблы которые уже были загружены
 
-        self.textures: dict[str : Image.Image] = {} # Уже загруженные текстуры {Название файла : текстура}
-        self.audios: dict[str : Sound] = {} # Уже загруженные звуки {Название файла : Звук} 348,9
+        self.textures: dict[
+            str : Image.Image
+        ] = {}  # Уже загруженные текстуры {Название файла : текстура}
+        self.audios: dict[
+            str:Sound
+        ] = {}  # Уже загруженные звуки {Название файла : Звук} 348,9
 
         self.RESAMPLING = Image.Resampling.BILINEAR
         self.SIZE_MODIF = 0.8
         self.REDUCING_GAP = 3.0
 
-    def load_assets(self, filenames: Union[list[str], set[str]], label: str) -> Optional[list[Thread]]:
+    def load_assets(
+        self, filenames: Union[list[str], set[str]], label: str
+    ) -> Optional[list[Thread]]:
         """
         Загружает текстуры пачками в другом потоке
         :param filenames: список названий файлов
@@ -80,7 +91,7 @@ class FilesManager:
         """
 
         if label in self.loaded_labels:
-            return None # Если текстура уже загружена, то скипаем
+            return None  # Если текстура уже загружена, то скипаем
 
         self.loaded_labels.append(label)
 
@@ -98,8 +109,15 @@ class FilesManager:
                     else:
                         with Image.open(path) as im:
                             original_size = tuple(im.size)
-                            size_resiz = (int(im.size[0] * self.SIZE_MODIF), int(im.size[1] * self.SIZE_MODIF))
-                            im = im.resize(size_resiz, self.RESAMPLING, reducing_gap=self.REDUCING_GAP)
+                            size_resiz = (
+                                int(im.size[0] * self.SIZE_MODIF),
+                                int(im.size[1] * self.SIZE_MODIF),
+                            )
+                            im = im.resize(
+                                size_resiz,
+                                self.RESAMPLING,
+                                reducing_gap=self.REDUCING_GAP,
+                            )
 
                             if im.mode != "RGBA":
                                 im = im.convert("RGBA")
@@ -117,7 +135,9 @@ class FilesManager:
                     audios[i] = load_sound(path, streaming=streaming)
 
         filenames = list(filenames)
-        n = min(32, len(filenames), int((os.cpu_count() * 4)/2) + 1)  # во сколько потоков будут загружаться текстуры
+        n = min(
+            32, len(filenames), int((os.cpu_count() * 4) / 2) + 1
+        )  # во сколько потоков будут загружаться текстуры
 
         if n == 0:
             return None
@@ -139,14 +159,18 @@ class FilesManager:
 
         return threads
 
-    def unload_assets(self, filenames: Union[list[str], set[str]], label: str) -> list[Thread]:
+    def unload_assets(
+        self, filenames: Union[list[str], set[str]], label: str
+    ) -> list[Thread]:
         """
         Выгружает ассеты из памяти игры
         :param filenames: Список названий файлов
         """
 
         filenames = list(filenames)
-        n = min(32, len(filenames), int((os.cpu_count() * 4)/2) + 1)  # во сколько потоков будут выгружаться текстуры
+        n = min(
+            32, len(filenames), int((os.cpu_count() * 4) / 2) + 1
+        )  # во сколько потоков будут выгружаться текстуры
 
         length = len(filenames)
         part_size = length // n
@@ -155,7 +179,7 @@ class FilesManager:
 
         logger.warning(f"- Выгрузка ассетов: {n} потоков, {length} текстур")
 
-        def unload(label : str, filenames: list):
+        def unload(label: str, filenames: list):
             if label in self.loaded_labels:
                 self.loaded_labels.remove(label)
 
@@ -165,7 +189,6 @@ class FilesManager:
 
                         if isinstance(asset, (tuple, set)):
                             asset = asset[0]
-
 
                         if isinstance(asset, Image.Image):
                             asset.close()
@@ -199,7 +222,7 @@ class FilesManager:
 
         return threads
 
-    def get_character_textures(self, sprite: str) ->  dict[str : Texture]:
+    def get_character_textures(self, sprite: str) -> dict[str:Texture]:
         """
         Возвращает текстуру персонажа
         :param sprite: Название спрайта
@@ -220,7 +243,9 @@ class FilesManager:
 
         return textures
 
-    def get_texture(self, filename: str) -> Optional[Union[Texture, TextureAnimationSprite]]:
+    def get_texture(
+        self, filename: str
+    ) -> Optional[Union[Texture, TextureAnimationSprite]]:
         texture_data = self.textures.get(filename, None)
         if texture_data is None:
             return None
@@ -241,7 +266,8 @@ class FilesManager:
 
         return texture
 
-'''
+
+"""
 нет
 8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
 8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
@@ -379,4 +405,4 @@ class FilesManager:
 8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
 8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
 8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888
-'''
+"""
