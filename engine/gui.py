@@ -591,7 +591,7 @@ class Managers:
                 def return_to_main_menu(event=None):
 
                     self.window.set_fullscreen(True)
-                    g.main.actions.active_generators.clear()
+                    g.actions.active_generators.clear()
                     g.am.stop_music()
                     g.am.stop_sound()
 

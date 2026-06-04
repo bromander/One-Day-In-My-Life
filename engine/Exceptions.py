@@ -1,15 +1,3 @@
-class ActionNotFoundError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
-
-
-class ChannelDoesNotExistError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
-
-
 class LayerDoesNotExistError(Exception):
     def __init__(self, message):
         self.message = message
@@ -53,6 +41,11 @@ class MainLabelNotFoundError(Exception):
 
 
 class LabelNotFoundError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+class ActionNotFoundError(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)

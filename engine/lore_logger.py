@@ -308,8 +308,7 @@ class LoreLogger:
 
     def _restore_namespace(self, data: dict[str:dict]):
 
-        new_namespace = Namespace()
-        g.main.NAMESPACE = new_namespace
+        new_namespace = Namespace(g)
 
         for name, value in data["variables"].items():
             new_namespace.NAMESPACE[name] = value
@@ -329,21 +328,23 @@ class LoreLogger:
         for name, value in data["persistents"].items():
             new_namespace["Persistent"].__setattr__(name, value)
 
+        g.main.NAMESPACE = new_namespace
+
     ### ==== GENERATORS ===
 
     def _snapshot_generators(self):
-        gens = g.main.actions.active_generators
+        gens = g.actions.active_generators
         return {
             "consistently": [
-                g
-                for g in gens.active_generators_consistently
-                if not g[0].startswith("talk")
+                gen
+                for gen in gens.active_generators_consistently
+                if not gen[0].startswith("talk")
             ],
             "together": copy.copy(gens.active_generators_together),
         }
 
     def _restore_generators(self, data):
-        gens = g.main.actions.active_generators
+        gens = g.actions.active_generators
         gens.clear()
 
         gens.active_generators_consistently = copy.copy(data["consistently"])

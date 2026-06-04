@@ -284,6 +284,8 @@ class Globals:
     lm = None  # Lore Manager
     da = None  # Discord actor
 
+    actions = None
+
     All_views = None
 
     ListCharacters = None

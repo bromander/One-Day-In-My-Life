@@ -27,7 +27,7 @@ from .lore_manager import LoreManager
 from .lore_logger import LoreLogger
 from .waiter import Waiter
 from .saves import Saves_manager
-from .namespace import Namespace
+from .namespace import *
 from .actions import Actions
 from .audio import AudioManager
 from .presence import Discord_act
@@ -385,7 +385,7 @@ class Views:
 
             self.session_id = ""
 
-            self.NAMESPACE = Namespace()
+            self.NAMESPACE = Namespace(g)
 
             self.session_data = {
                 "name": "",
@@ -499,8 +499,6 @@ class Views:
 
             load_saves(session_id)
 
-            self.actions = Actions()
-
             self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
 
@@ -540,7 +538,7 @@ class Views:
         def chanel(self):
             time.sleep(0.05)
 
-            self.actions.active_generators.clear()
+            g.actions.active_generators.clear()
 
             g.am.stop_sound()
             g.am.stop_music()
@@ -558,7 +556,7 @@ class Views:
             Получает инструкции сценария и запускает функцию talk(), обрабатывая её результаты
             """
 
-            gens = self.actions.active_generators
+            gens = g.actions.active_generators
             if gens.active_generators_consistently:
                 if gens.active_generators_consistently[0][0].startswith("talk"):
                     while gens.active_generators_consistently[0][0].startswith("talk"):
@@ -567,7 +565,7 @@ class Views:
                             break
                     return
 
-            gen = self.actions.active_generators.active_generators_consistently
+            gen = g.actions.active_generators.active_generators_consistently
             if gen:
                 if clicked:
                     self.cursor_texture.alpha = 255
@@ -581,7 +579,7 @@ class Views:
                             self.last_text_skip = time.time()
 
             if (
-                self.actions.active_generators.active_generators_consistently
+                g.actions.active_generators.active_generators_consistently
                 and not clicked
             ):
                 self.waiting_talk.on()
@@ -644,7 +642,7 @@ class Views:
                             "data"
                         ]["description"] != "":
                             if now["data"]["show_splash"]:
-                                self.actions.start_action(
+                                g.actions.start_action(
                                     "show_splash", now["data"], "together"
                                 )
                             g.da.update(now["data"]["name"], now["data"]["description"])
@@ -693,7 +691,7 @@ class Views:
 
             self.menu_manager.on_update(delta_time)
 
-            self.actions.update(delta_time)
+            g.actions.update(delta_time)
 
             self.characters_texts_manager.update(delta_time)
 
@@ -1795,7 +1793,7 @@ class Views:
                 center_y=self.height * 0.13,
             )
 
-            self.actions = g.main.actions
+            g.actions = g.actions
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
 
@@ -1857,7 +1855,7 @@ class Views:
             self.settings_manager.on_update(delta_time)
             self.menu_manager.on_update(delta_time)
 
-            g.main.actions.update(delta_time)
+            g.actions.update(delta_time)
 
         def on_draw(self) -> None:
             self.clear()
@@ -1913,8 +1911,6 @@ class Views:
                 center_x=self.width * 0.5,
                 center_y=self.height * 0.13,
             )
-
-            self.actions = g.main.actions
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
 
@@ -2015,7 +2011,7 @@ class Views:
             self.settings_manager.on_update(delta_time)
             self.menu_manager.on_update(delta_time)
 
-            g.main.actions.update(delta_time)
+            g.actions.update(delta_time)
 
         def on_draw(self) -> None:
             self.clear()
@@ -2049,7 +2045,6 @@ class Views:
             g.main.NAMESPACE["Define"].collected_items = {}
 
             # self.window.set_vsync(True)
-            self.actions = g.main.actions
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
 
@@ -2366,7 +2361,7 @@ class Views:
                     i.kill()
                     del i
 
-            g.main.actions.update(delta_time)
+            g.actions.update(delta_time)
 
         def on_key_press(self, key: int, modifiers: int) -> bool | None:
             if key == arcade.key.S or key == arcade.key.ESCAPE:
@@ -2401,7 +2396,6 @@ class Views:
             super().__init__()
 
             # self.window.set_vsync(True)
-            self.actions = g.main.actions
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
 
@@ -2491,7 +2485,7 @@ class Views:
                 self.NAMESPACE["Lore"].jump("bad_ending_golubi")
                 self.window.show_view(self.window.GameView)
 
-            g.main.actions.update(delta_time)
+            g.actions.update(delta_time)
 
     class ShopGetting(Main_template):
         def __init__(self):
@@ -2501,7 +2495,6 @@ class Views:
                 self.window.show_view(self.window.GameView)
 
             # self.window.set_vsync(True)
-            self.actions = g.main.actions
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
 
@@ -2869,7 +2862,7 @@ class Views:
                                 ]
                             self.layers[e]["collected"] = False
 
-            g.main.actions.update(delta_time)
+            g.actions.update(delta_time)
 
         def on_key_press(self, key: int, modifiers: int) -> bool | None:
             if key == arcade.key.S or key == arcade.key.ESCAPE:
@@ -2916,8 +2909,12 @@ def init_file() -> None:
     logger.info("Инициализация...")
 
     timee = time.time()
+
+    g.actions = Actions()
+
     logger.debug("Инициализация [1/8]: Saves_manager")
     g.sm = Saves_manager()
+
     logger.debug("Инициализация [2/8]: FilesManager")
     g.fm = FilesManager()
     g.fm.load_assets(
@@ -2928,16 +2925,23 @@ def init_file() -> None:
     )
     g.fm.load_assets(["box_office_3.png"], "movable_shop_assets_bying")
     g.fm.load_assets(["golub_click.png", "golub.png"], "CTW")
+
     logger.debug("Инициализация [3/8]: AudioManager")
     g.am = AudioManager()
+
     logger.debug("Инициализация [4/8]: Scene")
     g.scene = Scene()
+
     logger.debug("Инициализация [5/8]: LoreManager")
     g.lm = LoreManager()
+
     logger.debug("Инициализация [6/8]: DiscordActor")
     g.da = Discord_act()
+
     logger.debug("Инициализация [7/8]: Attributes")
     g.attributes = Attributes()
+
     logger.debug("Инициализация [8/8]: ListCharacters")
     g.ListCharacters = ListCharacters()
+
     logger.info(f"Инициализация завершена за {round(time.time() - timee, 3)} сек")
