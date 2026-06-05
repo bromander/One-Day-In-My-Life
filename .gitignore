@@ -4,3 +4,6 @@ start.dist/
 nuitka-crash-report.xml
 /Setuper/*/
 *.log
+.idea
+.ruff_cache
+/.venv/

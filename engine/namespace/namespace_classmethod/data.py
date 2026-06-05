@@ -1,4 +1,5 @@
-import datetime, time
+import datetime
+import time
 from typing import Optional
 
 class Data:

@@ -1,4 +1,3 @@
-import gzip
 from typing import Optional, Literal, Union, Tuple
 from arcade import get_window, Sprite, TextureAnimationSprite
 from .exceptions import ActionNotFoundError

@@ -1,10 +1,6 @@
-import time
-import datetime
 import re
-from typing import Optional, Literal, Tuple, Union
-import PIL
+from typing import Literal
 from .namespace_classmethod import *
-from arcade import Sprite, get_window, TextureAnimationSprite
 
 class Namespace:
     def __init__(self, g) -> None:
@@ -81,8 +77,8 @@ class Namespace:
             text = (
                 "".join(text)
                 .replace("\\\\", "\\")
-                .replace("\[", "[")
-                .replace("\]", "]")
+                .replace(r"\[", r"[")
+                .replace(r"\]", r"]")
             )
             return text
 
