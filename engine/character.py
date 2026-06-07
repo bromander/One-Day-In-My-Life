@@ -3,6 +3,7 @@ from arcade import color, Sprite, Texture
 import os
 import random
 import re
+import json5
 
 from .globals import g
 
@@ -257,20 +258,38 @@ class Character:
 class ListCharacters:
     def __init__(self) -> None:
         """
-        Хранит в себе список всех персонажей
+        Хранит в себе всех персонажей
         """
 
-        self.characters = {
-            "narr": Character(" ", None, text_anchor="center"),
-            "unk1": Character("???", None, text_anchor="center", colour="#f0c4c0"),
-            "unk2": Character("???", None, text_anchor="center", colour="#d5dbf0"),
-            "shak": Character("Жаклин", "shak", "#f5a889", "#f0855b"),
-            "lshak": Character("Жаклин", "lshak", "#f5a889", "#f0855b"),
-            "masorubka": Character("Кассир", "masorubka", "#E0FFFF", "#7FFFD4"),
-            "ed": Character("Сосед", "ed", "#FFDEAD", "#FFDEAD"),
-            "oz": Character("Ms. Ф. ОЗИНАД", "oz", "#12d3da", "#a44aff", c_scale=1.5),
-            "del": Character("Доставщик", "del", "#7290b0"),
-        }
+        self.characters = {"narr": Character(" ", None, text_anchor="center")}
+        self.characters.update(self._init_characters())
 
     def __getitem__(self, item) -> dict[str:Character]:
         return self.characters[item]
+
+    def _init_characters(self):
+        """
+        Парсит файл characters.json5
+        """
+
+        if "characters.json5" not in os.listdir("./game/other/"):
+            raise FileNotFoundError("Файл персонажей game/other/characters.json5 не найден!")
+
+        with open("./game/other/characters.json5", "r", encoding="UTF-8") as file:
+            characters: dict[str : dict] = json5.load(file)
+
+        characters_data = {
+            char_name : Character(
+                data.get("name", " "),
+                data.get("char_id", None),
+                data.get("colour", None),
+                data.get("name_colour", None),
+                data.get("c_scale", 1.0),
+                data.get("text_anchor", "left"),
+                data.get("lps", 60)
+            )
+            for char_name, data in characters.items()
+        }
+
+        return characters_data
+

@@ -43,3 +43,5 @@ scipy==1.17.1
 tqdm==4.67.3
 # JopaJam5SecretGame\engine\globals.py: 9
 hawk_python_sdk==3.5.2
+# JopaJam5SecretGame\engine\character.py: 6
+json5==0.14.0
