@@ -262,6 +262,10 @@ class Globals:
         return ".jpy"
 
     @property
+    def DEFAULT_LORE_COMPILED_FILE_EXT(self):
+        return ".jpyc"
+
+    @property
     def DEFAULT_START_LABEL(self):
         return "main"
 

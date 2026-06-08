@@ -72,7 +72,7 @@ class ListActiveGenerators:
             generator.send(delta_time)
         except StopIteration:
             return True
-        except TypeError:
+        except TypeError: # Если next() не вызывалось перед передачей генератора в функцию
             try:
                 next(generator)
             except StopIteration:

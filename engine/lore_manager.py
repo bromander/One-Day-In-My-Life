@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 import re
+from base64 import b64encode, b64decode
+import zlib, json
 import ast
 from typing import Optional, Union
 from functools import lru_cache
@@ -10,6 +12,78 @@ from .globals import g
 logger = g.get_logger(__name__)
 
 
+class LoreFileManager:
+
+    def __init__(self, lore_files: list[Path]):
+        self.lore_files = lore_files
+
+    def _check_file_jpya(self, jpy_filepath: Path) -> bool:
+        return jpy_filepath.with_suffix(g.DEFAULT_LORE_COMPILED_FILE_EXT).exists()
+
+    def _check_jpy_last_edit(self, filepath: Path) -> bool:
+
+        jpy_last_edit = float(filepath.stat().st_mtime)
+
+        jpyc_filepath = filepath.with_suffix(g.DEFAULT_LORE_COMPILED_FILE_EXT)
+        jpyc_last_edit = float(self._get_uncompiled_file_data(jpyc_filepath)["last_updated"])
+
+        return jpy_last_edit == jpyc_last_edit
+
+    def should_recompile(self, filepath: Path) -> bool:
+        if not self._check_file_jpya(filepath):
+            return True
+        if not self._check_jpy_last_edit(filepath):
+            return True
+
+        return False
+
+    def get_lore_by_files(self, lore_files: list[Path]):
+
+        lore_by_files = {}
+
+        for filepath in lore_files:
+            if not self.should_recompile(filepath):
+                jpyc_filepath = filepath.with_suffix(g.DEFAULT_LORE_COMPILED_FILE_EXT)
+                file_data = self._get_uncompiled_file_data(jpyc_filepath)
+                label_data = self._unzip_data(file_data["label_data"])
+                lore_by_files[filepath.absolute()] = label_data
+            else:
+                lore_by_files[filepath.absolute()] = None
+
+        return lore_by_files
+
+    def compile_data(self, lore_by_files: dict[Path : dict]):
+
+        for filename, labels in lore_by_files.items():
+            if self.should_recompile(filename):
+                self._compile_file(filename, labels)
+
+
+    def _compile_file(self, filepath: Path, labels: dict[str : dict]):
+
+        compiled_labels = self._zip_data(labels)
+
+        write_data = {
+            "last_updated" : filepath.stat().st_mtime,
+            "label_data" : compiled_labels
+        }
+
+        jpyc_filepath = filepath.with_suffix(g.DEFAULT_LORE_COMPILED_FILE_EXT)
+
+        with jpyc_filepath.open("w", encoding="UTF-8") as file:
+            json.dump(write_data, file)
+
+    def _get_uncompiled_file_data(self, filepath: Path):
+
+        with filepath.open("r", encoding="UTF-8") as file:
+            return json.load(file)
+
+    def _zip_data(self, data: dict) -> str:
+        return b64encode(zlib.compress(json.dumps(data, ensure_ascii=False).encode("utf-8"), 9)).decode("ascii")
+
+    def _unzip_data(self, data: str) -> dict:
+        return json.loads(zlib.decompress(b64decode(data)))
+
 class LoreManager:
     """
     Отвечает за всю работу с файлами сценария.
@@ -17,18 +91,18 @@ class LoreManager:
     """
 
     def __init__(self):
-        self.lore_files = self._find_files(g.DEFAULT_LORE_FILE_EXT)
+        lore_files = self._find_files(g.DEFAULT_LORE_FILE_EXT)
 
-        reorganize = Reorganize()
-        self.lore = reorganize.reorganize_files(
-            self.lore_files
-        )  # {"labe_name" : {"caption" : "", "assets" : set(), "lore" : [""]}}
-        reorganize.check_for_character.cache_clear()
+        lore_data_by_files = self.get_lore_data_by_files(lore_files)
 
-        print(self.lore)
+        self.lore = dict(
+            (k, v)
+            for file_data in lore_data_by_files.values()
+            for k, v in file_data.items()
+        )
 
         logger.debug(
-            f"Обнаружено Файлов сценария: {len(self.lore_files)}, Лейблов: {len(self.lore)}"
+            f"Обнаружено Файлов сценария: {len(lore_files)}, Лейблов: {len(self.lore)}"
         )
 
         self.graf = self._create_graf(self.lore)
@@ -37,6 +111,35 @@ class LoreManager:
         self.label = g.DEFAULT_START_LABEL
 
         self.load_assets(self.label)
+
+    def get_lore_data_by_files(self, lore_files: list[Path]):
+
+        lore_files_manager = LoreFileManager(lore_files)
+
+        lore_data_by_files = lore_files_manager.get_lore_by_files(lore_files)
+
+        reorganize = Reorganize()
+
+        should_recompile = False
+
+        reorganized_files = []
+
+        for filepath, label_data in lore_data_by_files.items():
+            if label_data is None:
+                should_recompile = True
+                lore_data_by_files[filepath] = reorganize.reorganize_file(filepath)
+                reorganized_files.append(str(filepath.name))
+
+        reorganize.check_for_character.cache_clear()
+
+        if should_recompile:
+            logger.info(f"Файлы сценария были перекомпилированны! Всего: {len(reorganized_files)}, [{", ".join(reorganized_files)}]")
+            lore_files_manager.compile_data(lore_data_by_files)
+        else:
+            logger.debug("Файлы сценария не были изменены!")
+
+        return lore_data_by_files
+
 
     def _find_files(
         self, extension: str, start_path: Union[str] = "./game"
@@ -306,9 +409,8 @@ class Reorganize:
 
                 paths[label_name] = {
                     "caption": label_data,
-                    "assets": set(),
-                    "lore": [],
-                    "unsplit_lore": "",
+                    "assets": [],
+                    "lore": []
                 }
 
                 point_start = (label_name, index + 1)
@@ -353,7 +455,7 @@ class Reorganize:
 
         return None
 
-    def _guess_assets(self, unsplit_lore: str) -> set[str]:
+    def _guess_assets(self, unsplit_lore: str) -> list[str]:
         """
         Смотрит строку кода и парсит все строки в кавычках, пытаясь найти в них файлы с ассетами.
         """
@@ -370,27 +472,26 @@ class Reorganize:
             if (
                 format in g.SUPPORTED_IMAGE_FORMATS
                 or format in g.SUPPORTED_AUDIO_FORMATS
+                and potential_asset not in founded_assets
             ):
                 founded_assets.append(potential_asset)
             else:
                 check_for_character = self.check_for_character(potential_asset)
 
-                if check_for_character:
+                if check_for_character and check_for_character not in founded_assets:
                     founded_assets.append(check_for_character)
 
-        return set(founded_assets)
+        return founded_assets
 
-    def reorganize_files(self, files: list[Path]) -> dict:
+    def reorganize_file(self, file_path: Path) -> dict:
         """
-        Полностью организует и обрабатывает файлы сюжета, возвращая готовый материал для работы
-        :param files: Список путей к файлам сюжета
+        Полностью организует и обрабатывает файлы сюжета, возвращая готовый материал для работы.
+        :param file_path: Путь к файлам сюжета.
+        :return: Возвращает подготовленные данные лейбла
         """
 
-        lore_file_data = ""
-
-        for path in files:
-            with path.open("r", encoding="UTF-8") as lore_file:
-                lore_file_data += "\n" + lore_file.read()
+        with file_path.open("r", encoding="UTF-8") as lore_file:
+            lore_file_data = lore_file.read()
 
         lore_file_data = self._del_trash(lore_file_data)
         lore_file_data = self._replace_characters_call(lore_file_data)
