@@ -1,6 +1,7 @@
 from typing import Literal, Optional
 from .exceptions import ChannelDoesNotExistError
 
+
 class Audio:
     def __init__(self, g) -> None:
         """
@@ -10,15 +11,15 @@ class Audio:
         self.actions = g.actions
 
     def play(
-            self,
-            channel: Literal["music", "sound"],
-            file_name: str,
-            volume: float = 1.0,
-            loop: Optional[bool] = None,
-            effect: Optional[Literal["fade"]] = None,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "consistently_async",
+        self,
+        channel: Literal["music", "sound"],
+        file_name: str,
+        volume: float = 1.0,
+        loop: Optional[bool] = None,
+        effect: Optional[Literal["fade"]] = None,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently_async",
     ) -> None:
         """
         Запускает музыку
@@ -47,12 +48,12 @@ class Audio:
                 raise ChannelDoesNotExistError(f"Channel {channel} does not exist")
 
     def stop(
-            self,
-            channel: Literal["music", "sound"],
-            effect: Optional[Literal["fade"]] = None,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "consistently_async",
+        self,
+        channel: Literal["music", "sound"],
+        effect: Optional[Literal["fade"]] = None,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently_async",
     ) -> None:
         """
         Останавливает проигрывание канала

@@ -2,7 +2,6 @@ import math
 
 
 class Ease:
-
     @staticmethod
     def prepare_effect(name: str, t: float):
         return Ease.__dict__[name](t)
@@ -153,9 +152,20 @@ class Ease:
         if t == 0 or t == 1:
             return t
         if t < 0.5:
-            return -(pow(2, 20 * t - 10) * math.sin((20 * t - 11.125) * (2 * math.pi) / 4.5)) / 2
+            return (
+                -(
+                    pow(2, 20 * t - 10)
+                    * math.sin((20 * t - 11.125) * (2 * math.pi) / 4.5)
+                )
+                / 2
+            )
         else:
-            return pow(2, -20 * t + 10) * math.sin((20 * t - 11.125) * (2 * math.pi) / 4.5) / 2 + 1
+            return (
+                pow(2, -20 * t + 10)
+                * math.sin((20 * t - 11.125) * (2 * math.pi) / 4.5)
+                / 2
+                + 1
+            )
 
     # ---- Бэк (Back) - перебор с возвратом ----
     @staticmethod

@@ -1,5 +1,6 @@
 from typing import Literal
 
+
 class Lore:
     def __init__(self, g) -> None:
         """
@@ -16,14 +17,12 @@ class Lore:
         self.g.lm.jump(label, position)
 
     def set_part(
-            self,
-            name: str,
-            description: str,
-            show_splash: bool = False,
-            speed: float = 1.0,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "together",
+        self,
+        name: str,
+        description: str,
+        show_splash: bool = False,
+        speed: float = 1.0,
+        stream: Literal["consistently", "consistently_async", "together"] = "together",
     ) -> None:
         """
         Позволяет указать то, в какой точке сюжета находится игрок.

@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import re
 from base64 import b64encode, b64decode
+from binascii import Error as binascii_Error
 import zlib, json
 import ast
 from typing import Optional, Union
@@ -13,9 +14,38 @@ logger = g.get_logger(__name__)
 
 
 class LoreFileManager:
-
     def __init__(self, lore_files: list[Path]):
+        """
+        Работает с файлами сценария и их скомпилированными версиями
+        :param lore_files: Список объектов pathlib.Path, ведущих к файлам сценария
+        """
         self.lore_files = lore_files
+
+        self.delete_unused_compiled()
+
+    def delete_unused_compiled(self):
+        compiled_files = self._find_files(g.DEFAULT_LORE_COMPILED_FILE_EXT)
+
+        for filepath in compiled_files:
+            if (
+                not filepath.with_suffix(g.DEFAULT_LORE_FILE_EXT).exists()
+                and filepath.exists()
+            ):
+                logger.debug(f"Удаляем ненужный скомпилированный файл {filepath.name}!")
+                filepath.unlink()
+
+    def _find_files(
+        self, extension: str, start_path: Union[str] = "./game"
+    ) -> list[Path]:
+
+        start = Path(start_path).absolute()
+        results = []
+        for entry in os.scandir(start):
+            if entry.is_dir():
+                results.extend(self._find_files(extension, entry.path))
+            elif entry.name.lower().endswith(extension.lower()):
+                results.append(Path(entry.path))
+        return results
 
     def _check_file_jpya(self, jpy_filepath: Path) -> bool:
         return jpy_filepath.with_suffix(g.DEFAULT_LORE_COMPILED_FILE_EXT).exists()
@@ -25,11 +55,13 @@ class LoreFileManager:
         jpy_last_edit = float(filepath.stat().st_mtime)
 
         jpyc_filepath = filepath.with_suffix(g.DEFAULT_LORE_COMPILED_FILE_EXT)
-        jpyc_last_edit = float(self._get_uncompiled_file_data(jpyc_filepath)["last_updated"])
+        jpyc_last_edit = float(
+            self._get_uncompiled_file_data(jpyc_filepath)["last_updated"]
+        )
 
         return jpy_last_edit == jpyc_last_edit
 
-    def should_recompile(self, filepath: Path) -> bool:
+    def _should_recompile(self, filepath: Path) -> bool:
         if not self._check_file_jpya(filepath):
             return True
         if not self._check_jpy_last_edit(filepath):
@@ -37,38 +69,62 @@ class LoreFileManager:
 
         return False
 
-    def get_lore_by_files(self, lore_files: list[Path]):
+    def get_lore_by_files(self) -> dict[Path:dict]:
+        """
+        Просматривает каждый скомпилированный файл и берёт из него данные, если они актуальны.
+        Может передавать None вместо данных, если они не были скомпилированны
+        """
 
         lore_by_files = {}
 
-        for filepath in lore_files:
-            if not self.should_recompile(filepath):
+        for filepath in self.lore_files:
+            if not self._should_recompile(filepath):
+                labels_data = {}
+
                 jpyc_filepath = filepath.with_suffix(g.DEFAULT_LORE_COMPILED_FILE_EXT)
                 file_data = self._get_uncompiled_file_data(jpyc_filepath)
-                label_data = self._unzip_data(file_data["label_data"])
-                lore_by_files[filepath.absolute()] = label_data
+
+                for label, label_data in file_data["label_data"].items():
+                    unzipped_label_data = self._unzip_data(label_data, label)
+
+                    if unzipped_label_data is None:
+                        labels_data = None
+                        break
+
+                    labels_data[label] = unzipped_label_data
+
+                lore_by_files[filepath.absolute()] = labels_data
             else:
                 lore_by_files[filepath.absolute()] = None
 
         return lore_by_files
 
-    def compile_data(self, lore_by_files: dict[Path : dict]):
-
+    def save_compile_data(self, lore_by_files: dict, files_to_recompile: list[str]):
+        """
+        Сохраняет актуальные скомпилированные данные файла сценария
+        :param lore_by_files: Словарь {Путь к файлу : Данные лейблов}
+        :param files_to_recompile: Список абсолютных путей к файлам
+        :return:
+        """
+        recompile_set = set(files_to_recompile)
+        abs_paths = {fp: str(fp) for fp in lore_by_files}
         for filename, labels in lore_by_files.items():
-            if self.should_recompile(filename):
+            if self._should_recompile(filename) or abs_paths[filename] in recompile_set:
                 self._compile_file(filename, labels)
 
-
-    def _compile_file(self, filepath: Path, labels: dict[str : dict]):
-
-        compiled_labels = self._zip_data(labels)
-
-        write_data = {
-            "last_updated" : filepath.stat().st_mtime,
-            "label_data" : compiled_labels
-        }
+    def _compile_file(self, filepath: Path, labels: dict[str:dict]):
 
         jpyc_filepath = filepath.with_suffix(g.DEFAULT_LORE_COMPILED_FILE_EXT)
+
+        compiled_labels = {
+            label_name: self._zip_data(compiled_data)
+            for label_name, compiled_data in labels.items()
+        }
+
+        write_data = {
+            "last_updated": filepath.stat().st_mtime,
+            "label_data": compiled_labels,
+        }
 
         with jpyc_filepath.open("w", encoding="UTF-8") as file:
             json.dump(write_data, file)
@@ -79,10 +135,25 @@ class LoreFileManager:
             return json.load(file)
 
     def _zip_data(self, data: dict) -> str:
-        return b64encode(zlib.compress(json.dumps(data, ensure_ascii=False).encode("utf-8"), 9)).decode("ascii")
+        return b64encode(
+            zlib.compress(json.dumps(data, ensure_ascii=False).encode("utf-8"), 9)
+        ).decode("ascii")
 
-    def _unzip_data(self, data: str) -> dict:
-        return json.loads(zlib.decompress(b64decode(data)))
+    def _unzip_data(self, data: str, label_name: str = None) -> Optional[dict]:
+        try:
+            loaded = json.loads(zlib.decompress(b64decode(data)))
+        except (  # Обрабатываем случаи, если данные были повреждены
+            binascii_Error, ValueError, TypeError,  # Повреждение на уровне Base64
+            zlib.error,  # Повреждение на уровне zlib
+            json.JSONDecodeError, UnicodeDecodeError,  # Повреждение на уровне JSON
+        ):
+            logger.error(
+                f"Данные лейбла {label_name} были повреждены! Перекомпилируем..."
+            )
+            loaded = None
+
+        return loaded
+
 
 class LoreManager:
     """
@@ -112,11 +183,15 @@ class LoreManager:
 
         self.load_assets(self.label)
 
-    def get_lore_data_by_files(self, lore_files: list[Path]):
+    def get_lore_data_by_files(self, lore_files: list[Path]) -> dict:
+        """
+        Работает с кешированными уже скомпилированными файлами и возвращает словарь с уже обработанным сценарием
+        :param lore_files: Список Path объектов к файлам сценария
+        """
 
         lore_files_manager = LoreFileManager(lore_files)
 
-        lore_data_by_files = lore_files_manager.get_lore_by_files(lore_files)
+        lore_data_by_files = lore_files_manager.get_lore_by_files()
 
         reorganize = Reorganize()
 
@@ -128,32 +203,31 @@ class LoreManager:
             if label_data is None:
                 should_recompile = True
                 lore_data_by_files[filepath] = reorganize.reorganize_file(filepath)
-                reorganized_files.append(str(filepath.name))
+                reorganized_files.append(str(filepath.absolute()))
 
         reorganize.check_for_character.cache_clear()
 
         if should_recompile:
-            logger.info(f"Файлы сценария были перекомпилированны! Всего: {len(reorganized_files)}, [{", ".join(reorganized_files)}]")
-            lore_files_manager.compile_data(lore_data_by_files)
+            logger.info(
+                f"Файлы сценария были перекомпилированны! Всего: {len(reorganized_files)}, [{', '.join(reorganized_files)}]"
+            )
+            lore_files_manager.save_compile_data(lore_data_by_files, reorganized_files)
         else:
             logger.debug("Файлы сценария не были изменены!")
 
         return lore_data_by_files
 
-
     def _find_files(
         self, extension: str, start_path: Union[str] = "./game"
     ) -> list[Path]:
 
-        if not isinstance(start_path, Path):
-            start_path = Path(start_path)
-
+        start = Path(start_path).absolute()
         results = []
-        for root, dirs, files in Path.walk(start_path):
-            for file in files:
-                if file.lower().endswith(extension.lower()):
-                    full_path = Path(os.path.join(root, file)).absolute()
-                    results.append(full_path)
+        for entry in os.scandir(start):
+            if entry.is_dir():
+                results.extend(self._find_files(extension, entry.path))
+            elif entry.name.lower().endswith(extension.lower()):
+                results.append(Path(entry.path))
         return results
 
     def _create_graf(self, lore_data: dict) -> dict[str : list[str]]:
@@ -407,11 +481,7 @@ class Reorganize:
                 label_name = line.replace("label ", "").split("(")[0]
                 label_data = re.split(r"[()]", line)[1]
 
-                paths[label_name] = {
-                    "caption": label_data,
-                    "assets": [],
-                    "lore": []
-                }
+                paths[label_name] = {"caption": label_data, "assets": [], "lore": []}
 
                 point_start = (label_name, index + 1)
 

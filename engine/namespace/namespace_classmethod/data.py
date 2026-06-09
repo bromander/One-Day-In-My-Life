@@ -2,6 +2,7 @@ import datetime
 import time
 from typing import Optional
 
+
 class Data:
     """
     Предоставляет доступ к основным классам движка

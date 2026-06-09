@@ -1,5 +1,6 @@
 from arcade import get_window
 
+
 class Screen:
     def __init__(self, g):
         self.g = g

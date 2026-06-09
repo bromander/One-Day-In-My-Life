@@ -273,23 +273,24 @@ class ListCharacters:
         """
 
         if "characters.json5" not in os.listdir("./game/other/"):
-            raise FileNotFoundError("Файл персонажей game/other/characters.json5 не найден!")
+            raise FileNotFoundError(
+                "Файл персонажей game/other/characters.json5 не найден!"
+            )
 
         with open("./game/other/characters.json5", "r", encoding="UTF-8") as file:
-            characters: dict[str : dict] = json5.load(file)
+            characters: dict[str:dict] = json5.load(file)
 
         characters_data = {
-            char_name : Character(
+            char_name: Character(
                 data.get("name", " "),
                 data.get("char_id", None),
                 data.get("colour", None),
                 data.get("name_colour", None),
                 data.get("c_scale", 1.0),
                 data.get("text_anchor", "left"),
-                data.get("lps", 60)
+                data.get("lps", 60),
             )
             for char_name, data in characters.items()
         }
 
         return characters_data
-

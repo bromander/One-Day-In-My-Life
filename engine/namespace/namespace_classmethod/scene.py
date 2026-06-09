@@ -2,6 +2,7 @@ from typing import Optional, Literal, Union, Tuple
 from arcade import get_window, Sprite, TextureAnimationSprite
 from .exceptions import ActionNotFoundError
 
+
 class Scene:
     def __init__(self, g) -> None:
         """
@@ -21,15 +22,15 @@ class Scene:
         self.g.scene.set_characters_slice(value)
 
     def _get_norm(
-            self,
-            at: Optional[
-                Union[
-                    Literal["left", "right", "center"],
-                    tuple[int, int],
-                    tuple[float, float],
-                ]
-            ],
-            sprite_name: str,
+        self,
+        at: Optional[
+            Union[
+                Literal["left", "right", "center"],
+                tuple[int, int],
+                tuple[float, float],
+            ]
+        ],
+        sprite_name: str,
     ):
 
         window = get_window()
@@ -77,9 +78,9 @@ class Scene:
         return x_norm, y_norm
 
     def _get_size(
-            self,
-            size: Optional[Union[int, float, Tuple[int], Tuple[float]]],
-            sprite_size: tuple,
+        self,
+        size: Optional[Union[int, float, Tuple[int], Tuple[float]]],
+        sprite_size: tuple,
     ) -> tuple:
         if size is None:
             return sprite_size
@@ -115,22 +116,22 @@ class Scene:
         return sprite_size
 
     def add_sprite(
-            self,
-            filename_or_sprite: [str, Sprite, TextureAnimationSprite],
-            at: Optional[
-                Union[
-                    Literal["left", "right", "center"],
-                    tuple[int, int],
-                    tuple[float, float],
-                ]
-            ] = None,
-            size: Optional[Union[tuple[int, int], int]] = None,
-            angle: int = 0.0,
-            effect=None,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "consistently",
-            layer: str = "sprites",
+        self,
+        filename_or_sprite: [str, Sprite, TextureAnimationSprite],
+        at: Optional[
+            Union[
+                Literal["left", "right", "center"],
+                tuple[int, int],
+                tuple[float, float],
+            ]
+        ] = None,
+        size: Optional[Union[tuple[int, int], int]] = None,
+        angle: int = 0.0,
+        effect=None,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently",
+        layer: str = "sprites",
     ) -> None:
         """
         Добавляет спрайт на сцену
@@ -176,21 +177,19 @@ class Scene:
             self.g.scene.add_sprite(layer, filename, sprite)
             yield
 
-        self.actions.active_generators.add_generator(
-            stream, target(), "show_sprite"
-        )
+        self.actions.active_generators.add_generator(stream, target(), "show_sprite")
         if effect is not None:
             self.actions.active_generators.add_generator(
                 stream, effect.effect(sprite), "show_sprite_effect"
             )
 
     def hide_sprite(
-            self,
-            filename: str,
-            effect=None,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "consistently",
+        self,
+        filename: str,
+        effect=None,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently",
     ) -> None:
         """
         Удаляет спрайт со сцены
@@ -208,25 +207,23 @@ class Scene:
             self.actions.active_generators.add_generator(
                 stream, effect.effect(sprite, 0), "hide_sprite_effect"
             )
-        self.actions.active_generators.add_generator(
-            stream, target(), "hide_sprite"
-        )
+        self.actions.active_generators.add_generator(stream, target(), "hide_sprite")
 
     def show_character(
-            self,
-            character: str,
-            at: Optional[
-                Union[
-                    Literal["left", "right", "center"],
-                    tuple[int, int],
-                    tuple[float, float],
-                ]
-            ] = None,
-            size: Optional[Union[int, float, Tuple[int], Tuple[float]]] = None,
-            effect=None,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "consistently",
+        self,
+        character: str,
+        at: Optional[
+            Union[
+                Literal["left", "right", "center"],
+                tuple[int, int],
+                tuple[float, float],
+            ]
+        ] = None,
+        size: Optional[Union[int, float, Tuple[int], Tuple[float]]] = None,
+        effect=None,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently",
     ) -> None:
         """
         Добавляет спрайт персонажа на сцену
@@ -263,7 +260,7 @@ class Scene:
         else:
             sprite.alpha = 255
 
-        new_char_name_sprite = f"{character.split(" ")[0]}_new"
+        new_char_name_sprite = f"{character.split(' ')[0]}_new"
 
         def target():
             if effect is not None:
@@ -278,30 +275,26 @@ class Scene:
             self.g.scene["sprites"][character.split(" ")[0]] = sprite
             yield
 
-        self.actions.active_generators.add_generator(
-            stream, target(), "show_sprite"
-        )
+        self.actions.active_generators.add_generator(stream, target(), "show_sprite")
         if effect is not None:
             self.actions.active_generators.add_generator(
                 stream,
                 effect.effect_show_sprite(sprite, character.split(" ")[0]),
-                "show_sprite_effect"
+                "show_sprite_effect",
             )
             self.actions.active_generators.add_generator(
-                stream,
-                rename(),
-                "rename_sprite_effect"
+                stream, rename(), "rename_sprite_effect"
             )
 
         # effect_show_sprite(self, new_sprite: Sprite, old_sprite: Sprite)
 
     def hide_character(
-            self,
-            character: str,
-            effect=None,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "consistently",
+        self,
+        character: str,
+        effect=None,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently",
     ) -> None:
         """
         Удаляет спрайт персонажа со сцены
@@ -325,14 +318,14 @@ class Scene:
         )
 
     def set_scene(
-            self,
-            file_name: Optional[Union[str, Sprite]],
-            size: Optional[Union[tuple[int, int], int]] = None,
-            layer: int = 0,
-            effect=None,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "consistently",
+        self,
+        file_name: Optional[Union[str, Sprite]],
+        size: Optional[Union[tuple[int, int], int]] = None,
+        layer: int = 0,
+        effect=None,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently",
     ) -> None:
         """
         Изменяет бекграунд
@@ -428,11 +421,9 @@ class Scene:
             )
 
     def set_scene_parallax(
-            self,
-            files: [tuple[str, float]],
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "together",
+        self,
+        files: [tuple[str, float]],
+        stream: Literal["consistently", "consistently_async", "together"] = "together",
     ) -> None:
 
         window = get_window()
@@ -454,13 +445,13 @@ class Scene:
             )
 
     def move(
-            self,
-            sprite: str,
-            position: tuple[Tuple[int, float]],
-            speed: float,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "consistently",
+        self,
+        sprite: str,
+        position: tuple[Tuple[int, float]],
+        speed: float,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently",
     ) -> None:
         """
         Перемещает персонажа из текущего положения в определённую координату
@@ -473,12 +464,12 @@ class Scene:
         self.actions.start_action("move_sprite", now, stream=stream)
 
     def fade(
-            self,
-            type: Literal["fadein", "fadeout"],
-            duration: float,
-            stream: Literal[
-                "consistently", "consistently_async", "together"
-            ] = "consistently",
+        self,
+        type: Literal["fadein", "fadeout"],
+        duration: float,
+        stream: Literal[
+            "consistently", "consistently_async", "together"
+        ] = "consistently",
     ) -> None:
         """
         Создаёт эффект фейдинга на экране
@@ -489,13 +480,9 @@ class Scene:
         """
         match type:
             case "fadein":
-                self.actions.start_action(
-                    "fadein", {"time": duration}, stream=stream
-                )
+                self.actions.start_action("fadein", {"time": duration}, stream=stream)
             case "fadeout":
-                self.actions.start_action(
-                    "fadeout", {"time": duration}, stream=stream
-                )
+                self.actions.start_action("fadeout", {"time": duration}, stream=stream)
             case _:
                 raise ActionNotFoundError(f'Action "{type}" now found!')
 

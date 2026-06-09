@@ -3,12 +3,20 @@ from arcade import Sprite
 
 from .Ease import Ease
 
+
 class SpriteEffects:
     def __init__(self, g):
-        self.Dissolve = lambda duration = 1.0, additional_effect= "ease_in_out_cubic": self.Dissolve_effect(g, duration, additional_effect)
+        self.Dissolve = lambda duration=1.0, additional_effect="ease_in_out_cubic": (
+            self.Dissolve_effect(g, duration, additional_effect)
+        )
 
     class Dissolve_effect:
-        def __init__(self, g, duration: float = 1.0, additional_effect: Optional[str] = "ease_in_out_cubic") -> None:
+        def __init__(
+            self,
+            g,
+            duration: float = 1.0,
+            additional_effect: Optional[str] = "ease_in_out_cubic",
+        ) -> None:
             """
             Отвечает эа эффект растворения
             :param duration: Продолжительность эффекта
