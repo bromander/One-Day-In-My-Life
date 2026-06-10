@@ -704,6 +704,7 @@ class Views:
                 - Лейбл: {g.lm.label}
                 - Позиция: {g.lm.pose}
                 - Граф сюжета: {g.lm.graf}
+                - Следующие лейблы: {g.lm.graf[g.lm.label]}
                 
                 ===== АССЕТЫ =====
                 - Текстуры: ЗАГРУЖЕНО: {len(g.fm.textures)}, НЕ ЗАГРУЖЕНО: {len(g.fm.textures_paths) - len(g.fm.textures)}

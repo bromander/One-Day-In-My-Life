@@ -31,8 +31,6 @@ class Scene:
 
         self.fm: FilesManager = g.fm
 
-        self.len_loaded_textures = 0
-
         self.textures = {}
 
     def set_characters_slice(self, value):
@@ -95,6 +93,10 @@ class Scene:
 
     def __setitem__(self, key, value):
         self.data[key] = value
+
+    @property
+    def len_loaded_textures(self):
+        return sum([len(data) for data in self.data.values()])
 
     def clear_scene(self):
         for name, dat in self.data.items():
@@ -199,14 +201,6 @@ class Scene:
                 for sprite in layer_content.values():
                     if isinstance(sprite, Sprite):
                         sprite.update()
-
-        for i, v in self.data.items():
-            if isinstance(v, dict):
-                len_sprites += len(v.values())
-            else:
-                len_sprites += 1
-
-        self.len_loaded_textures = len_sprites
 
     def add_parallax_bg(self, filename, speed, center_x, center_y):
         sprite = self.get_sprite(filename)

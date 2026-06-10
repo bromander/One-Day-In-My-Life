@@ -246,7 +246,6 @@ class LoreLogger:
 
             elif t == "parallax":
                 d = entry["data"]
-                print(d["texture"])
                 new_scene.add_parallax_bg(
                     d["texture"], d["speed"], d["original_x"], d["original_y"]
                 )

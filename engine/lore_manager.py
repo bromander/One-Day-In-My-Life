@@ -382,7 +382,7 @@ class LoreManager:
         for label, assets in assets_pack.items():
             g.fm.load_assets(assets, label)
 
-        self.unload_assets(label, scan_last=False)
+        self.unload_assets(label)
 
     def jump(self, label: str, pose: int) -> None:
         """
@@ -582,7 +582,6 @@ class Reorganize:
                 for label_to in labels_to:
                     paths[label_name]["assets"] += paths[label_to]["assets"]
                     paths[label_name]["assets"] = list(set(paths[label_name]["assets"]))
-                    print(label_name, paths[label_name]["assets"])
 
         return paths
 
