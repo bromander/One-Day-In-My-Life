@@ -496,7 +496,7 @@ class Scene:
 
     # ===== ГЕНЕРАТОРЫ =====
 
-    def _effect(self, t, effect: Optional[str] = None):
+    def _effect_progress(self, t, effect: Optional[str] = None):
         if effect:
             return Ease.prepare_effect(effect, t)
         else:
@@ -517,7 +517,7 @@ class Scene:
                 continue
 
             progress = min(progress + dt / duration, 1.0)
-            progress_ease = self._effect(progress, effect)
+            progress_ease = self._effect_progress(progress, effect)
             new_alpha = round(progress_ease * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
@@ -542,7 +542,7 @@ class Scene:
                 continue
 
             progress = min(progress + dt / duration, 1.0)
-            progress_ease = self._effect(progress, effect)
+            progress_ease = self._effect_progress(progress, effect)
             new_alpha = 255 - round(progress_ease * 255)
 
             if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
