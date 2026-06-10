@@ -362,7 +362,7 @@ class Scene:
 
             return None
 
-        if isinstance(file_name, str):
+        elif isinstance(file_name, str):
             sprite = scene.get_sprite(file_name)
             if sprite is None:
                 raise FileNotFoundError(f"File {file_name} not found!")
@@ -492,7 +492,6 @@ class Scene:
         self.g.scene.clear_layer("bg")
         self.g.scene.clear_layer("animated_sprites")
         self.add_sprite(cutscene, layer="animated_sprites", at=(0.5, 0.5))
-
 
     # ===== ГЕНЕРАТОРЫ =====
 

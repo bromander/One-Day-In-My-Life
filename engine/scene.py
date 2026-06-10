@@ -57,6 +57,17 @@ class Scene:
             return sprite
         return None
 
+    def find_sprite_in_scene(self, sprite_filename: str):
+        for layer, sprites in self.data.items():
+            if layer != "bg_parallax":
+                if sprite_filename in sprites:
+                    return sprites[sprite_filename]
+            else:
+                for parallax_data in sprites:
+                    parallax_sprite: Sprite = parallax_data["sprite"]
+                    if sprite_filename == str(parallax_sprite.texture.file_path.name):
+                        return parallax_sprite
+
     def on_resize(self, width, height):
         for i in self.data["bg"].values():
             i: Sprite = i

@@ -94,9 +94,13 @@ class SpriteEffects:
                 progress_ease_new = self._effect(progress_new)
                 progress_ease_old = self._effect(progress)
 
-                new_sprite.alpha = round(start_new + (255 - start_new) * progress_ease_new)
+                new_sprite.alpha = round(
+                    start_new + (255 - start_new) * progress_ease_new
+                )
                 if use_old_sprite:
-                    old_sprite.alpha = round(start_old + (0 - start_old) * progress_ease_old)
+                    old_sprite.alpha = round(
+                        start_old + (0 - start_old) * progress_ease_old
+                    )
 
     class Slide_effect:
         def __init__(
@@ -106,7 +110,9 @@ class SpriteEffects:
             ease_dissolve_effect: Optional[str] = "ease_in_out_cubic",
             ease_slide_effect: Optional[str] = "ease_in_out_cubic",
             offset: Optional[int] = None,
-            side_from: Literal["left", "top", "right", "bottom", "auto_horizontal", "auto_vertical"] = "auto_horizontal"
+            side_from: Literal[
+                "left", "top", "right", "bottom", "auto_horizontal", "auto_vertical"
+            ] = "auto_horizontal",
         ) -> None:
             """
             Отвечает эа эффект растворения
@@ -155,7 +161,9 @@ class SpriteEffects:
                     else:
                         slide_offset = (start_pos[0], start_pos[1] + offset[1])
                 case _:
-                    raise ValueError(f"Значение параметра side_from у Slide_effect спарйта {sprite.texture.file_path.name} не существует!")
+                    raise ValueError(
+                        f"Значение параметра side_from у Slide_effect спарйта {sprite.texture.file_path.name} не существует!"
+                    )
 
             return slide_offset
 
@@ -163,11 +171,10 @@ class SpriteEffects:
 
             duration = max(self.duration * self.g.sm.Volume.fade_speed, 0.001)
 
-
             start_pos = (sprite.center_x, sprite.center_y)
 
             if self.offset is None:
-                offset = (sprite.width / 2, sprite.height /2)
+                offset = (sprite.width / 2, sprite.height / 2)
             else:
                 offset = (self.offset, self.offset)
 
@@ -185,14 +192,22 @@ class SpriteEffects:
                     continue
 
                 progress = min(progress + dt / duration, 1.0)
-                progress_dissolve_ease = self._effect(progress, self.ease_dissolve_effect)
+                progress_dissolve_ease = self._effect(
+                    progress, self.ease_dissolve_effect
+                )
                 progress_slide_ease = self._effect(progress, self.ease_slide_effect)
 
                 new_alpha = round(
                     start_alpha + (target_alpha - start_alpha) * progress_dissolve_ease
                 )
-                new_x = slide_offset[0] + (start_pos[0] - slide_offset[0]) * progress_slide_ease
-                new_y = slide_offset[1] + (start_pos[1] - slide_offset[1]) * progress_slide_ease
+                new_x = (
+                    slide_offset[0]
+                    + (start_pos[0] - slide_offset[0]) * progress_slide_ease
+                )
+                new_y = (
+                    slide_offset[1]
+                    + (start_pos[1] - slide_offset[1]) * progress_slide_ease
+                )
                 sprite.center_x = round(new_x)
                 sprite.center_y = round(new_y)
 
@@ -214,7 +229,6 @@ class SpriteEffects:
 
             total_duration = duration_old
 
-
             start_pos = (new_sprite.center_x, new_sprite.center_y)
 
             if self.offset is None:
@@ -225,7 +239,6 @@ class SpriteEffects:
             slide_offset = self._get_slide_offset(start_pos, offset, new_sprite)
 
             new_sprite.center_x, new_sprite.center_y = slide_offset
-
 
             elapsed = 0.0
             progress = 0.0
@@ -245,18 +258,28 @@ class SpriteEffects:
                     progress = min(elapsed / duration_new, 1.0)
                     progress_new = min(progress, 1.0)
 
-                progress_ease_new = self._effect(progress_new, self.ease_dissolve_effect)
+                progress_ease_new = self._effect(
+                    progress_new, self.ease_dissolve_effect
+                )
                 progress_ease_old = self._effect(progress, self.ease_dissolve_effect)
 
-                new_sprite.alpha = round(start_new + (255 - start_new) * progress_ease_new)
+                new_sprite.alpha = round(
+                    start_new + (255 - start_new) * progress_ease_new
+                )
                 if use_old_sprite:
-                    old_sprite.alpha = round(start_old + (0 - start_old) * progress_ease_old)
-
-
+                    old_sprite.alpha = round(
+                        start_old + (0 - start_old) * progress_ease_old
+                    )
 
                 progress_slide_ease = self._effect(progress_new, self.ease_slide_effect)
 
-                new_x = slide_offset[0] + (start_pos[0] - slide_offset[0]) * progress_slide_ease
-                new_y = slide_offset[1] + (start_pos[1] - slide_offset[1]) * progress_slide_ease
+                new_x = (
+                    slide_offset[0]
+                    + (start_pos[0] - slide_offset[0]) * progress_slide_ease
+                )
+                new_y = (
+                    slide_offset[1]
+                    + (start_pos[1] - slide_offset[1]) * progress_slide_ease
+                )
                 new_sprite.center_x = round(new_x)
                 new_sprite.center_y = round(new_y)

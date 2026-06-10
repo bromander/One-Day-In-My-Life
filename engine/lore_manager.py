@@ -308,10 +308,19 @@ class LoreManager:
 
         return True
 
-    def unload_assets(self, label) -> None:
+    def unload_assets(
+        self,
+        label,
+        scan_now: bool = True,
+        scan_next: bool = True,
+        scan_last=True,
+    ) -> None:
         """
         Выгружает ненужные ассеты из памяти
         :param label: Название текущего лейбла
+        :param scan_now: Проверяет по текущему лейблу
+        :param scan_next: Проверяет по следующему лейблу
+        :param scan_last: Проверяет по прошлому лейблу
         """
 
         loaded_assets = set(g.fm.textures.copy().keys()).union(
@@ -321,7 +330,8 @@ class LoreManager:
         files_pack = [
             file_name
             for file_name in loaded_assets
-            if self._can_unload_asset(file_name, label)
+            if self._can_unload_asset(file_name, label, scan_now, scan_next, scan_last)
+            and not g.scene.find_sprite_in_scene(file_name)
         ]
 
         if files_pack:
@@ -372,7 +382,7 @@ class LoreManager:
         for label, assets in assets_pack.items():
             g.fm.load_assets(assets, label)
 
-        self.unload_assets(label)
+        self.unload_assets(label, scan_last=False)
 
     def jump(self, label: str, pose: int) -> None:
         """
@@ -498,6 +508,8 @@ class Reorganize:
             paths[label_name]["lore"] = split
             paths[label_name]["assets"] = self._guess_assets(unsplit)
 
+        paths = self._check_assets(paths)
+
         return paths
 
     def _split_code(self, unsplitted_lore: str) -> list:
@@ -527,6 +539,52 @@ class Reorganize:
                 return potential_asset
 
         return None
+
+    def _create_graf(self, lore_data: dict) -> dict[str : list[str]]:
+
+        graf = {}
+
+        for label_name in lore_data.keys():
+            for line in lore_data[label_name]["lore"]:
+                under_lines = [i.lstrip() for i in line.splitlines()]
+
+                for line in under_lines:
+                    if "Lore.jump(" in line:
+                        label_jump = re.split(r"[()]", line)
+                        label_jump = label_jump[
+                            label_jump.index("Lore.jump") + 1
+                        ]  # Ну вдург там скобки ещё поставит ктот
+                        label_jump = label_jump.strip("'")
+
+                        if label_name not in graf:
+                            graf[label_name] = [
+                                label_jump,
+                            ]
+                        else:
+                            graf[label_name].append(label_jump)
+        return graf
+
+    def _check_assets(self, paths: dict[str:dict]) -> dict:
+        first = True
+
+        graph = self._create_graf(paths)
+
+        for label_name, label_data in paths.items():
+            if first:
+                first = False
+                continue
+
+            if "set_scene(" not in "".join(label_data["lore"]):
+                labels_to = [
+                    node for node, neighbors in graph.items() if label_name in neighbors
+                ]
+
+                for label_to in labels_to:
+                    paths[label_name]["assets"] += paths[label_to]["assets"]
+                    paths[label_name]["assets"] = list(set(paths[label_name]["assets"]))
+                    print(label_name, paths[label_name]["assets"])
+
+        return paths
 
     def _guess_assets(self, unsplit_lore: str) -> list[str]:
         """
