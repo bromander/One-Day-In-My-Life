@@ -637,22 +637,6 @@ class Views:
                         res = res if res is not None else "NEXT"
                         return res
 
-                    case "SHOW_SPLASH":
-                        if (now["data"]["name"] != ")" and now["data"]["name"]) or now[
-                            "data"
-                        ]["description"] != "":
-                            if now["data"]["show_splash"]:
-                                g.actions.start_action(
-                                    "show_splash", now["data"], "together"
-                                )
-                            g.da.update(now["data"]["name"], now["data"]["description"])
-                            self.session_data["description"] = str(
-                                now["data"]["description"]
-                            )
-                            self.session_data["name"] = str(now["data"]["name"])
-
-                        return "NEXT"
-
                     case _:
                         logger.error(f"Неопознанная команда: {now}")
                         return "NEXT"

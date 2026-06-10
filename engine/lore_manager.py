@@ -143,9 +143,12 @@ class LoreFileManager:
         try:
             loaded = json.loads(zlib.decompress(b64decode(data)))
         except (  # Обрабатываем случаи, если данные были повреждены
-            binascii_Error, ValueError, TypeError,  # Повреждение на уровне Base64
-            zlib.error,  # Повреждение на уровне zlib
-            json.JSONDecodeError, UnicodeDecodeError,  # Повреждение на уровне JSON
+            binascii_Error,
+            ValueError,
+            TypeError,  # Повреждения на уровне Base64
+            zlib.error,  # Повреждения на уровне zlib
+            json.JSONDecodeError,
+            UnicodeDecodeError,  # Повреждения на уровне JSON
         ):
             logger.error(
                 f"Данные лейбла {label_name} были повреждены! Перекомпилируем..."

@@ -1,6 +1,7 @@
 import re
 from typing import Literal
 from .namespace_classmethod import *
+import time
 
 
 class Namespace:
@@ -62,7 +63,14 @@ class Namespace:
         """
         Заставляет игру... Ждать
         """
-        self.g.actions.start_action("wait", {"time": duration}, stream)
+
+        def _wait(duration):
+            start_time = time.time()
+
+            while time.time() - start_time < duration:
+                yield
+
+        self.g.actions.active_generators.add_generator(stream, _wait(duration), "wait")
 
     def end(self):
         self.g.lm.jump(self.g.DEFAULT_START_LABEL, 0)

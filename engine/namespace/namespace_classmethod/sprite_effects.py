@@ -15,7 +15,7 @@ class SpriteEffects:
             self,
             g,
             duration: float = 1.0,
-            additional_effect: Optional[str] = "ease_in_out_cubic",
+            ease_effect: Optional[str] = "ease_in_out_cubic",
         ) -> None:
             """
             Отвечает эа эффект растворения
@@ -23,13 +23,13 @@ class SpriteEffects:
             """
             self.name = "DISSOLVE"
             self.duration = duration
-            self.additional_effect = additional_effect
+            self.ease_effect = ease_effect
 
             self.g = g
 
         def _effect(self, t):
-            if self.additional_effect:
-                return Ease.prepare_effect(self.additional_effect, t)
+            if self.ease_effect:
+                return Ease.prepare_effect(self.ease_effect, t)
             else:
                 return t
 

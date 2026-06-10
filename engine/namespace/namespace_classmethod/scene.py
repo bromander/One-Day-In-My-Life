@@ -1,6 +1,8 @@
 from typing import Optional, Literal, Union, Tuple
 from arcade import get_window, Sprite, TextureAnimationSprite
+
 from .exceptions import ActionNotFoundError
+from .Ease import Ease
 
 
 class Scene:
@@ -79,7 +81,7 @@ class Scene:
 
     def _get_size(
         self,
-        size: Optional[Union[int, float, Tuple[int], Tuple[float]]],
+        size,
         sprite_size: tuple,
     ) -> tuple:
         if size is None:
@@ -118,14 +120,8 @@ class Scene:
     def add_sprite(
         self,
         filename_or_sprite: [str, Sprite, TextureAnimationSprite],
-        at: Optional[
-            Union[
-                Literal["left", "right", "center"],
-                tuple[int, int],
-                tuple[float, float],
-            ]
-        ] = None,
-        size: Optional[Union[tuple[int, int], int]] = None,
+        at=None,
+        size=None,
         angle: int = 0.0,
         effect=None,
         stream: Literal[
@@ -212,14 +208,8 @@ class Scene:
     def show_character(
         self,
         character: str,
-        at: Optional[
-            Union[
-                Literal["left", "right", "center"],
-                tuple[int, int],
-                tuple[float, float],
-            ]
-        ] = None,
-        size: Optional[Union[int, float, Tuple[int], Tuple[float]]] = None,
+        at=None,
+        size=None,
         effect=None,
         stream: Literal[
             "consistently", "consistently_async", "together"
@@ -320,7 +310,7 @@ class Scene:
     def set_scene(
         self,
         file_name: Optional[Union[str, Sprite]],
-        size: Optional[Union[tuple[int, int], int]] = None,
+        size=None,
         layer: int = 0,
         effect=None,
         stream: Literal[
@@ -447,7 +437,7 @@ class Scene:
     def move(
         self,
         sprite: str,
-        position: tuple[Tuple[int, float]],
+        move_to,
         speed: float,
         stream: Literal[
             "consistently", "consistently_async", "together"
@@ -456,17 +446,19 @@ class Scene:
         """
         Перемещает персонажа из текущего положения в определённую координату
         :param sprite: Название спрайта
-        :param position: Положение
+        :param move_to: Положение
         :param speed: Скорость передвижения
         :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
         """
-        now = {"character": sprite, "pos": position, "speed": speed}
-        self.actions.start_action("move_sprite", now, stream=stream)
+        self.actions.active_generators.add_generator(
+            stream, self._move_gen(sprite, speed, move_to), "move_sprite"
+        )
 
     def fade(
         self,
         type: Literal["fadein", "fadeout"],
         duration: float,
+        effect: Optional[str] = "ease_in_quad",
         stream: Literal[
             "consistently", "consistently_async", "together"
         ] = "consistently",
@@ -475,14 +467,19 @@ class Scene:
         Создаёт эффект фейдинга на экране
         :param type: Тип фейда "fadein" или "fadeout"
         :param duration: Продолжительность анимации
+        :param effect: Ease эффект появления фейда
         :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
         :raises ActionNotFoundError: Если type не существует
         """
         match type:
             case "fadein":
-                self.actions.start_action("fadein", {"time": duration}, stream=stream)
+                self.actions.active_generators.add_generator(
+                    stream, self._fadein_gen(duration, effect), "fadein"
+                )
             case "fadeout":
-                self.actions.start_action("fadeout", {"time": duration}, stream=stream)
+                self.actions.active_generators.add_generator(
+                    stream, self._fadeout_gen(duration, effect), "fadeout"
+                )
             case _:
                 raise ActionNotFoundError(f'Action "{type}" now found!')
 
@@ -495,3 +492,105 @@ class Scene:
         self.g.scene.clear_layer("bg")
         self.g.scene.clear_layer("animated_sprites")
         self.add_sprite(cutscene, layer="animated_sprites", at=(0.5, 0.5))
+
+
+    # ===== ГЕНЕРАТОРЫ =====
+
+    def _effect(self, t, effect: Optional[str] = None):
+        if effect:
+            return Ease.prepare_effect(effect, t)
+        else:
+            return t
+
+    def _fadein_gen(self, time: float, effect: Optional[str] = None):
+
+        duration = max(time * self.g.sm.Volume.fade_speed, 0.001)
+        progress = 0.0
+        last_alpha = self.g.scene["fade"]["fade"].alpha
+        fade_sprite = self.g.scene["fade"]["fade"]
+        min_step = 1
+
+        while True:
+            dt = yield
+
+            if dt is None or dt <= 0:
+                continue
+
+            progress = min(progress + dt / duration, 1.0)
+            progress_ease = self._effect(progress, effect)
+            new_alpha = round(progress_ease * 255)
+
+            if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
+                fade_sprite.alpha = new_alpha
+                last_alpha = new_alpha
+
+            if progress >= 1.0:
+                return
+
+    def _fadeout_gen(self, time: float, effect: Optional[str] = None):
+
+        duration = max(time * self.g.sm.Volume.fade_speed, 0.001)
+        progress = 0.0
+        last_alpha = self.g.scene["fade"]["fade"].alpha
+        fade_sprite = self.g.scene["fade"]["fade"]
+        min_step = 1
+
+        while True:
+            dt = yield
+
+            if dt is None or dt <= 0:
+                continue
+
+            progress = min(progress + dt / duration, 1.0)
+            progress_ease = self._effect(progress, effect)
+            new_alpha = 255 - round(progress_ease * 255)
+
+            if abs(new_alpha - last_alpha) >= min_step or progress >= 1.0:
+                fade_sprite.alpha = new_alpha
+                last_alpha = new_alpha
+
+            if progress >= 1.0:
+                fade_sprite.alpha = 0
+                return
+
+    def _move_gen(self, sprite_name: str, speed: float, move_to):
+        main = self.g.main
+
+        sprite = self.g.scene["sprites"][sprite_name]
+        speed *= 1000
+
+        x_norm, y_norm = self._get_norm(move_to, sprite_name)
+
+        target_x = main.width * x_norm
+        target_y = main.height * y_norm
+
+        speed = abs(speed) if speed != 0 else 0.001
+
+        start_x = sprite.center_x
+        start_y = sprite.center_y
+        full_distance = ((target_x - start_x) ** 2 + (target_y - start_y) ** 2) ** 0.5
+
+        if full_distance < 1:
+            return None
+
+        while True:
+            dt = yield
+
+            if dt is None or dt <= 0:
+                continue
+
+            current_x = sprite.center_x
+            current_y = sprite.center_y
+            dx = target_x - current_x
+            dy = target_y - current_y
+
+            distance = (dx**2 + dy**2) ** 0.5
+            step = speed * dt
+
+            if distance <= step:
+                sprite.center_x = target_x
+                sprite.center_y = target_y
+                break
+            else:
+                sprite.center_x += (dx / distance) * step
+                sprite.center_y += (dy / distance) * step
