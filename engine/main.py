@@ -544,6 +544,8 @@ class Views:
             g.am.stop_music()
             g.am.stop_voice()
 
+            self.window.set_fullscreen(True)
+            time.sleep(0.01)
             self.window.set_fullscreen(False)
             self.window.size = (1024, 786)
             game = Views.GameMenu(show_lc=True)
