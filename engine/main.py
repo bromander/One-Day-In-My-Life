@@ -2374,6 +2374,9 @@ class Views:
 
         def on_mouse_motion(self, x, y, dx, dy):
 
+            if self.settings_manager.waiting_settings:
+                return None
+
             for e, layer in enumerate(self.layers):
                 if hasattr(layer["sprite"], "freeze"):
                     if layer["sprite"].freeze:
@@ -2874,6 +2877,9 @@ class Views:
             layer["sprite"].center_y = layer["original_y"] + normalized_y * max_offset_y
 
         def on_mouse_motion(self, x, y, dx, dy):
+
+            if self.settings_manager.waiting_settings:
+                return None
 
             for e, layer in enumerate(self.layers):
                 if hasattr(layer["sprite"], "clicked"):

@@ -823,7 +823,7 @@ class Managers:
                 split_lines = self._split_by_length(line, 60)
 
                 for sline in split_lines:
-                    y_pos = (self.window.height * 0.2) - line_counter * 40
+                    y_pos = ((self.window.height * 0.2) - line_counter * 40) + 15
 
                     t = agui.UILabel(
                         text=sline,

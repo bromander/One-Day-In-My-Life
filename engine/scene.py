@@ -183,8 +183,6 @@ class Scene:
     def update(self, delta_time=1 / 60) -> None:
         """Обновляет все спрайты"""
 
-        len_sprites = 0
-
         for layer, layer_content in self.data.items():
             if layer == "animated_sprites":
                 for id, sprite in layer_content.items():
@@ -233,6 +231,10 @@ class Scene:
         layer["sprite"].center_y = layer["original_y"] + normalized_y * max_offset_y
 
     def on_mouse_motion(self, x, y):
+
+        if hasattr(g.main, "settings_manager"):
+            if g.main.settings_manager.waiting_settings:
+                return None
 
         for e, layer in enumerate(self.data["bg_parallax"]):
             if hasattr(layer["sprite"], "clicked"):
