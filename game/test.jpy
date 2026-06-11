@@ -30,7 +30,7 @@ label main("Пролог", "А всё так хорошо начиналось!"
 
     <> "По улице идёт мадама с выражением лица вселенской усталости. Периодически она с тоской смотрит на тех, кто проводит это время в прогулке или сидя в уютном кафе, либо хмуро провожает взглядом школьников, пробегающих мимо, и морщится на шум."
 
-    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Dissolve(2))
+    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Slide(1.5))
     <shak> "Ужасные дети. Им бы готовиться к экзаменам, а не балду гонять. \n Но нет, учёба это же просто шутка..."
 
     <> "Она щурится на солнце, поправляя очки и бормочет под нос."
@@ -80,6 +80,7 @@ label shop_box_office()
 
     <> "У каждого есть минуты слабости."
 
+    Scene.fade("fadein", 2)
     Screen.call_view("ShopCollecting")
 
     Scene.set_scene_parallax([("box_office_0.png", 0.0), ("box_office_0.png", 0.2), ("box_office_1.png", 0.4),  ("box_office_2.png", 0.6),  ("box_office_3.png", 0.7)])
@@ -92,10 +93,10 @@ label shop_box_office()
     <> "Порой жизнь не жалеет и таких индивидов."
 
     <shak> "Доброго дня,\n {w=0.5}Или типа того…"
-    Scene.show_character(character="masorubka funny", at="center")
+    Scene.show_character(character="masorubka funny", at="center", effect=SpriteEffects.Dissolve(0.2))
     <masorubka> "С днём дурака… \n {w=0.5}Или типа того…"
     <shak> "Да, дурака… \n {w=0.5}Или типа того…"
-    Scene.show_character(character="masorubka netural", at="center")
+    Scene.show_character(character="masorubka netural", at="center", effect=SpriteEffects.Dissolve(0.2))
     <> "Дабы не продолжать этот марафон неловких ответов, кассир преступил к пробиванию содержимого корзины"
 
     if len(Define.collected_items) == 1:
@@ -110,7 +111,7 @@ label not_enough_money():
     <masorubka> "ммм..."
     <masorubka> "Тут не хватает."
     <shak> "Ой. Сколько?"
-    Scene.show_character(character="masorubka ugly", at="center")
+    Scene.show_character(character="masorubka ugly", at="center", effect=SpriteEffects.Dissolve(0.2))
     <masorubka> "Сама считай..."
     Lore.jump("shop_box_office_much_prod")
 
@@ -120,14 +121,14 @@ label too_much_enough_money():
     <masorubka> "ммм..."
     <masorubka> "Тут слишком много."
     <shak> "Ну так выдайте сдачу."
-    Scene.show_character(character="masorubka ugly", at="center")
+    Scene.show_character(character="masorubka ugly", at="center", effect=SpriteEffects.Dissolve(0.2))
     <masorubka> "Не. Сама считай..."
     Lore.jump("shop_box_office_much_prod")
 
 label shop_box_money_continue():
     <masorubka> "Ну вроде всё… вам пакет нужен или нет?"
     <shak> "Я с шопперами, спасибо…"
-    Scene.show_character(character="masorubka ugly", at="center", effect=SpriteEffects.Dissolve(0.1))
+    Scene.show_character(character="masorubka ugly", at="center", effect=SpriteEffects.Dissolve(0.2))
     <masorubka> "ок… \n {w=0.1}ну тогда всего доброго и не возвращайтесь… \n {w=0.5}или типа того…"
 
     Lore.jump("shop_box_office_end")
@@ -138,7 +139,7 @@ label shop_box_office_much_prod():
     Scene.fade("fadein", 2)
     Screen.call_view("ShopGetting")
 
-    Scene.show_character(character="masorubka netural", at="center")
+    Scene.show_character(character="masorubka netural", at="center", effect=SpriteEffects.Dissolve(0.2))
     Scene.fade("fadeout", 2)
 
     <> "Жаклин выложила деньги на кассу."
@@ -156,7 +157,7 @@ label shop_box_office_much_prod():
 
 label shop_box_office_one_prod():
 
-    Scene.show_character(character="masorubka ugly", at="center")
+    Scene.show_character(character="masorubka ugly", at="center", effect=SpriteEffects.Dissolve(0.2))
     <masorubka> "Ну типа… {w=0.1}блин…"
     <shak> "Что-то не так?"
     <masorubka> "Уйдите."
@@ -168,7 +169,7 @@ label shop_box_office_one_prod():
 
 label shop_box_office_end():
     <shak> "Грубо…"
-    Scene.show_character(character="masorubka funny", at="center")
+    Scene.show_character(character="masorubka funny", at="center", effect=SpriteEffects.Dissolve(0.2))
     <masorubka> "Мне слишком мало платят для приличного общения…"
 
     <> "Неловкость так и смердела в магазине, пришлось уйти, чтобы перестать её вдыхать."
@@ -191,7 +192,7 @@ label bread():
 
 label road_to_home("Путь домой", "Ну наконец-то", show_splash = True, speed = 2):
     Audio.play("music", "outside_music.mp3", effect="fade")
-    Scene.set_scene("edwin_murray_sidit_sexsy.png")
+    Scene.set_scene("edwin_murray_sidit_sexsy.png", effect=SpriteEffects.Dissolve(1.0))
     Scene.fade("fadeout", 1)
 
     <> "Весна так же продолжает бушевать всеми своими клоунскими, под стать празднику красками."
@@ -207,13 +208,13 @@ label road_to_home_continue():
     <> "Тем не менее, последние шаги до дома были самыми тихими за этот день. Были бы ещё тише, если бы не скрип карандаша о бумагу блокнота в руках джентльмена, сидящего на скамейке в буром костюме с кремовым пиджаком и в очках."
     <> "Безымянный сосед, как его называла Жаклин, потому что каждый раз забывала его имя при встрече. Интересно, что видела она его довольно редко, как будто он вечно то появлялся то исчезал бесследно."
 
-    Scene.show_character("shak usual 1", at="right", effect=SpriteEffects.Dissolve(0.5), stream = "together")
-    Scene.show_character("ed usual", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("shak usual 1", at="right", effect=SpriteEffects.Slide(1.0), stream = "together")
+    Scene.show_character("ed usual", at="left", effect=SpriteEffects.Dissolve(1.0))
     <ed> "Миссис Жаклин! \n Рад вас сегодня видеть! \n Как ваши дела? \n Надеюсь, детишки вам ещё не докучали, нынче этого избежать всё трудней."
     <shak> "Да, мистер… \n Настроение вполне… \n В пределах нормы…"
     <ed> "Ну и чудесно, но, тем не менее, выскажу свои опасения, на районе я всё чаще начал слышать какие-то странные звуки, будто какой-то медведь или… \n {w=0.5}орёл… \n {w=0.2}трудно сказать…"
     <> "Странное высказывание даже для него, такое сравнение не только вгоняет в ступор, но и делает ситуацию всё более неловкой."
-    Scene.show_character("shak usual")
+    Scene.show_character("shak usual", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Я возьму ваши опасения на заметку, а теперь мне нужно домой… {w=0.1}мистер…"
     <ed> "Хорошего дня, Мисс Жаклин!"
     Scene.fade("fadein", 1)
@@ -223,7 +224,7 @@ label road_to_home_continue():
     Scene.show_character("ed goner", at="left")
     Scene.fade("fadeout", 1)
     <shak> "Эй мистер…!"
-    Scene.show_character("shak usual 1")
+    Scene.show_character("shak usual 1", effect=SpriteEffects.Dissolve(0.2))
     <> "Оборот в ту сторону не дал результата. \"Безымянный сосед\" пропал, будто его на том месте никогда и не было."
     <> "Это cтранно, но, тем не менее, пора домой."
     Scene.fade("fadein", 3)
@@ -333,9 +334,9 @@ label food_choice():
 
     # хтонь успокаивается и сваливает обратно в косможижу
 
-    Scene.show_character("shak angry", at="right", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("shak angry", at="right", effect=SpriteEffects.Slide(1.0))
     <shak> "Напомни, почему я всё ещё держу тебя тут?"
-    Scene.show_character("oz mage 2", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz mage 2", at="left", effect=SpriteEffects.Slide(1.0))
     <oz> "Потому что я помогаю со счетами?"
 
     Scene.fade("fadein", 2)
@@ -343,14 +344,14 @@ label food_choice():
     Scene.set_scene("home_hallway.jpg")
     Scene.fade("fadeout", 1)
 
-    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Dissolve(0.5))
     <shak> "Не помогаешь."
-    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(1.0))
+    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve6(0.5))
     <oz> "Ну значит, это моя неотразимая харизма!"
     Scene.show_character("shak usual 1")
     <shak> "..."
     <oz> "..."
-    Scene.show_character("oz mage 3", at="left")
+    Scene.show_character("oz mage 3", at="left", effect=SpriteEffects.Dissolve(0.2))
     <shak> "...убирать беспорядок будешь сама."
     Lore.jump("homework")
 
@@ -394,38 +395,38 @@ label survey_program_uncorrect():
 
 
 label home_late_continue():
-    Scene.show_character("oz table 1", at=(0.3, 0.615), effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("oz table 1", at=(0.3, 0.615), effect=SpriteEffects.Slide(0.5, side_from="top"))
     <> "Незаметно за столом возникла ещё одна личность. Она некоторое время понаблюдала за работой с ухмылкой, а потом внезапно спросила:"
     <oz> "Ну, как продвигается?~ "
     <> "Жаклин пробормотала что-то невнятное."
     <oz> "Есть положительные изменения или всё стабильно?"
     <shak> "Ну… у некоторых, очевидно, вообще ничего никогда не меняется. \n Ленивые заразы… как же я устала…"
     <oz> "Могу немного облегчить твои страдания~"
-    Scene.show_character("oz na")
+    Scene.show_character("oz na", effect=SpriteEffects.Dissolve(0.2))
     <> "Она продемонстрировала какую-то чёрную склизкую креветку, неестественно переливающуюся на свету."
     <oz> "Хочешь запечатать в одну из работ и вспугнуть кого-нибудь?"
     <> "Жаклин вытаращилась на неё."
-    Scene.show_character("shak book discontent")
+    Scene.show_character("shak book discontent", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Ты издеваешься?.. Нет, я знаю, что ты любишь устраивать такие фокусы – к слову, незачем было подкладывать их мне в кошель – но это совсем выходит за границы. Я ещё не настолько-"
     <> "Ms. Ф.ОЗИНАД ловко выхватила один из листочков, взглянула на него с усмешкой и протянула Жаклин, подняв брови."
-    Scene.show_character("oz derji")
+    Scene.show_character("oz derji", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Вот эта джекушка полупокера буквально написала: «Я не готовилась, и что вы мне сделаете?»."
     
-    Scene.show_character("shak book angry")
+    Scene.show_character("shak book angry", effect=SpriteEffects.Dissolve(0.2))
     <> "Жаклин вспыхнула и сжала челюсти, глядя на листок. Одно из её век дёрнулось, губы дрогнули, превращаясь в истеричную улыбку. Затем она подняла взгляд на собеседницу."
     <shak> "Нет, знаешь что… вперёд. Давай сюда свою мерзость."
-    Scene.show_character("shak book discontent")
+    Scene.show_character("shak book discontent", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Это была последняя капля, видит вселенная – я держалась до последнего. Запечатывай что хочешь, хуже уже не будет. Может, хотя бы раз я не увижу эту глупую улыбку на лице Джексон."
-    Scene.show_character("shak book discontent")
+    Scene.show_character("shak book discontent", effect=SpriteEffects.Dissolve(0.2))
     <> "Ms. Ф.ОЗИНАД хихикнула, втирая существо в её руках в листок. Оно быстро растворилось в нём, сливаясь с чернилами."
     <oz> "Вот и треснула твоя выдержка, хе-хе~ Не парься, оно в любом случае заслуженно. Они там все бестолочи, а ты у нас главный недооценённый великомученик~"
     Scene.show_character("oz table 1")
     <> "Она дружески хлопнула подругу по плечу. Жаклин криво улыбнулась и потянулась, разминая затёкшую шею."
     Scene.show_character("shak funny 3", at=(0.75, 0.5), effect=SpriteEffects.Dissolve(0.2))
     <shak> "Иногда я задумываюсь, ради чего вообще пытаюсь, и есть ли в этом настолько много моей вины… а потом смотрю на тебя и понимаю, что, в целом, всё ещё неплохо."
-    Scene.show_character("oz table 2")
+    Scene.show_character("oz table 2", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Ну и супер! Ты давай держись, я жду твоих абсурдных историй с работы как вечернюю газету~"
-    Scene.show_character("shak funny 2")
+    Scene.show_character("shak funny 2", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Только благодаря тебе и держусь, Оз."
     Scene.set_scene(None)
     Scene.set_scene("dz_ending.png", effect=SpriteEffects.Dissolve(1.0))
@@ -446,16 +447,16 @@ label home_first("Дом милый дом", "Это что за покемон?
     Audio.play("music", "ponos_deda_(remix).mp3", effect="fade", volume=0.5)
     Scene.fade("fadeout", 1)
 
-    Scene.show_character("oz meet 1", at="left", effect=SpriteEffects.Dissolve(0.5), stream = "together")
-    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Dissolve(0.5), stream = "together")
+    Scene.show_character("oz meet 1", at="left", effect=SpriteEffects.Slide(1.0), stream = "together")
+    Scene.show_character("shak usual", at="right", effect=SpriteEffects.Slide(1.0), stream = "together")
     <> "В прихожую впорхнула леди в вычурном претенциозном наряде со смутными претензиями на готику."
     <> "Было удивительно, как вся эта чопорная одежда, покрывающая чуть ли не всё тело, не заставляла её выглядеть упаренной вусмерть."
     <> "Напротив, обладательница сего гардероба выглядела вполне жизнерадостно."
     <oz> "А ВОТ И МОЯ ЛЮБИМАЯ СОСЕДУШКАААА!~"
     <> "Жаклин устало поморщилась."
-    Scene.show_character("shak angry")
+    Scene.show_character("shak angry", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Нельзя ли потише... "
-    Scene.show_character("oz meet 2")
+    Scene.show_character("oz meet 2", effect=SpriteEffects.Dissolve(0.2))
     <oz> "А у меня для тебя сюрприз! Хочешь узнать, какой?~"
 
     Lore.jump("home")
@@ -465,35 +466,36 @@ label home():
     <shak> "Я бы больше хотела, чтобы ты мне с пакетами помогла..."
     Data.trig_dialogue_window(False)
     Scene.start_cutscene("strashilka_xodit.gif")
-    wait(10.0)
-    Data.trig_dialogue_window(True)
-    Scene.set_scene("home_hallway.jpg")
 
-    Scene.show_character("shak angry", at="right", effect=SpriteEffects.Dissolve(0.5), stream = "together")
-    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(0.5))
+    wait(10.0)
+    Scene.set_scene("home_hallway.jpg")
+    Scene.show_character("shak angry", at="right")
+    Scene.show_character("oz meet 2", at="left")
+    Data.trig_dialogue_window(True)
+
     <shak> "...что это."
-    Scene.show_character("oz aww")
+    Scene.show_character("oz aww", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Это зайка)"
-    Scene.show_character("shak usual")
+    Scene.show_character("shak usual", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Чт- какой зайка, где ты *это* подобрала?.."
-    Scene.show_character("oz meet 3")
+    Scene.show_character("oz meet 3", effect=SpriteEffects.Dissolve(0.2))
     <oz> "С ПЕРВЫМ АПРЕЛЯ)))"
     <shak> "..."
-    Scene.show_character("oz meet 2")
+    Scene.show_character("oz meet 2", effect=SpriteEffects.Dissolve(0.2))
     <oz> ")))"
-    Scene.show_character("shak usual 1")
+    Scene.show_character("shak usual 1", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Оно хоть привито?"
     <oz> "Их не нужно прививать, я их достала прямиком из черничного моря ;3"
-    Scene.show_character("shak usual")
+    Scene.show_character("shak usual", effect=SpriteEffects.Dissolve(0.2))
     <shak> "*вздох смирения* И где ты взяла это черничное море? Не дай боже снова заляпаешь комнату своими порталами, оттирать будешь сама."
-    Scene.show_character("oz meet 4")
+    Scene.show_character("oz meet 4", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Да неееее, я не- \n {w=1.0} ОХ БЛИН СПАСИБО ЧТО НАПОМНИЛА ЗАКРЫТЬ-"
-    Scene.hide_sprite("oz", effect=SpriteEffects.Dissolve(0.1))
+    Scene.hide_sprite("oz", effect=SpriteEffects.Slide(0.5, side_from="right"))
     <shak> "Мгм, всегда пожалуйста"
     <oz> "Кто знает, какая дурь оттуда бы выползла, если б ты сейчас не сказала..."
+    Scene.show_character("shak funny 2", effect=SpriteEffects.Dissolve(0.2)) # Меня сука эта рожа бесит уже. Она накуренная какая-то ,kznm
     <shak> "А ты разве сама не знаешь?"
     <oz> "аъыь...!"
-    Scene.show_character("shak funny 2")
     <oz> "Окей, в этот раз подловила."
     <shak> "Это не то что бы сложно."
 

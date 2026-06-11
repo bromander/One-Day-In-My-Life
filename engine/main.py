@@ -89,6 +89,8 @@ class Views:
         def show_view(self, new_view: View) -> None:
             super().show_view(new_view)
             logger.warning(f"Открываем новое View: {new_view}")
+            if hasattr(self.current_view, "set_bg_by_scene_bg") and g.scene:
+                self.current_view.set_bg_by_scene_bg()
 
     class Main_template(arcade.View):
         def __init__(self) -> None:
@@ -540,6 +542,8 @@ class Views:
 
             g.actions.active_generators.clear()
 
+            g.lm.unload_assets(g.DEFAULT_START_LABEL)
+
             g.am.stop_sound()
             g.am.stop_music()
             g.am.stop_voice()
@@ -550,6 +554,7 @@ class Views:
             self.window.size = (1024, 786)
             game = Views.GameMenu(show_lc=True)
             self.window.show_view(game)
+            self.window.center_window()
 
         def talk_manager(
             self, pos_offset: int = 0, clicked: bool = True, do_snapshot: bool = True
@@ -1783,6 +1788,9 @@ class Views:
             g.actions = g.actions
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
+
+            self.window.background_color = (198, 166, 128)
+            self.background_color = (198, 166, 128)
 
             self.menu_v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 

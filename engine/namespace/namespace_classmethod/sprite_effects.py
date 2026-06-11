@@ -1,3 +1,4 @@
+import time
 from typing import Optional, Literal
 from arcade import Sprite, get_window
 
@@ -9,8 +10,8 @@ class SpriteEffects:
         self.Dissolve = lambda duration=1.0, additional_effect="ease_in_out_cubic": (
             self.Dissolve_effect(g, duration, additional_effect)
         )
-        self.Slide = lambda duration=1.0, additional_effect="ease_in_out_cubic": (
-            self.Slide_effect(g, duration, additional_effect)
+        self.Slide = lambda duration=1.0, ease_dissolve_effect="ease_in_out_cubic", ease_slide_effect="ease_in_out_cubic", offset=None, side_from="auto_horizontal": (
+            self.Slide_effect(g, duration, ease_dissolve_effect, ease_slide_effect, offset, side_from)
         )
 
     class Dissolve_effect:
@@ -119,7 +120,7 @@ class SpriteEffects:
             :param duration: Продолжительность эффекта
             :param ease_dissolve_effect: Ease эффект появления спрайта
             :param ease_slide_effect: Ease эффект движения спрайта
-            :param offset: Сколько пикселей спрайт будет двигаться. None, чтобы спрайт двигался половину своей ширины
+            :param offset: Сколько пикселей спрайт будет двигаться. None, чтобы спрайт двигался треть своей ширины
             :param side_from: С какой стороны будет выезжать спрайт
             """
             self.name = "SLIDE"
@@ -137,9 +138,14 @@ class SpriteEffects:
             else:
                 return t
 
-        def _get_slide_offset(self, start_pos: tuple, offset: tuple, sprite: Sprite):
+        def _get_slide_offset(self, start_pos: tuple, sprite: Sprite):
 
             window = get_window()
+
+            if self.offset is None:
+                offset = (sprite.width / 3, sprite.height / 3)
+            else:
+                offset = (self.offset, self.offset)
 
             match self.side_from:
                 case "left":
@@ -173,12 +179,7 @@ class SpriteEffects:
 
             start_pos = (sprite.center_x, sprite.center_y)
 
-            if self.offset is None:
-                offset = (sprite.width / 2, sprite.height / 2)
-            else:
-                offset = (self.offset, self.offset)
-
-            slide_offset = self._get_slide_offset(start_pos, offset, sprite)
+            slide_offset = self._get_slide_offset(start_pos, sprite)
 
             sprite.center_x, sprite.center_y = slide_offset
 
@@ -231,12 +232,7 @@ class SpriteEffects:
 
             start_pos = (new_sprite.center_x, new_sprite.center_y)
 
-            if self.offset is None:
-                offset = (new_sprite.width / 2, new_sprite.height / 2)
-            else:
-                offset = (self.offset, self.offset)
-
-            slide_offset = self._get_slide_offset(start_pos, offset, new_sprite)
+            slide_offset = self._get_slide_offset(start_pos, new_sprite)
 
             new_sprite.center_x, new_sprite.center_y = slide_offset
 
