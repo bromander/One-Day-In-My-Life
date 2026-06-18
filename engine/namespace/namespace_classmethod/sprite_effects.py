@@ -7,27 +7,35 @@ from .Ease import Ease
 
 class SpriteEffects:
     def __init__(self, g):
-        self.Dissolve = lambda duration=1.0, additional_effect="ease_in_out_cubic": (
-            self.Dissolve_effect(
-                g,
-                duration,
-                additional_effect
-            )
-        )
-        self.Slide = (
-            lambda duration=1.0, ease_dissolve_effect="ease_in_out_cubic", ease_slide_effect="ease_in_out_cubic", offset=None, side_from="auto_horizontal": (
-                self.Slide_effect(
-                    g,
-                    duration,
-                    ease_dissolve_effect,
-                    ease_slide_effect,
-                    offset,
-                    side_from,
-                )
-            )
+        self.g = g
+
+    def Dissolve(self,
+                 duration: float = 1.0,
+                 additional_effect: str = "ease_in_out_cubic"):
+
+        return self._Dissolve_effect(
+            self.g,
+            duration,
+            additional_effect
         )
 
-    class Dissolve_effect:
+    def Slide(self,
+              duration: float = 1.0,
+              offset: Optional[int] = None,
+              ease_dissolve_effect: str = "ease_in_out_cubic",
+              ease_slide_effect: str = "ease_in_out_cubic",
+              side_from: str = "auto_horizontal"):
+
+        return self._Slide_effect(
+            self.g,
+            duration,
+            ease_dissolve_effect,
+            ease_slide_effect,
+            offset,
+            side_from
+        )
+
+    class _Dissolve_effect:
         def __init__(
             self,
             g,
@@ -116,7 +124,7 @@ class SpriteEffects:
                         start_old + (0 - start_old) * progress_ease_old
                     )
 
-    class Slide_effect:
+    class _Slide_effect:
         def __init__(
             self,
             g,

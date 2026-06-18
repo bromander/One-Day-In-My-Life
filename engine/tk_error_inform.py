@@ -165,10 +165,10 @@ def get_save_path():
     if os.name == "nt":  # Windows
         # Используем %APPDATA% (C:\Users\Имя\AppData\Roaming\Название_игры)
         app_data = os.environ.get("APPDATA", os.path.expanduser("~"))
-        save_dir = os.path.join(app_data, "OneDay")
+        save_dir = os.path.join(app_data, g.GAME_SAVES_FOLDER_NAME)
     else:
         # Linux/Mac
-        save_dir = os.path.join(os.path.expanduser("~"), ".local", "share", "OneDay")
+        save_dir = os.path.join(os.path.expanduser("~"), ".local", "share", g.GAME_SAVES_FOLDER_NAME)
 
     os.makedirs(save_dir, exist_ok=True)
 

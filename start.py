@@ -13,14 +13,16 @@ import arcade
 import random
 import json
 from engine.main import Views
+from engine.errors_captor import ErrorsCaptor
 import warnings
 
 from engine.globals import g
+from engine.logger import get_logger
 
 # python -m nuitka --standalone --include-data-dir=./game/=game --windows-console-mode=attach --show-progress --assume-yes-for-downloads --jobs=12 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests --windows-icon-from-ico=Setuper/pineapple.ico --enable-plugin=tk-inter --output-filename=OneDay.exe start.py
 
 
-logger = g.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 def main():
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
     except Exception as e:
-        g.notice_crash(e)
+        ErrorsCaptor().notice_crash(e)
 
     # profiler.disable()  # Останавливаем сбор
 

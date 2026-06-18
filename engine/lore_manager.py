@@ -7,10 +7,12 @@ import zlib, json
 import ast
 from typing import Optional, Union
 from functools import lru_cache
+from .zipper import encode, decode
 
 from .globals import g
+from .logger import get_logger
 
-logger = g.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class LoreFileManager:
@@ -135,19 +137,17 @@ class LoreFileManager:
             return json.load(file)
 
     def _zip_data(self, data: dict) -> str:
-        return b64encode(
-            zlib.compress(json.dumps(data, ensure_ascii=False).encode("utf-8"), 9)
-        ).decode("ascii")
+        return encode(data)
 
     def _unzip_data(self, data: str, label_name: str = None) -> Optional[dict]:
         try:
-            loaded = json.loads(zlib.decompress(b64decode(data)))
+            loaded = decode(data)
         except (  # Обрабатываем случаи, если данные были повреждены
             binascii_Error,
-            ValueError,
+            ValueError, # Повреждения на уровне Base64
             TypeError,  # Повреждения на уровне Base64
             zlib.error,  # Повреждения на уровне zlib
-            json.JSONDecodeError,
+            json.JSONDecodeError,  # Повреждения на уровне JSON
             UnicodeDecodeError,  # Повреждения на уровне JSON
         ):
             logger.error(

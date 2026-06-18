@@ -1,23 +1,36 @@
 import copy
 import pathlib
-import zlib
 import json
 import os
-from base64 import b64encode, b64decode
 from .Exceptions import SaveDoesNotExistError
+from .zipper import encode, decode
 from arcade import TextureAnimationSprite
 
 from .globals import g
+from .logger import get_logger
 
-logger = g.get_logger(__name__)
+logger = get_logger(__name__)
 
+
+def _get_save_path():
+    if os.name == "nt":  # Windows
+        # Используем %APPDATA% (C:\Users\Имя\AppData\Roaming\Название_игры)
+        app_data = os.environ.get("APPDATA", os.path.expanduser("~"))
+        save_dir = os.path.join(app_data, g.GAME_SAVES_FOLDER_NAME)
+    else:
+        # Linux/Mac
+        save_dir = os.path.join(
+            os.path.expanduser("~"), ".local", "share", g.GAME_SAVES_FOLDER_NAME
+        )
+    os.makedirs(save_dir, exist_ok=True)
+    return save_dir
 
 class Saves_manager:
     def __init__(self):
         """
         Отвечает за работу с сохранением различных данных.
         """
-        save_folder = self.get_save_path()
+        save_folder = _get_save_path()
         if not os.path.exists(os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME)):
             logger.warning("Создаём файл сохранений!")
             self._create_save()
@@ -44,34 +57,17 @@ class Saves_manager:
         self.Save = self.Save()
 
     def _create_save(self):
-        save_folder = self.get_save_path()
+        save_folder = _get_save_path()
         with open(
             os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME), "w", encoding="UTF-8"
         ) as file:
             data = {
                 "saves_version": g.TOPICAL_SAVES_VERSION,
-                "saves": b64encode(
-                    zlib.compress(json.dumps({}, ensure_ascii=False).encode("utf-8"), 9)
-                ).decode("ascii"),
+                "saves": encode({}),
                 "persistent": {},
                 "options": g.DEFAULT_OPTIONS_PARAM,
             }
             json.dump(data, file, indent=4, ensure_ascii=False)
-
-    @staticmethod
-    def get_save_path():
-        if os.name == "nt":  # Windows
-            # Используем %APPDATA% (C:\Users\Имя\AppData\Roaming\Название_игры)
-            app_data = os.environ.get("APPDATA", os.path.expanduser("~"))
-            save_dir = os.path.join(app_data, "OneDay")
-        else:
-            # Linux/Mac
-            save_dir = os.path.join(
-                os.path.expanduser("~"), ".local", "share", "OneDay"
-            )
-
-        os.makedirs(save_dir, exist_ok=True)
-        return save_dir
 
     class Persistent:
         """
@@ -80,7 +76,7 @@ class Saves_manager:
         """
 
         def __init__(self):
-            save_folder = Saves_manager.get_save_path()
+            save_folder = _get_save_path()
             with open(
                 os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                 "r",
@@ -90,7 +86,7 @@ class Saves_manager:
             self.file = file
 
         def _save_data(self) -> None:
-            save_folder = Saves_manager.get_save_path()
+            save_folder = _get_save_path()
             with open(
                 os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                 "w",
@@ -99,7 +95,7 @@ class Saves_manager:
                 json.dump(self.file, file)
 
         def _get_data(self):
-            save_folder = Saves_manager.get_save_path()
+            save_folder = _get_save_path()
             with open(
                 os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                 "r",
@@ -155,7 +151,7 @@ class Saves_manager:
         """
 
         def __init__(self):
-            save_folder = Saves_manager.get_save_path()
+            save_folder = _get_save_path()
             with open(
                 os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                 "r",
@@ -201,7 +197,7 @@ class Saves_manager:
 
             file = super().__getattribute__("file")
 
-            save_folder = Saves_manager.get_save_path()
+            save_folder = _get_save_path()
             with open(
                 os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                 "w",
@@ -210,7 +206,7 @@ class Saves_manager:
                 json.dump(file, data_file)
 
         def _update_data(self):
-            save_folder = Saves_manager.get_save_path()
+            save_folder = _get_save_path()
             with open(
                 os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                 "r",
@@ -225,7 +221,7 @@ class Saves_manager:
         """
 
         def __init__(self):
-            save_folder = Saves_manager.get_save_path()
+            save_folder = _get_save_path()
             with open(
                 os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                 "r",
@@ -235,7 +231,7 @@ class Saves_manager:
             self.file = file
 
         def _save_data(self):
-            save_folder = Saves_manager.get_save_path()
+            save_folder = _get_save_path()
             with open(
                 os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                 "w",
@@ -244,7 +240,7 @@ class Saves_manager:
                 json.dump(self.file, file)
 
         def _get_data(self):
-            save_folder = Saves_manager.get_save_path()
+            save_folder = _get_save_path()
             with open(
                 os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                 "r",
@@ -338,7 +334,7 @@ class Saves_manager:
                 "characters_slice": g.scene.characters_slice,
             }
 
-            saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
+            saves = decode(self.file["saves"])
 
             saves[g.main.session_id] = {
                 "position": g.lm.pose - 1,
@@ -349,9 +345,7 @@ class Saves_manager:
                 "session_data": g.main.session_data,
             }
 
-            self.file["saves"] = b64encode(
-                zlib.compress(json.dumps(saves, ensure_ascii=False).encode("utf-8"), 9)
-            ).decode("ascii")
+            self.file["saves"] = encode(saves)
 
             self._save_data()
 
@@ -363,7 +357,7 @@ class Saves_manager:
             """
             self._get_data()
 
-            saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
+            saves = decode(self.file["saves"])
 
             if session_id not in saves:
                 raise SaveDoesNotExistError(f'Save "{session_id}" does not exist!')
@@ -376,19 +370,17 @@ class Saves_manager:
             """
             self._get_data()
 
-            saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
+            saves = decode(self.file["saves"])
 
             return [[i, o] for i, o in saves.items()]
 
         def del_save(self, session_id):
             self._get_data()
 
-            saves = json.loads(zlib.decompress(b64decode(self.file["saves"])))
+            saves = decode(self.file["saves"])
 
             del saves[session_id]
 
-            self.file["saves"] = b64encode(
-                zlib.compress(json.dumps(saves, ensure_ascii=False).encode("utf-8"), 9)
-            ).decode("ascii")
+            self.file["saves"] = encode(saves)
 
             self._save_data()

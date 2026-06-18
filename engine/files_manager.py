@@ -10,8 +10,9 @@ from arcade.texture import default_texture_cache
 from .load_animated_gif import load_animated_gif
 
 from .globals import g
+from .logger import get_logger
 
-logger = g.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class FilesManager:
@@ -28,44 +29,17 @@ class FilesManager:
                 "sounds": "./game/sounds",
             }
 
-        def find_files(
-            extensions: list[str],
-            start_path: Union[str, Path],
-            exclude: Optional[list[str]] = None,
-        ) -> dict:
-
-            if exclude is None:
-                exclude = []
-
-            extensions_lower = [ext.lower() for ext in extensions]
-            results = {}
-
-            start_path = Path(start_path).resolve()
-            if not start_path.exists():
-                return results
-
-            for root, dirs, files in os.walk(str(start_path)):
-                root_parts = Path(root).parts
-                if any(part in exclude for part in root_parts):
-                    continue
-
-                for file in files:
-                    if any(file.lower().endswith(ext) for ext in extensions_lower):
-                        file_path = Path(root) / file
-                        results[str(file_path.name)] = file_path.absolute()
-
-            return results
-
         self.images_path = Path(paths["images"]).absolute()
         self.music_path = Path(paths["music"]).absolute()
         self.sounds_path = Path(paths["sounds"]).absolute()
 
-        self.textures_paths: dict[str:Path] = find_files(
+
+        self.textures_paths: dict[str:Path] = self._find_files(
             g.SUPPORTED_IMAGE_FORMATS, self.images_path
         )  # Пути к текстурам всех спрайтов {Название файла : полный путь}
-        self.audio_paths: dict[str:Path] = find_files(
+        self.audio_paths: dict[str:Path] = self._find_files(
             g.SUPPORTED_AUDIO_FORMATS, self.music_path, ["voice"]
-        ) | find_files(
+        ) | self._find_files(
             g.SUPPORTED_AUDIO_FORMATS, self.sounds_path, ["voice"]
         )  # Пути ко всем звуковым файлам {Название файла : полный путь}
         self.loaded_labels: list[str] = []  # Лейблы которые уже были загружены
@@ -80,6 +54,35 @@ class FilesManager:
         self.RESAMPLING = Image.Resampling.BILINEAR
         self.SIZE_MODIF = 0.8
         self.REDUCING_GAP = 3.0
+
+    def _find_files(
+            self,
+            extensions: list[str],
+            start_path: Union[str, Path],
+            exclude: Optional[list[str]] = None,
+    ) -> dict:
+
+        if exclude is None:
+            exclude = []
+
+        extensions_lower = [ext.lower() for ext in extensions]
+        results = {}
+
+        start_path = Path(start_path).resolve()
+        if not start_path.exists():
+            return results
+
+        for root, dirs, files in os.walk(str(start_path)):
+            root_parts = Path(root).parts
+            if any(part in exclude for part in root_parts):
+                continue
+
+            for file in files:
+                if any(file.lower().endswith(ext) for ext in extensions_lower):
+                    file_path = Path(root) / file
+                    results[str(file_path.name)] = file_path.absolute()
+
+        return results
 
     def load_assets(
         self, filenames: Union[list[str], set[str]], label: str

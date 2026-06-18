@@ -35,8 +35,9 @@ from .files_manager import FilesManager
 from .character import ListCharacters, Attributes
 
 from .globals import g
+from .logger import get_logger
 
-logger = g.get_logger(__name__)
+logger = get_logger(__name__)
 
 arcade.load_font("game/fonts/Kurale-Regular.ttf")
 
@@ -1548,7 +1549,7 @@ class Views:
             sm = g.sm
 
             def create_menu_buttons():
-                save_folder = sm.get_save_path()
+                save_folder = g.get_save_path()
                 with open(
                     os.path.join(save_folder, g.DEFAULT_DATA_FILE_NAME),
                     "r",
