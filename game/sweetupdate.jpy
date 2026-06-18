@@ -5,54 +5,54 @@ label cooking_omlet("Омлетик", "Зачем я живу?", show_splash = T
     <shak> "О!.."
     <> "Жаклин начала смешивать смесь яиц и молока в миске."
     <oz> "Так что готовишь-то?"
-    Scene.show_character("lshak funny", at="left")
+    Scene.show_character("lshak funny", at="left", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Запечённую курицу."
     <oz> "А если серьёзно?"
     <shak> "Тогда блины."
-    Scene.show_character("oz sit 2", at="right")
+    Scene.show_character("oz sit 2", at="right", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Что-то непохоже."
-    Scene.show_character("lshak funny 3", at="left")
+    Scene.show_character("lshak funny 3", at="left", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Ты много блинов в своей жизни сделала?"
-    Scene.show_character("oz sit 3", at="right")
+    Scene.show_character("oz sit 3", at="right", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Да не то что бы- стой, не переводи тему!"
     <shak> "Ну так вот я в этой теме всё-таки немного поопытнее... и я говорю, что это будут блины. Сейчас буду жарить."
     <oz> "А муку кто добавлять будет?"
-    Scene.show_character("lshak usual 1", at="left")
+    Scene.show_character("lshak usual 1", at="left", effect=SpriteEffects.Dissolve(0.2))
     <> "Жаклин сдержала в горле подступивший смешок, напустив на себя серьёзное выражение лица."
     <shak> "Этот рецепт называется \"панкейки без муки\", Ози."
     <oz> "Да это же не блины никакие, а клятучий омлет! В блинах обязательно должна быть мука!"
     <shak> "А панкейки это ещё и оладьи..."
-    Scene.show_character("oz sit 4", at="right")
+    Scene.show_character("oz sit 4", at="right", effect=SpriteEffects.Dissolve(0.2))
     <> "Ms. Ф.ОЗИНАД на секунду остановилась, то ли потеряв дар речи, то ли пытаясь прочитать мысли кулинарного гения местного разлива."
-    Scene.show_character("oz sit 5", at="right")
+    Scene.show_character("oz sit 5", at="right", effect=SpriteEffects.Dissolve(0.2))
     <oz> "В оладьях тоже нужна мука, ты поехавшая!..."
-    Scene.show_character("lshak funny 2", at="left")
+    Scene.show_character("lshak funny 2", at="left", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Ну так я повторюсь, это в любом случае рецепт \"панкейки без муки\", он даже называется так, специально для таких, как ты~"
     <oz> "ПАНКЕЙКИ БЕЗ МУКИ ЭТО СРАНЫЙ ОМЛЕТ-"
-    Scene.show_character("lshak funny 1 mouth", at="left")
-    Scene.show_character("oz sit 6", at="right")
+    Scene.show_character("lshak funny 1 mouth", at="left", effect=SpriteEffects.Dissolve(0.2))
+    Scene.show_character("oz sit 6", at="right", effect=SpriteEffects.Dissolve(0.2))
     <> "Обе: УГАШЕННЫЙ ТЫ ОБ ДЕРЕВО"
     <> "Дамы от души рассмеялись в унисон."
-    Scene.show_character("lshak funny 1", at="left")
+    Scene.show_character("lshak funny 1", at="left", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Спасибо, что подыграла~"
-    Scene.show_character("oz sit 1", at="right")
+    Scene.show_character("oz sit 1", at="right", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Буду честна, в начале я действительно подумала, что у тебя начала течь крыша, но потом пришло осознание."
-    Scene.show_character("oz sit 7", at="right")
+    Scene.show_character("oz sit 7", at="right", effect=SpriteEffects.Dissolve(0.2))
     <oz> "И как ты вообще могла так шутить со мной, ах..."
     <shak> "То есть когда ты меняешь берёзовый сок на морскую воду, это окей, а когда я меняю местами понятия, это катастрофа?"
-    Scene.show_character("oz sit 6", at="right")
+    Scene.show_character("oz sit 6", at="right", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Твоё лицо того стоило~"
-    Scene.show_character("lshak funny 2", at="left")
+    Scene.show_character("lshak funny 2", at="left", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Твоё тоже~"
     <> "Жаклин тихо хихикнула под нос, накрывая сковороду с омлетом крышкой."
     <shak> "И, раз уж начистоту, есть что-то особенное в том, чтобы перехитрить такую чертилу, как ты~"
-    Scene.show_character("oz sit 7", at="right")
+    Scene.show_character("oz sit 7", at="right", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Да ты чтооооо! Вот это ты великомученица, страдальчески терпишь такую страшную бесовщину!"
-    Scene.show_character("lshak confused", at="left")
+    Scene.show_character("lshak confused", at="left", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Хех... Да и не то что бы я особенно страшно страдала с этой \"страшной бесовщиной\"."
-    Scene.show_character("oz sit 1", at="right")
+    Scene.show_character("oz sit 1", at="right", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Почему же?"
-    Scene.show_character("lshak funny 2", at="left")
+    Scene.show_character("lshak funny 2", at="left", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Потому что ты моя бесовщина~"
     Scene.set_scene(None)
     Scene.set_scene("omelette_ending.png", effect=SpriteEffects.Dissolve(1.0))
@@ -70,9 +70,9 @@ label cooking_bliny("Сладкие блинчики", "Ой блины, бли�
     <shak> "Есть одна славная идея."
     <> "Она достала муку, яйца, молоко и, поколебавшись, добавила пакетик ванилина."
     <oz> "Что-то в этот раз ты прямо жалеешь сахарку. Это диета или экономия?"
-    Scene.show_character("lshak usual 1")
+    Scene.show_character("lshak usual 1", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Это отсутствие сахара. Странно, мне казалось, что там ещё много…"
-    Scene.show_character("oz sit 6")
+    Scene.show_character("oz sit 6", effect=SpriteEffects.Dissolve(0.2))
     <oz> "А, видимо, это я позаимствовала~"
     <shak> "На что..."
     <oz> "На зайку~"
@@ -88,62 +88,62 @@ label cooking_bliny("Сладкие блинчики", "Ой блины, бли�
     <shak> "…кто там?"
     <del> "Доставка."
     Audio.play("sound", "door_open.mp3")
-    Scene.set_scene("home_door_open.jpg")
+    Scene.set_scene("home_door_open.jpg", effect=SpriteEffects.Dissolve(0.5))
     Scene.show_character("del hi 1", at="center", effect=SpriteEffects.Dissolve(1.0))
 
     <del> "Дня."
     <shak> "…и вам того же. Вы не ошиблись адресом?"
-    Scene.show_character("del hi 2")
+    Scene.show_character("del hi 2", effect=SpriteEffects.Dissolve(0.2))
     <del> "Та вроде не."
-    Scene.show_character("del hi 1")
+    Scene.show_character("del hi 1", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Я ничего не заказывала…"
     <del> "…"
-    Scene.show_character("del hi 2")
+    Scene.show_character("del hi 2", effect=SpriteEffects.Dissolve(0.2))
     <del> "Да вы, наверное, шутите…"
-    Scene.show_character("del paper 1")
+    Scene.show_character("del paper 1", effect=SpriteEffects.Dissolve(0.2))
     <> "Он вытащил из кармана какой-то листок с записями и развернул его."
-    Scene.show_character("del paper 2")
+    Scene.show_character("del paper 2", effect=SpriteEffects.Dissolve(0.2))
     <del> "Адрес точно тот, описание дома вполне совпадает."
-    Scene.show_character("del paper 3")
+    Scene.show_character("del paper 3", effect=SpriteEffects.Dissolve(0.2))
     <> "Доставщик сделал паузу, перевёл взгляд с листочка на Жаклин и обвёл её глазами."
-    Scene.show_character("del paper 2")
+    Scene.show_character("del paper 2", effect=SpriteEffects.Dissolve(0.2))
     <> "Затем снова перевёл глаза на листочек."
-    Scene.show_character("del paper 3")
+    Scene.show_character("del paper 3", effect=SpriteEffects.Dissolve(0.2))
     <> "На Жаклин."
-    Scene.show_character("del paper 2")
+    Scene.show_character("del paper 2", effect=SpriteEffects.Dissolve(0.2))
     <> "И на листочек."
-    Scene.show_character("del paper 3")
+    Scene.show_character("del paper 3", effect=SpriteEffects.Dissolve(0.2))
     <> "На Жаклин."
-    Scene.show_character("del paper 1")
+    Scene.show_character("del paper 1", effect=SpriteEffects.Dissolve(0.2))
     <> "На листочек."
     <> "На-"
-    Scene.show_character("del paper 3")
+    Scene.show_character("del paper 3", effect=SpriteEffects.Dissolve(0.2))
     <del> "А вот вы не совпадаете. А мне бы передать из рук в руки…"
     <shak> "Прошу прощения?..."
     <del> "Слушайте, не подскажете, где тут найти мисс Эф О Зэ И Эн А Дэ? Говорили, типа как сиреневый Майкл Джексон или фиолетовый парень, но не парень, и-"
     <> "Он осёкся, поймав на себе тяжёлый взгляд хозяйки дома."
-    Scene.show_character("del paper 2")
+    Scene.show_character("del paper 2", effect=SpriteEffects.Dissolve(0.2))
     <del> "Звиняйте. Меня особо не просвятили в расшифровке такого скопления букв."
-    Scene.show_character("del paper 1")
+    Scene.show_character("del paper 1", effect=SpriteEffects.Dissolve(0.2))
     <> "Из-за спины раздался голос Жаклин послышался голос."
     <oz> "Это тебя ко мне принесло, голубчик~ Можешь передать в руки этой замечательной мадамы~"
-    Scene.show_character("del paper 3")
+    Scene.show_character("del paper 3", effect=SpriteEffects.Dissolve(0.2))
     <del> "Но надо ещё распи-"
     <oz> "Там уже всё расписано~"
-    Scene.show_character("del paper 1")
+    Scene.show_character("del paper 1", effect=SpriteEffects.Dissolve(0.2))
     <> "Доставщик ещё раз взглянул в листок и тяжело вздохнул."
-    Scene.show_character("del na 2")
+    Scene.show_character("del na 2", effect=SpriteEffects.Dissolve(0.2))
     <del> "На."
-    Scene.show_character("del na 1")
+    Scene.show_character("del na 1", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Да что за цирк…"
-    Scene.show_character("del na 2")
+    Scene.show_character("del na 2", effect=SpriteEffects.Dissolve(0.2))
     <del> "Просто уже возьми…"
     <del> "…те."
-    Scene.show_character("del na 1")
+    Scene.show_character("del na 1", effect=SpriteEffects.Dissolve(0.2))
     <> "Жаклин неуверенно приняла свёрток."
-    Scene.show_character("del na 2")
+    Scene.show_character("del na 2", effect=SpriteEffects.Dissolve(0.2))
     <del> "И на том спасибо."
-    Scene.show_character("del na 1")
+    Scene.show_character("del na 1", effect=SpriteEffects.Dissolve(0.2))
     <> "Не дожидаясь официального окончания разговора, он развернулся и зашагал прочь."
 
     Scene.set_scene("home_kitchen.jpg", effect=SpriteEffects.Dissolve(0.5))
@@ -169,25 +169,25 @@ label cooking_bliny("Сладкие блинчики", "Ой блины, бли�
     Scene.show_character("oz sit 2", at="right", effect=SpriteEffects.Dissolve(0.5), stream = "together")
     Scene.show_character("lshak funny 3", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Действительно, хм. Лучше приберечь на пиццу."
-    Scene.show_character("lshak usual 1")
+    Scene.show_character("lshak usual 1", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Ты фанат пиццы с ананасами…?"
-    Scene.show_character("oz sit 5")
+    Scene.show_character("oz sit 5", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Я фанат того выражения отвращения на лицах людей, которое возникает при упоминании этой пиццы~ там такое бурление начинается~"
-    Scene.show_character("lshak usual")
+    Scene.show_character("lshak usual", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Честно говоря, не вижу большого смысла в этих бурлениях. Выпечка с фруктами есть выпечка с фруктами, никто ведь не устраивает крестовые походы за шарлотку с яблоками."
-    Scene.show_character("oz sit 6")
+    Scene.show_character("oz sit 6", effect=SpriteEffects.Dissolve(0.2))
     <oz> "А если брать курицу с ананасами? Тебе не претит идея мяса с фруктами на одной пицце?"
-    Scene.show_character("lshak usual 1")
-    Scene.show_character("oz sit 2")
+    Scene.show_character("lshak usual 1", effect=SpriteEffects.Dissolve(0.2))
+    Scene.show_character("oz sit 2", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Мясо с фруктами - классика. Курица с лимонным перцем, говядина с грушей…"
-    Scene.show_character("lshak funny 3")
+    Scene.show_character("lshak funny 3", effect=SpriteEffects.Dissolve(0.2))
     <shak> "…что с лицом, я говорю что-то не то?"
-    Scene.show_character("oz sit 6")
+    Scene.show_character("oz sit 6", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Вот поэтому мы с тобой отличный дуэт~"
-    Scene.hide_sprite("lshak", stream = "together")
-    Scene.show_character("shak funny 1", at="left")
+    Scene.hide_sprite("lshak", stream = "together", effect=SpriteEffects.Dissolve(0.2))
+    Scene.show_character("shak funny 1", at="left", effect=SpriteEffects.Dissolve(0.2))
     <> "Жаклин демонстративно закатила глаза и отвернулась к сковородке, пряча улыбку."
-    Scene.show_character("shak funny 2")
+    Scene.show_character("shak funny 2", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Да… дуэт…"
     Scene.set_scene(None)
     Scene.set_scene("blini_ending.png", effect=SpriteEffects.Dissolve(1.0))
@@ -206,83 +206,83 @@ label cooking_salad("Салатик", "Оу, что это? САЛАТИК! Мм
     Scene.show_character("lshak blank")
     Scene.show_character("oz sit 1")
     <oz> "Что-то особенное?"
-    Scene.show_character("lshak funny 1")
+    Scene.show_character("lshak funny 1", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Ммм… нет, просто салат пока что, наверное."
     <oz> "Из чего?"
     <shak> "Да я вот помидоров прихватила в магазине. Их и нашинкую."
     <oz> "И всё?"
-    Scene.show_character("lshak funny 2")
+    Scene.show_character("lshak funny 2", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Там не было новой партии нормальных… не суть, забудь."
     <oz> "Может быть, хоть заправишь чем?"
     <> "Жаклин уставилась на неё с непониманием."
-    Scene.show_character("lshak usual 1")
+    Scene.show_character("lshak usual 1", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Само собой. Масло, соль, сметана, что твоей душеньке угодно."
-    Scene.show_character("oz sit 6")
+    Scene.show_character("oz sit 6", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Вот и чудненько!"
     <oz> "Знаешь, говорят, салат не салат, когда там что-то одно."
     <oz> "Другие спорят, что моно-салат – это тоже нормальный салат, но это всё же как будто ощущается иначе."
-    Scene.show_character("lshak usual")
+    Scene.show_character("lshak usual", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Почти что угодно с подходящей заправкой пойдёт как нормальный салат. Чего разводить кипиш на пустом месте…"
-    Scene.show_character("oz sit 5")
+    Scene.show_character("oz sit 5", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Неее, там очень много тонкостей~"
     <> "Леди расплылась в коварной ухмылке."
-    Scene.show_character("oz sit 6")
+    Scene.show_character("oz sit 6", effect=SpriteEffects.Dissolve(0.2))
     <oz> "И очень много поводов запустить интересный спор!"
     Scene.show_character("lshak funny")
     <shak> "Оз, тебе лишь бы срач открыть. Было б у тебя яблоко раздора, кинула бы в первую попавшуюся толпу."
-    Scene.show_character("oz sit 7")
+    Scene.show_character("oz sit 7", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Моя бы воля, я бы из этого яблока целую плантацию фруктов раздора устроила бы~"
-    Scene.show_character("oz sit 5")
+    Scene.show_character("oz sit 5", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Это же так весело!"
-    Scene.show_character("oz sit 6")
-    Scene.show_character("lshak usual")
+    Scene.show_character("oz sit 6", effect=SpriteEffects.Dissolve(0.2))
+    Scene.show_character("lshak usual", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Просто бесполезный шум вокруг готовки. Все работают как разумеют, главное, чтобы получилось съедобно. В идеале ещё получится и полезно. Или вкусно."
-    Scene.show_character("oz sit 1")
+    Scene.show_character("oz sit 1", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Напомни, почему ты бросила вести в кулинарном кружке?"
-    Scene.show_character("lshak blank")
+    Scene.show_character("lshak blank", effect=SpriteEffects.Dissolve(0.2))
     <> "Жаклин сжала челюсти."
-    Scene.show_character("lshak angry")
+    Scene.show_character("lshak angry", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Потому что мне хватает этих оболтусов на обычных занятиях. Это нужно где-то двум или трём, если повезёт, а остальные мешают себе и другим. Ещё я на это нервы не тратила."
     <oz> "То есть это не из-за той краснощёкой девицы, которую размазало чуть ли не в сопли у тебя на уроке?"
-    Scene.show_character("lshak blank")
+    Scene.show_character("lshak blank", effect=SpriteEffects.Dissolve(0.2))
     <shak> "…!"
-    Scene.show_character("oz sit 2")
+    Scene.show_character("oz sit 2", effect=SpriteEffects.Dissolve(0.2))
     <> "Жаклин сделала шумный вдох, но удержалась от острого ответа. Ф.ОЗИНАД и носом не повела, будто бы речь шла о погоде и обыкновенной рутине."
     <oz> "Вообще, на самом деле, в теме готовки даже стараться не надо, чтобы устроить хаос, даже в среде новичков. Взять тот же салат."
-    Scene.show_character("lshak usual")
+    Scene.show_character("lshak usual", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Кто-то верит, что самое главное – это чтобы овощей было больше одного, кто-то считает, что их надо особенно порезать, кто-то верит в превосходство определённых приправ…"
     <oz> "Ты, я так понимаю, в третьем лагере?"
     <> "Жаклин с видом профессора, преисполненного достоинством, поправила очки и смерила Ф.ОЗИНАД строгим, но спокойным взглядом."
-    Scene.show_character("lshak usual 1")
+    Scene.show_character("lshak usual 1", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Само слово салат пришло от французского, и там оно обозначало буквально «то, что посолено». По-моему, это достаточное основание, чтобы считать определённые продукты с определённой заправкой салатом."
-    Scene.show_character("oz sit 1")
+    Scene.show_character("oz sit 1", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Но будет ли тогда салатом заправка с заправкой?~"
-    Scene.show_character("lshak funny 2")
+    Scene.show_character("lshak funny 2", effect=SpriteEffects.Dissolve(0.2))
     <shak> "А ты готова хлестать посоленное подсолнечное масло с уксусом?.."
-    Scene.show_character("oz sit 5")
+    Scene.show_character("oz sit 5", effect=SpriteEffects.Dissolve(0.2))
     <oz> "~~~"
-    Scene.show_character("lshak funny 1 mouth")
+    Scene.show_character("lshak funny 1 mouth", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Впрочем, кого я спрашиваю, действительно… возвращаясь к теме, тебе чего угодно?"
-    Scene.show_character("oz sit 6")
+    Scene.show_character("oz sit 6", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Мне просто кофию откушать~"
-    Scene.show_character("lshak funny 2")
+    Scene.show_character("lshak funny 2", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Вот как. Тогда ещё подождёшь, пока вскипит. Тебе какой крепости?"
     <oz> "Как самые неизведанные глубины моей души~"
     <> "Жаклин усмехнулась."
-    Scene.show_character("lshak funny")
+    Scene.show_character("lshak funny", effect=SpriteEffects.Dissolve(0.2))
     <shak> "То есть просто молока налить?~"
-    Scene.show_character("oz sit 3")
+    Scene.show_character("oz sit 3", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Ах ты-"
-    Scene.show_character("oz sit 2")
+    Scene.show_character("oz sit 2", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Тогда как твоя ненависть к кураторству."
     <> "Жаклин скривилась и фыркнула."
-    Scene.show_character("lshak funny 3")
+    Scene.show_character("lshak funny 3", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Значит, пожуёшь так, всухую."
     <oz> "Тебе не понравится результат~"
-    Scene.show_character("lshak funny")
+    Scene.show_character("lshak funny", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Могу заправить молоком. Такой жидкий кофейный салат будет. Устроит?"
     <> "Ms. Ф. ОЗИНАД хихикнула вполголоса, не сдержав смешинку."
-    Scene.show_character("oz sit 6")
+    Scene.show_character("oz sit 6", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Тушé!~ И добавь ванили, как ты это делаешь, всё равно одной приправой больше, одной меньше~"
     Scene.set_scene(None)
     Scene.set_scene("salad_ending.png", effect=SpriteEffects.Dissolve(1.0))
@@ -302,27 +302,27 @@ label MGRoL("???", show_splash = True, speed = 2):
     Scene.show_character("oz meet 1", at="right")
 
     <shak> "…впрочем, знаешь… может, сегодня просто доставку? Я прикинула, как оно будет, и у меня просто нет сил."
-    Scene.show_character("oz meet 2")
+    Scene.show_character("oz meet 2", effect=SpriteEffects.Dissolve(0.2))
     <oz> "В таком случае, я беру этот вечер на себя~"
-    Scene.show_character("lshak usual")
+    Scene.show_character("lshak usual", effect=SpriteEffects.Dissolve(0.2))
     <> "Жаклин села на стул у кухонного островка и провела руками по лицу, убирая с него лишние пряди волос."
     <shak> "Мне нужен кофе…"
-    Scene.show_character("oz meet 1")
+    Scene.show_character("oz meet 1", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Тебе нужен отпуск, дорогая. И подышать свежим воздухом, лесным или морским."
     <shak> "У меня не будет на это ни финансов, ни времени, Оз. Точно не в ближайшие полгода. Может, дольше."
-    Scene.show_character("oz meet 3")
+    Scene.show_character("oz meet 3", effect=SpriteEffects.Dissolve(0.2))
     <oz> "Я разве что-то говорила о твоих расписании и финансах? Я сказала, что беру этот вечер на себя, ты же слышала?"
-    Scene.show_character("lshak usual 1")
+    Scene.show_character("lshak usual 1", effect=SpriteEffects.Dissolve(0.2))
     <shak> "И как ты собираешься это устроить?"
-    Scene.show_character("oz mage 2")
+    Scene.show_character("oz mage 2", effect=SpriteEffects.Dissolve(0.2))
     <oz> "У меня свои методы, моя дорогая~"
-    Scene.show_character("lshak blank")
+    Scene.show_character("lshak blank", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Подожди, ты же не собираешься-"
     #Scene.fade("fadein", 1)
     Audio.stop("music", effect="fade")
 
     Audio.play("sound", "Rouxls Kaard Appears.mp3")
-    Scene.set_scene("whitescreen.png")
+    Scene.set_scene("whitescreen.png", effect=SpriteEffects.Dissolve(0.1))
     wait(3)
 
     <> "Прежде чем она успела договорить, был произведён замысловатый взмах посохом, после чего посох звонко стукнул об плитку на полу."
@@ -393,7 +393,7 @@ label MGRoL("???", show_splash = True, speed = 2):
     <> "Жаклин сделала глубокий вдох, протёрла очки и опустила взгляд."
     Scene.set_scene("Epstein_Island_j.jpg", effect=SpriteEffects.Dissolve(0.5)) # 😏😏
     <> "Ms. Ф. ОЗИНАД широким жестом указала вниз, где по пляжу бродил, растерянно оглядываясь по сторонам, молодой человек в шортах и оранжевой рубашке на манер гавайской, прочищая очки от морских брызг. Он выглядел… знакомо?"
-    Scene.set_scene("MGRoL7.png", effect=SpriteEffects.Dissolve(0.5))
+    Scene.set_scene("MGRoL7.png", effect=SpriteEffects.Dissolve(1.5))
     <oz> "Что думаешь об этом? Говори первое, что приходит на ум."
     <> "Жаклин прищурилась, вглядываясь в его далёкую фигурку, и наморщила нос."
     <shak> "Pathetic."
