@@ -1,9 +1,5 @@
 import arcade.gui
-import logging
-import colorlog
-import sys
 import os
-import re
 
 
 class Globals:

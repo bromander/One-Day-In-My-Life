@@ -33,6 +33,16 @@ class Scene:
 
         self.textures = {}
 
+    def __getitem__(self, item):
+        return self.data[item]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+    @property
+    def len_loaded_textures(self):
+        return sum([len(data) for data in self.data.values()])
+
     def set_characters_slice(self, value):
         self.characters_slice = value
 
@@ -87,16 +97,6 @@ class Scene:
         if sprite is None:
             raise SpriteIsNotLoadedError(filename, layer)
         return sprite
-
-    def __getitem__(self, item):
-        return self.data[item]
-
-    def __setitem__(self, key, value):
-        self.data[key] = value
-
-    @property
-    def len_loaded_textures(self):
-        return sum([len(data) for data in self.data.values()])
 
     def clear_scene(self):
         for name, dat in self.data.items():
@@ -236,21 +236,22 @@ class Scene:
             if g.main.settings_manager.waiting_settings:
                 return None
 
-        for e, layer in enumerate(self.data["bg_parallax"]):
-            if hasattr(layer["sprite"], "clicked"):
-                if not layer["sprite"].clicked:
-                    if hasattr(layer["sprite"], "freezed"):
-                        if not layer["sprite"].freezed:
+        if self.data["bg_parallax"]:
+            for e, layer in enumerate(self.data["bg_parallax"]):
+                if hasattr(layer["sprite"], "clicked"):
+                    if not layer["sprite"].clicked:
+                        if hasattr(layer["sprite"], "freezed"):
+                            if not layer["sprite"].freezed:
+                                self._move_parallax(layer, x, y)
+                        else:
                             self._move_parallax(layer, x, y)
                     else:
-                        self._move_parallax(layer, x, y)
-                else:
-                    self.data["bg_parallax"][e]["original_x"] = layer["sprite"].center_x
-                    self.data["bg_parallax"][e]["original_y"] = layer["sprite"].center_y
-                    self.data["bg_parallax"].append(self.data["bg_parallax"].pop(e))
+                        self.data["bg_parallax"][e]["original_x"] = layer["sprite"].center_x
+                        self.data["bg_parallax"][e]["original_y"] = layer["sprite"].center_y
+                        self.data["bg_parallax"].append(self.data["bg_parallax"].pop(e))
 
-            else:
-                self._move_parallax(layer, x, y)
+                else:
+                    self._move_parallax(layer, x, y)
 
     def draw(self) -> None:
         """Рисует спрайты со всей сцены"""
@@ -294,20 +295,3 @@ class Scene:
             elif isinstance(value, dict):
                 for sprite in value.values():
                     draw_sprite(sprite)
-
-    def create_savepoint(self) -> None:
-        """
-        Созадёт копию сцены
-        """
-        self.save_points.append(self.data)
-
-    def load_savepoint(self, sp_id: int = 0) -> None:
-        """
-        Загружает копию сцены
-        :param sp_id: Индекс сцены:
-        :raises IndexError: если нет сохранений
-        """
-        if len(self.save_points) < 0:
-            raise IndexError("There is no save points!")
-
-        self.data = self.save_points[sp_id]
