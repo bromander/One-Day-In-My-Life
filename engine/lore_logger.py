@@ -235,7 +235,7 @@ class LoreLogger:
                     new_scene.add_sprite(entry["layer"], entry["name"], same_old_sprite)
                     continue
 
-                sprite = load_animated_gif(d["texture"])[0]
+                sprite = load_animated_gif(d["texture"])
                 sprite.center_x, sprite.center_y = d["center_x"], d["center_y"]
                 sprite.width, sprite.height = d["width"], d["height"]
                 sprite.angle = d["angle"]

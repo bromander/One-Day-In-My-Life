@@ -51,10 +51,6 @@ class FilesManager:
             str:Sound
         ] = {}  # Уже загруженные звуки {Название файла : Звук} 348,9
 
-        self.RESAMPLING = Image.Resampling.BILINEAR
-        self.SIZE_MODIF = 0.8
-        self.REDUCING_GAP = 3.0
-
     def _find_files(
             self,
             extensions: list[str],
@@ -108,24 +104,14 @@ class FilesManager:
                 if i in textures_paths and i not in textures:
                     path = str(textures_paths.get(i))
                     if path.endswith(".gif"):
-                        textures[i] = load_animated_gif(path, self.SIZE_MODIF)
+                        textures[i] = load_animated_gif(path)
                     else:
-                        with Image.open(path) as im:
-                            original_size = tuple(im.size)
-                            size_resiz = (
-                                int(im.size[0] * self.SIZE_MODIF),
-                                int(im.size[1] * self.SIZE_MODIF),
-                            )
-                            im = im.resize(
-                                size_resiz,
-                                self.RESAMPLING,
-                                reducing_gap=self.REDUCING_GAP,
-                            )
+                        im = Image.open(path)
 
-                            if im.mode != "RGBA":
-                                im = im.convert("RGBA")
+                        if im.mode != "RGBA":
+                            im = im.convert("RGBA")
 
-                        textures[i] = (im, original_size, Path(path).absolute())
+                        textures[i] = (im, Path(path).absolute())
 
                 elif i in audio_paths and i not in audios:
                     path = str(audio_paths[i])
@@ -237,8 +223,7 @@ class FilesManager:
             if key.startswith(sprite):
                 texture = texture_data[0].copy()
                 texture = Texture(texture)
-                texture.size = texture_data[1]
-                texture.file_path = texture_data[2]
+                texture.file_path = texture_data[1]
                 new_key = key.rsplit(".", 1)[0]
                 textures[new_key] = texture
 
@@ -250,20 +235,20 @@ class FilesManager:
         self, filename: str
     ) -> Optional[Union[Texture, TextureAnimationSprite]]:
         texture_data = self.textures.get(filename, None)
+
+        if isinstance(texture_data, TextureAnimationSprite):
+            sprite = texture_data
+            return sprite
+
         if texture_data is None:
             return None
         else:
             if texture_data[0] is None:
                 return None
-        if isinstance(texture_data[0], TextureAnimationSprite):
-            sprite = texture_data[0]
-            sprite.file_path = texture_data[1]
-            return sprite
 
-        texture = texture_data[0].copy()
+        texture = texture_data[0]
         texture = Texture(texture)
-        texture.file_path = texture_data[2]
-        texture.size = texture_data[1]
+        texture.file_path = texture_data[1]
 
         default_texture_cache.flush(True, True, True)
 
