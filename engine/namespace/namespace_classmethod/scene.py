@@ -32,19 +32,20 @@ class Scene:
                 tuple[float, float],
             ]
         ],
-        sprite_name: str,
+        sprite_name: Optional[str] = None,
     ):
 
         window = get_window()
 
         x_norm, y_norm = 0, 0.4
 
-        if sprite_name in self.g.scene["sprites"]:
-            sprite = self.g.scene["sprites"][sprite_name]
-        else:
-            sprite = Sprite(
-                center_x=window.width * x_norm, center_y=window.height * y_norm
-            )
+        if sprite_name:
+            if sprite_name in self.g.scene["sprites"]:
+                sprite = self.g.scene["sprites"][sprite_name]
+            else:
+                sprite = Sprite(
+                    center_x=window.width * x_norm, center_y=window.height * y_norm
+                )
 
         match at:
             case "center":
@@ -55,7 +56,10 @@ class Scene:
                 x_norm = 0.8
             case _ if isinstance(at, tuple) and len(at) == 2:
                 if at[0] == -1:
-                    x_norm = sprite.position[0] / window.width
+                    if sprite_name:
+                        x_norm = sprite.position[0] / window.width
+                    else:
+                        x_norm = window.center_x
                 elif isinstance(at[0], int):
                     x_norm = at[0] / window.width
 
@@ -66,8 +70,10 @@ class Scene:
                         x_norm = at[0] / window.width
 
                 if at[1] == -1:
-                    y_norm = sprite.position[1] / window.height
-
+                    if sprite_name:
+                        y_norm = sprite.position[1] / window.height
+                    else:
+                        y_norm = window.center_y
                 elif isinstance(at[1], int):
                     y_norm = at[1] / window.height
 
@@ -311,6 +317,7 @@ class Scene:
         self,
         file_name: Optional[Union[str, Sprite]],
         size=None,
+        at=None,
         layer: int = 0,
         effect=None,
         stream: Literal[
@@ -321,6 +328,7 @@ class Scene:
         Изменяет бекграунд
         :param file_name: Название файла
         :param size: Размер
+        :param at: Положение бекграунда
         :param layer: Слой
         :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
         :param stream: Метод обновления. Together: Обновление всех генераторов разом, Consistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
@@ -370,14 +378,21 @@ class Scene:
         elif isinstance(file_name, Sprite):
             sprite = file_name
 
-        sprite.center_x, sprite.center_y, sprite.size = (
-            window.width * 0.5,
-            window.height * 0.5,
-            self._get_size(size, sprite.size),
-        )
+        sprite.size = self._get_size(size, sprite.size)
 
         if effect is not None:
             sprite.alpha = 0
+
+        if at is not None:
+            x_norm, y_norm = self._get_norm(at)
+
+            sprite.center_x = window.width * x_norm
+            sprite.center_y = window.height * y_norm
+
+        else:
+            sprite.center_x = window.width // 2
+            sprite.center_y = window.height * 0.2
+
 
         def target(bg_id, hide_scene: bool):
             scene.clear_layer("sprites")
