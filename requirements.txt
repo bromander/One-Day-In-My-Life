@@ -45,3 +45,4 @@ tqdm==4.67.3
 hawk_python_sdk==3.5.2
 # JopaJam5SecretGame\engine\character.py: 6
 json5==0.14.0
+Nuitka==4.1.2
