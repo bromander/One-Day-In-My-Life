@@ -3,13 +3,12 @@ from typing import Optional
 import arcade
 from arcade import gui as agui
 from pyglet.gl import GLException
-from hashlib import sha256
 import random
 
 from .globals import g
 from .logger import get_logger
 from .gui import Managers
-from .gui import MovableBlockFalling, ItemsNotifText, MovableBlock, ItemsNotifText, ClickableSprite
+from .gui import MovableBlockFalling, MovableBlock, ItemsNotifText, ClickableSprite
 from .character import Attributes
 
 logger = get_logger(__name__)

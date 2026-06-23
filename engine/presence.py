@@ -1,3 +1,4 @@
+
 from pypresence import Presence
 from pypresence.exceptions import DiscordNotFound, PipeClosed, InvalidPipe
 from pypresence.types import ActivityType, StatusDisplayType

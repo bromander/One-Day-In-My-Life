@@ -312,7 +312,7 @@ class Saves_manager:
                 "loaded_textures": {
                     filename: str(texture[1])
                     for filename, texture in g.fm.textures.items()
-                    if type(texture[0]) is not TextureAnimationSprite
+                    if type(texture) is not TextureAnimationSprite
                 },
                 "loaded_audios": {
                     filename: str(sound.file_name)
@@ -320,9 +320,9 @@ class Saves_manager:
                 },
             }
             for filename, sprite in g.fm.textures.items():
-                if type(sprite[0]) is TextureAnimationSprite:
+                if type(sprite) is TextureAnimationSprite:
                     files_manager["loaded_textures"][filename] = str(
-                        sprite[0].texture.file_path.absolute()
+                        sprite.texture.file_path.absolute()
                     )
 
             scene = {

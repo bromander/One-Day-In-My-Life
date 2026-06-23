@@ -394,6 +394,7 @@ class Views:
                 "session_start": round(time.time()),
             }
 
+            self.loaded_from_save = False
             def load_saves(session_id):
                 """
                 Загружает сохранение
@@ -401,11 +402,14 @@ class Views:
                 if session_id is None:
                     self.session_id = str(uuid.uuid4())
                 else:
-                    logger.info(f"Открытие сохранения {session_id}")
+                    self.loaded_from_save = True
+                    logger.info(f"Открытие сохранения {session_id}...")
 
                     lm = g.lm
                     self.session_id = str(uuid.uuid4())
                     save = g.sm.Save.get_save(session_id)
+
+                    print(save)
 
                     for i, o in save["defines"].items():
                         self.NAMESPACE["Define"].__setattr__(i, o)
@@ -519,7 +523,8 @@ class Views:
             self.in_game_manager.enable()
             # self.in_game_manager.return_button.on_click = self.LoreLogger.return_back
 
-            g.lm.jump(g.DEFAULT_START_LABEL, 0)
+            if not self.loaded_from_save:
+                g.lm.jump(g.DEFAULT_START_LABEL, 0)
 
             self.talk_manager(clicked=False)
 

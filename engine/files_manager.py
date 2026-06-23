@@ -55,14 +55,14 @@ class HashedFilesManager:
         # TODO
         return self.manifest["fonts"]
 
-hashed_files_manager = HashedFilesManager()
-
 class FilesManager:
     """
     Отвечает за работу со всеми ассетами игры.
     """
 
     def __init__(self, paths: Optional[dict] = None):
+
+        self.hashed_files_manager = HashedFilesManager()
 
         if paths is None:
             paths = {
@@ -380,10 +380,10 @@ class FilesManager:
 
     def get_original_filename(self, filename: str):
         if self.use_hashed_assets:
-            if filename in hashed_files_manager.indexes_names:
+            if filename in self.hashed_files_manager.indexes_names:
                 return filename
-            if filename in hashed_files_manager.reverse_indexes_names:
-                return hashed_files_manager.reverse_indexes_names[filename]
+            if filename in self.hashed_files_manager.reverse_indexes_names:
+                return self.hashed_files_manager.reverse_indexes_names[filename]
         else:
             return filename
 
