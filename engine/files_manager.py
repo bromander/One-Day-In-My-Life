@@ -4,7 +4,7 @@ import os
 import mutagen
 from typing import Union, Optional, Literal
 from threading import Thread
-from arcade import load_sound, Texture, Sound, Sprite, TextureAnimationSprite
+from arcade import load_sound, Texture, Sound, Sprite, TextureAnimationSprite, load_font
 from PIL import Image
 from arcade.texture import default_texture_cache
 
@@ -52,7 +52,6 @@ class HashedFilesManager:
         return self.manifest["images"]
 
     def get_fonts(self):
-        # TODO
         return self.manifest["fonts"]
 
 class FilesManager:
@@ -69,6 +68,7 @@ class FilesManager:
                 "images": "./game/images",
                 "music": "./game/music",
                 "sounds": "./game/sounds",
+                "fonts": "./game/fonts"
             }
 
         self._use_hashed_assets = self._get_assets_hashed_value()
@@ -76,8 +76,9 @@ class FilesManager:
         self.images_path = Path(paths["images"]).absolute()
         self.music_path = Path(paths["music"]).absolute()
         self.sounds_path = Path(paths["sounds"]).absolute()
+        self.fonts_path = Path(paths["fonts"]).absolute()
 
-        self.textures_paths, self.audio_paths = self._get_assets_paths()
+        self.textures_paths, self.audio_paths, self.fonts_paths = self._get_assets_paths()
 
         self.loaded_labels: list = []  # Лейблы которые уже были загружены {Название лейбла : ассеты}
         self.priority_assets: list = []
@@ -88,6 +89,8 @@ class FilesManager:
         self.audios: dict[
             str:Sound
         ] = {}  # Уже загруженные звуки {Название файла : Звук}
+
+        self._load_fonts()
 
         self.load_assets([
             "767e4a851516f55e2471809744295141.jpg",
@@ -109,32 +112,36 @@ class FilesManager:
     def use_hashed_assets(self):
         return self._use_hashed_assets
 
-    def _get_assets_paths(self) -> (list, list):
+    def _get_assets_paths(self) -> (list, list, list):
 
         if not self.use_hashed_assets:
             logger.debug("Ассеты не были хэшированы! Загружаем из доступных директорий...")
-            textures_paths = self._find_files(
+            textures_path = self._find_files(
                 g.SUPPORTED_IMAGE_FORMATS, self.images_path
             )
-            audio_paths = self._find_files(
+            audios_path = self._find_files(
                 g.SUPPORTED_AUDIO_FORMATS, self.music_path
             ) | self._find_files(
                 g.SUPPORTED_AUDIO_FORMATS, self.sounds_path
             )
+            fonts_path = self._find_files(
+                g.SUPPORTED_FONT_FORMATS, self.fonts_path
+            )
         else:
             logger.debug("Загружаем ассеты из их хэшированных версий...")
             try:
-                audio_paths = hashed_files_manager.get_audios()
-                textures_paths = hashed_files_manager.get_medias()
+                audios_path = self.hashed_files_manager.get_audios()
+                textures_path = self.hashed_files_manager.get_medias()
+                fonts_path = self.hashed_files_manager.get_fonts()
             except FileNotFoundError:
                 logger.error("Ассеты не найдены! Загружаем из доступных директорий...")
                 if not self.images_path.exists() or not self.sounds_path.exists() or not self.music_path.exists():
                     raise AssetsNotFoundError("Папки с ассетами/их хэшированных версий не существует!")
                 else:
                     self._use_hashed_assets = False
-                    textures_paths, audio_paths = self._get_assets_paths()
+                    textures_path, audios_path, fonts_path = self._get_assets_paths()
 
-        return textures_paths, audio_paths
+        return textures_path, audios_path, fonts_path
 
     def _get_assets_hashed_value(self):
         with open("./game/game_data.json", "r", encoding="UTF-8") as game_data:
@@ -190,6 +197,10 @@ class FilesManager:
 
                 audios[i] = self._load_asset(path, "audio")
 
+    def _load_fonts(self):
+        for font_path in self.fonts_paths:
+            load_font(font_path)
+        logger.debug("Шрифты успешно загружены!")
 
     def load_assets(
         self, filenames: Union[list[str], set[str]], label: Optional[str] = None, priority: bool = False

@@ -38,6 +38,23 @@ class Globals:
         }
 
     @property
+    def MAX_SAVESFILE_SIZE_LIMIT(self):
+        """
+        Максимальный порог веса файла в байтах.
+        Если файл сохранения его переступит, то отныне будет сжиматься
+        """
+        return 20000
+
+    @property
+    def SHOULD_ZIP_SAVES_DATA(self) -> bool:
+        """
+        True - принудительное сжатие
+        False - Принудительное игнорирование
+        None - Если размер превышает MAX_SAVESFILE_SIZE_LIMIT, то будет применено сжатие
+        """
+        return None
+
+    @property
     def DEFAULT_IN_GAME_WINDOW_SIZE(self) -> tuple[int]:
         return (1920, 1080)
 
@@ -115,6 +132,10 @@ class Globals:
     @property
     def SUPPORTED_IMAGE_FORMATS(self) -> frozenset:
         return frozenset((".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"))
+
+    @property
+    def SUPPORTED_FONT_FORMATS(self) -> frozenset:
+        return frozenset((".tff", ".otf"))
 
     fm = None  # Files manager
     sm = None  # Saves manager

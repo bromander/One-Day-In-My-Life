@@ -7,6 +7,8 @@ from typing import  Union, Optional
 from pathlib import Path
 import shutil
 
+from engine.globals import g
+
 
 class AssetsHasher:
     def __init__(self):
@@ -16,9 +18,10 @@ class AssetsHasher:
 
     def _create_manifest(self):
         manifest = {"images" : {}, "sounds" : {}, "music" : {}, "fonts" : {}}
+        all_extensions = list(g.SUPPORTED_FONT_FORMATS) + list(g.SUPPORTED_AUDIO_FORMATS) + list(g.SUPPORTED_IMAGE_FORMATS)
 
         for dir in manifest.keys():
-            assets = self._find_files([".mp3", ".wav", ".ogg", ".png", ".jpg", ".jpeg", ".gif", ".ttf", ".otf"],f"./game/{dir}")
+            assets = self._find_files(all_extensions,f"./game/{dir}")
             for asset in assets:
                 path_hash = sha256(asset.name.encode()).hexdigest()
                 manifest[dir][asset] = Path(f"./game/hash_assets/objects/{path_hash[0:2]}/{path_hash}")

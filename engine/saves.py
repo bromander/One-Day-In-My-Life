@@ -249,11 +249,57 @@ class Saves_manager:
                 file = dict(json.load(file))
             self.file = file
 
+        def _set_saves(self, saves: dict):
+            if g.SHOULD_ZIP_SAVES_DATA:
+                saves = encode(saves)
+            self.file["saves"] = saves
+            self._save_data()
+
+        def _get_saves(self) -> dict:
+            self._get_data()
+            saves = self.file.get("saves")
+
+            if saves is None:
+                saves = {}
+                self.file["saves"] = saves
+
+            if g.SHOULD_ZIP_SAVES_DATA is not None: # Если установлены принудительные параметры
+                if g.SHOULD_ZIP_SAVES_DATA and isinstance(saves, dict):
+                    logger.error("Файл сохранения не заархивирован, архивируем...")
+                    self._set_saves(saves)
+                    return decode(encode(saves))
+
+                if not g.SHOULD_ZIP_SAVES_DATA and isinstance(saves, str):
+                    logger.error("Файл сохранения был заархивирован, разархивируем...")
+                    decoded = decode(saves)
+                    self._set_saves(decoded)
+                    return decoded
+
+                if g.SHOULD_ZIP_SAVES_DATA and isinstance(saves, str):
+                    return decode(saves)
+
+                if not g.SHOULD_ZIP_SAVES_DATA and isinstance(saves, dict):
+                    return saves
+            else: # Сжимаем автоматически
+                if isinstance(saves, dict):
+                    json_str = json.dumps(saves, ensure_ascii=True).encode('utf-8')
+                    if len(json_str) > g.MAX_SAVESFILE_SIZE_LIMIT:
+                        logger.log(f"Файл сохранений стал весить больше {g.MAX_SAVESFILE_SIZE_LIMIT} байт! Применяем сжатие")
+                        self._set_saves(encode(saves))
+                    return saves
+                else:
+                    saves = decode(saves)
+                    json_str = json.dumps(saves, ensure_ascii=True).encode('utf-8')
+                    if len(json_str) < g.MAX_SAVESFILE_SIZE_LIMIT:
+                        logger.log(f"Файл сохранений стал весить меньше {g.MAX_SAVESFILE_SIZE_LIMIT} байт! Сжатие не будет использовано")
+                        self._set_saves(saves)
+                    return saves
+
+
         def create_save(self) -> None:
             """
             Создаёт сохранение
             """
-            self._get_data()
             if g.am.music.is_playing():
                 music_file = g.am.music.now_playing_path
                 music_volume = g.am.music._local_modifier
@@ -334,7 +380,7 @@ class Saves_manager:
                 "characters_slice": g.scene.characters_slice,
             }
 
-            saves = decode(self.file["saves"])
+            saves = self._get_saves()
 
             saves[g.main.session_id] = {
                 "position": g.lm.pose - 1,
@@ -345,7 +391,7 @@ class Saves_manager:
                 "session_data": g.main.session_data,
             }
 
-            self.file["saves"] = encode(saves)
+            self._set_saves(saves)
 
             self._save_data()
 
@@ -355,9 +401,8 @@ class Saves_manager:
             :param session_id: Айди сохранения
             :raises SaveDoesNotExistError: Если сохранение не  существует
             """
-            self._get_data()
 
-            saves = decode(self.file["saves"])
+            saves = self._get_saves()
 
             if session_id not in saves:
                 raise SaveDoesNotExistError(f'Save "{session_id}" does not exist!')
@@ -368,19 +413,12 @@ class Saves_manager:
             """
             Возвращает все игровые сохранения
             """
-            self._get_data()
-
-            saves = decode(self.file["saves"])
+            saves = self._get_saves()
 
             return [[i, o] for i, o in saves.items()]
 
         def del_save(self, session_id):
-            self._get_data()
 
-            saves = decode(self.file["saves"])
-
+            saves = self._get_saves()
             del saves[session_id]
-
-            self.file["saves"] = encode(saves)
-
-            self._save_data()
+            self._set_saves(saves)
