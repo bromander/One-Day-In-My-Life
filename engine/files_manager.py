@@ -1,19 +1,61 @@
+import json
 from pathlib import Path
 import os
 import mutagen
-from typing import Union, Optional
+from typing import Union, Optional, Literal
 from threading import Thread
 from arcade import load_sound, Texture, Sound, Sprite, TextureAnimationSprite
 from PIL import Image
 from arcade.texture import default_texture_cache
 
 from .load_animated_gif import load_animated_gif
-
 from .globals import g
 from .logger import get_logger
+from .Sound_modif import Sound_modif
+from .Exceptions import AssetsNotFoundError
 
 logger = get_logger(__name__)
 
+
+class HashedFilesManager:
+
+    def __init__(self):
+        self.manifest = self._get_manifest()
+        self.indexes_names, self.reverse_indexes_names = self._load_indexes()
+
+    def _get_manifest(self) -> dict:
+        if not Path("./game/hash_assets/manifest.json").exists():
+            raise FileNotFoundError("Не найден файл с индексами ассетов!")
+
+        with open("./game/hash_assets/manifest.json", "r", encoding="UTF-8") as manifest_file:
+            manifest = json.load(manifest_file)
+        return manifest
+
+    def _load_indexes(self) -> tuple[dict, dict]:
+        indexes_names = {}
+        reverse_indexes_names = {}
+
+        for dir, assets in self.manifest.items():
+            for asset_name, hash_path in assets.items():
+                hash_path = hash_path.split("\\")[-1]
+                indexes_names[asset_name] = hash_path
+                reverse_indexes_names[hash_path] = asset_name
+
+        return indexes_names, reverse_indexes_names
+
+    def get_audios(self):
+        audios = self.manifest["sounds"]
+        audios.update(self.manifest["music"])
+        return audios
+
+    def get_medias(self):
+        return self.manifest["images"]
+
+    def get_fonts(self):
+        # TODO
+        return self.manifest["fonts"]
+
+hashed_files_manager = HashedFilesManager()
 
 class FilesManager:
     """
@@ -29,27 +71,75 @@ class FilesManager:
                 "sounds": "./game/sounds",
             }
 
+        self._use_hashed_assets = self._get_assets_hashed_value()
+
         self.images_path = Path(paths["images"]).absolute()
         self.music_path = Path(paths["music"]).absolute()
         self.sounds_path = Path(paths["sounds"]).absolute()
 
+        self.textures_paths, self.audio_paths = self._get_assets_paths()
 
-        self.textures_paths: dict[str:Path] = self._find_files(
-            g.SUPPORTED_IMAGE_FORMATS, self.images_path
-        )  # Пути к текстурам всех спрайтов {Название файла : полный путь}
-        self.audio_paths: dict[str:Path] = self._find_files(
-            g.SUPPORTED_AUDIO_FORMATS, self.music_path, ["voice"]
-        ) | self._find_files(
-            g.SUPPORTED_AUDIO_FORMATS, self.sounds_path, ["voice"]
-        )  # Пути ко всем звуковым файлам {Название файла : полный путь}
-        self.loaded_labels: list[str] = []  # Лейблы которые уже были загружены
+        self.loaded_labels: list = []  # Лейблы которые уже были загружены {Название лейбла : ассеты}
+        self.priority_assets: list = []
 
         self.textures: dict[
             str : Image.Image
         ] = {}  # Уже загруженные текстуры {Название файла : текстура}
         self.audios: dict[
             str:Sound
-        ] = {}  # Уже загруженные звуки {Название файла : Звук} 348,9
+        ] = {}  # Уже загруженные звуки {Название файла : Звук}
+
+        self.load_assets([
+            "767e4a851516f55e2471809744295141.jpg",
+            "bg_eblani.png",
+            "bg_main_menu.png",
+            "blackscreen.png",
+            "cursor.png",
+            "dialog_window.png",
+            "in_game_settings.png",
+            "JE3000_logo.png",
+            "JE3000_logo-export.png",
+            "name_window.png",
+            "splash.png",
+            "what_are_you_so_afraid_of.png"
+        ], "init_gui_sprites", True)
+
+
+    @property
+    def use_hashed_assets(self):
+        return self._use_hashed_assets
+
+    def _get_assets_paths(self) -> (list, list):
+
+        if not self.use_hashed_assets:
+            logger.debug("Ассеты не были хэшированы! Загружаем из доступных директорий...")
+            textures_paths = self._find_files(
+                g.SUPPORTED_IMAGE_FORMATS, self.images_path
+            )
+            audio_paths = self._find_files(
+                g.SUPPORTED_AUDIO_FORMATS, self.music_path
+            ) | self._find_files(
+                g.SUPPORTED_AUDIO_FORMATS, self.sounds_path
+            )
+        else:
+            logger.debug("Загружаем ассеты из их хэшированных версий...")
+            try:
+                audio_paths = hashed_files_manager.get_audios()
+                textures_paths = hashed_files_manager.get_medias()
+            except FileNotFoundError:
+                logger.error("Ассеты не найдены! Загружаем из доступных директорий...")
+                if not self.images_path.exists() or not self.sounds_path.exists() or not self.music_path.exists():
+                    raise AssetsNotFoundError("Папки с ассетами/их хэшированных версий не существует!")
+                else:
+                    self._use_hashed_assets = False
+                    textures_paths, audio_paths = self._get_assets_paths()
+
+        return textures_paths, audio_paths
+
+    def _get_assets_hashed_value(self):
+        with open("./game/game_data.json", "r", encoding="UTF-8") as game_data:
+            game_data = json.load(game_data)
+        return game_data["assets_hashed"]
 
     def _find_files(
             self,
@@ -80,48 +170,45 @@ class FilesManager:
 
         return results
 
+    def _load_assets_pack(self, filenames: list):
+        textures_paths = self.textures_paths
+        audio_paths = self.audio_paths
+        textures = self.textures
+        audios = self.audios
+
+        for i in filenames:
+            if i in textures_paths and i not in textures:
+                path = str(textures_paths.get(i))
+                if i.endswith(".gif"):
+                    self.textures[i] = self._load_asset(path, "gif")
+                else:
+                    im = self._load_asset(path, "image")
+                    self.textures[i] = (im, Path(path).absolute())
+
+            elif i in audio_paths and i not in audios:
+                path = str(audio_paths[i])
+
+                audios[i] = self._load_asset(path, "audio")
+
+
     def load_assets(
-        self, filenames: Union[list[str], set[str]], label: str
+        self, filenames: Union[list[str], set[str]], label: Optional[str] = None, priority: bool = False
     ) -> Optional[list[Thread]]:
         """
         Загружает текстуры пачками в другом потоке
         :param filenames: список названий файлов
         :param label: Ассеты какого лейбла сейчас грузятся
+        :param priority: Задаёт 'приоритет' спрайтам, чтобы их не удалял сборщик мусора
         """
 
-        if label in self.loaded_labels:
-            return None  # Если текстура уже загружена, то скипаем
+        if priority:
+            self.priority_assets += filenames
 
-        self.loaded_labels.append(label)
+        if label:
+            if label in self.loaded_labels:
+                return None  # Если лейбл уже загружен, то скипаем
 
-        def load(filenames):
-            textures_paths = self.textures_paths
-            audio_paths = self.audio_paths
-            textures = self.textures
-            audios = self.audios
-
-            for i in filenames:
-                if i in textures_paths and i not in textures:
-                    path = str(textures_paths.get(i))
-                    if path.endswith(".gif"):
-                        textures[i] = load_animated_gif(path)
-                    else:
-                        im = Image.open(path)
-
-                        if im.mode != "RGBA":
-                            im = im.convert("RGBA")
-
-                        textures[i] = (im, Path(path).absolute())
-
-                elif i in audio_paths and i not in audios:
-                    path = str(audio_paths[i])
-                    try:
-                        duration = mutagen.File(path).info.length
-                        streaming = duration > 10
-                    except:
-                        streaming = False
-
-                    audios[i] = load_sound(path, streaming=streaming)
+            self.loaded_labels.append(label)
 
         filenames = list(filenames)
         n = min(
@@ -140,23 +227,58 @@ class FilesManager:
             start = i * part_size + min(i, remainder)
             end = start + part_size + (1 if i < remainder else 0)
             part = filenames[start:end]
-            thread = Thread(target=load, args=(part,), daemon=True)
+            thread = Thread(target=self._load_assets_pack, args=(part, ), daemon=True)
             thread.start()
             threads.append(thread)
 
         logger.warning(f"+ Подгрузка ассетов: {n} потоков, {length} текстур")
 
+        default_texture_cache.flush(True, True, True)
+
         return threads
 
+    def _load_asset(self, path, type: Literal["gif", "image", "audio"]):
+        match type:
+            case "gif":
+                return load_animated_gif(path)
+            case "image":
+                im = Image.open(path)
+
+                if im.mode != "RGBA":
+                    im = im.convert("RGBA")
+                return im
+            case "audio":
+                try:
+                    duration = mutagen.File(path).info.length
+                    streaming = duration > 10
+                except:
+                    streaming = False
+
+                if not self.use_hashed_assets:
+                    return load_sound(path, streaming=streaming)
+                else:
+                    return Sound_modif(open(path, "rb"), path.split("/")[-1], streaming)
+
     def unload_assets(
-        self, filenames: Union[list[str], set[str]], label: str
-    ) -> list[Thread]:
+        self, filenames: Union[list[str], set[str]], label: Optional[str] = None
+    ) -> Optional[list[Thread]]:
         """
         Выгружает ассеты из памяти игры
         :param filenames: Список названий файлов
+        :param label: Название лейбла
         """
 
-        filenames = list(filenames)
+        if label in g.EXCLUDE_LABELS_FOR_UNLOAD:
+            return None
+
+        if label in self.loaded_labels:
+            self.loaded_labels.remove(label)
+
+        filenames = [i for i in filenames if i not in self.priority_assets]
+
+        if not filenames:
+            return None
+
         n = min(
             32, len(filenames), int((os.cpu_count() * 4) / 2) + 1
         )  # во сколько потоков будут выгружаться текстуры
@@ -168,42 +290,44 @@ class FilesManager:
 
         logger.warning(f"- Выгрузка ассетов: {n} потоков, {length} текстур")
 
-        def unload(label: str, filenames: list):
-            if label in self.loaded_labels:
-                self.loaded_labels.remove(label)
+        def unload(filenames: list):
+            for file in filenames:
+                if file in self.priority_assets:
+                    continue
+                if file in self.textures:
+                    asset = self.textures.get(file)
 
-                for file in filenames:
-                    if file in self.textures:
-                        asset = self.textures.get(file)
+                    if isinstance(asset, (tuple, set)):
+                        asset = asset[0]
 
-                        if isinstance(asset, (tuple, set)):
-                            asset = asset[0]
+                    elif isinstance(asset, Image.Image):
+                        asset.close()
+                        del asset
+                        del self.textures[file]
 
-                        if isinstance(asset, Image.Image):
-                            asset.close()
-                            del asset
-                            del self.textures[file]
+                    elif isinstance(asset, (Sprite, TextureAnimationSprite)):
+                        asset.stop()
+                        asset.kill()
+                        del asset.textures
+                        del asset
+                        del self.textures[file]
 
-                        elif isinstance(asset, Sound):
-                            del asset
-                            del self.audios[file]
+                    elif isinstance(asset, Texture):
+                        del asset
+                        del self.textures[file]
 
-                        elif isinstance(asset, (Sprite, TextureAnimationSprite)):
-                            asset.stop()
-                            asset.kill()
-                            del asset.textures
-                            del asset
-                            del self.textures[file]
+                elif file in self.audios:
+                    asset = self.audios.get(file)
 
-                        elif isinstance(asset, Texture):
-                            del asset
-                            del self.textures[file]
+                    if isinstance(asset, Sound):
+                        del asset
+                        del self.audios[file]
 
         for i in range(n):
             start = i * part_size + min(i, remainder)
             end = start + part_size + (1 if i < remainder else 0)
             part = filenames[start:end]
-            thread = Thread(target=unload, args=(label, part), daemon=True)
+            thread = Thread(target=unload, args=(part, ), daemon=True)
             thread.start()
             threads.append(thread)
 
@@ -253,6 +377,17 @@ class FilesManager:
         default_texture_cache.flush(True, True, True)
 
         return texture
+
+    def get_original_filename(self, filename: str):
+        if self.use_hashed_assets:
+            if filename in hashed_files_manager.indexes_names:
+                return filename
+            if filename in hashed_files_manager.reverse_indexes_names:
+                return hashed_files_manager.reverse_indexes_names[filename]
+        else:
+            return filename
+
+
 
 
 """

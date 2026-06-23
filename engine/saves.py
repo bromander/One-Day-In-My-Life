@@ -310,7 +310,7 @@ class Saves_manager:
             files_manager = {
                 "loaded_lables": copy.copy(g.fm.loaded_labels),
                 "loaded_textures": {
-                    filename: str(texture[2])
+                    filename: str(texture[1])
                     for filename, texture in g.fm.textures.items()
                     if type(texture[0]) is not TextureAnimationSprite
                 },

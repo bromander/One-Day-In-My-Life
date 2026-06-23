@@ -1,5 +1,92 @@
+import json
 import subprocess
 import sys
+import os
+from hashlib import sha256
+from typing import  Union, Optional
+from pathlib import Path
+import shutil
+
+
+class AssetsHasher:
+    def __init__(self):
+
+        self.manifest = self._create_manifest()
+        print(self.manifest)
+
+    def _create_manifest(self):
+        manifest = {"images" : {}, "sounds" : {}, "music" : {}, "fonts" : {}}
+
+        for dir in manifest.keys():
+            assets = self._find_files([".mp3", ".wav", ".ogg", ".png", ".jpg", ".jpeg", ".gif", ".ttf", ".otf"],f"./game/{dir}")
+            for asset in assets:
+                path_hash = sha256(asset.name.encode()).hexdigest()
+                manifest[dir][asset] = Path(f"./game/hash_assets/objects/{path_hash[0:2]}/{path_hash}")
+
+        return manifest
+
+    def _find_files(
+            self,
+            extensions: list[str],
+            start_path: Union[str, Path],
+            exclude_dirs: Optional[list[str]] = None,
+    ) -> list[Path]:
+
+        if exclude_dirs is None:
+            exclude_dirs = []
+
+        extensions_lower = [ext.lower() for ext in extensions]
+        results = []
+
+        start_path = Path(start_path).resolve()
+        if not start_path.exists():
+            return results
+
+        for root, dirs, files in os.walk(str(start_path)):
+            root_parts = Path(root).parts
+            if any(part in exclude_dirs for part in root_parts):
+                continue
+
+            for file in files:
+                if any(file.lower().endswith(ext) for ext in extensions_lower):
+                    file_path = Path(root) / file
+                    results.append(file_path)
+
+        return results
+
+    def hash_files(self):
+
+        for dir, assets in self.manifest.items():
+            for path, new_path in assets.items():
+                if not new_path.exists():
+                    new_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(path, new_path)
+
+    def write_manifest(self):
+
+        hash_assets_dir = Path("./game/hash_assets")
+        if not hash_assets_dir.exists():
+            hash_assets_dir.mkdir()
+
+        real_manifest = {}
+
+        for dir, assets in self.manifest.items():
+            real_manifest[dir] = {}
+            for path, new_path in assets.items():
+                real_manifest[dir][str(path.name)] = str(new_path)
+
+        with open("./game/hash_assets/manifest.json", "w", encoding="UTF-8") as manifest_file:
+            json.dump(real_manifest, manifest_file, indent=4, ensure_ascii=False)
+
+    def turn_on_hash_for_game(self):
+
+        with open("game/game_data.json", "r", encoding="UTF-8") as game_data_file:
+            game_data = json.load(game_data_file)
+
+        game_data["assets_hashed"] = True
+
+        with open("game/game_data.json", "w", encoding="UTF-8") as game_data_file:
+            json.dump(game_data, game_data_file)
 
 
 args = {
@@ -16,6 +103,7 @@ args = {
     "jobs" : 8,
     "meta" : {"project_name" : None, "project_version" : None, "file_version" : None, "file_description" : None, "torg_mark" : False, "copyright" : None},
     "start" : False,
+    "should_hash" : False,
     "other" : []
 }
 
@@ -40,6 +128,7 @@ while True:
         12: Метаданные
         13: Добавить свой аргумент
         14: Запустить игру после сборки
+        15: Хешировать ли ассеты
         """
     )
 
@@ -152,6 +241,13 @@ while True:
                     "   2: Не запускать"
                 )
                 args["start"] = int(input("> ")) == 1
+            case "15":
+                print(
+                    "Выберете режим:\n"
+                    "   1: хешировать\n"
+                    "   2: Не хешировать"
+                )
+                args["should_hash"] = int(input("> ")) == 1
             case "":
                 break
             case _:
@@ -161,6 +257,13 @@ while True:
         print('\n' * 10)
         continue
 
+if args["should_hash"]:
+    print("Хеширование ассетов...")
+    hasher = AssetsHasher()
+    hasher.write_manifest()
+    hasher.hash_files()
+    hasher.turn_on_hash_for_game()
+    print("Готово!")
 
 command = [
     sys.executable,

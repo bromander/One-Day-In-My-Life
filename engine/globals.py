@@ -3,16 +3,6 @@ import os
 
 
 class Globals:
-    def __init__(self):
-
-        self._cant_unload = []
-        self._cant_unload += (
-            os.listdir("./game/images/moving_shop_assets")
-            + os.listdir("./game/images/bying_shop_assets")
-            + ["box_office_3.png", "golub_click.png", "golub.png"]
-        )
-
-        self._cant_unload = frozenset(self._cant_unload)
 
     def get_save_path(self) -> str:
         if os.name == "nt":  # Windows
@@ -31,6 +21,10 @@ class Globals:
     @property
     def TOPICAL_SAVES_VERSION(self) -> int:
         return 0
+
+    @property
+    def EXCLUDE_LABELS_FOR_UNLOAD(self):
+        return frozenset(["init_gui_sprites"])
 
     @property
     def DEFAULT_OPTIONS_PARAM(self) -> dict:
@@ -122,10 +116,6 @@ class Globals:
     def SUPPORTED_IMAGE_FORMATS(self) -> frozenset:
         return frozenset((".png", ".jpg", ".jpeg", ".PNG", ".JPEG", ".gif", ".GIF"))
 
-    @property
-    def IGNORE_FILES_FOR_UNLOADING(self) -> frozenset:
-        return self._cant_unload
-
     fm = None  # Files manager
     sm = None  # Saves manager
     am = None  # Audio manager
@@ -135,7 +125,8 @@ class Globals:
 
     actions = None
 
-    All_views = None
+    All_main_views = None
+    GameViews = None
 
     ListCharacters = None
 

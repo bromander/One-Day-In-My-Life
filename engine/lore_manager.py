@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 import re
-from base64 import b64encode, b64decode
 from binascii import Error as binascii_Error
 import zlib, json
 import ast
@@ -279,7 +278,7 @@ class LoreManager:
         :return: Булевое значение, можно ли выгрузить ассет
         """
 
-        if filename in g.IGNORE_FILES_FOR_UNLOADING:
+        if label in g.EXCLUDE_LABELS_FOR_UNLOAD:
             return False
 
         if filename not in g.fm.textures and filename not in g.fm.audios:

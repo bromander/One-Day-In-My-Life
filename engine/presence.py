@@ -9,7 +9,7 @@ import time
 
 class Discord_act:
     def __init__(self):
-        with open("game/game_data.JSON") as data:
+        with open("game/game_data.json") as data:
             self.discord_application_ID = json.load(data)["discord_application_ID"]
 
         self.RPC = Presence(self.discord_application_ID)

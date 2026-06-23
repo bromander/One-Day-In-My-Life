@@ -5,6 +5,7 @@ import random
 
 import pyglet.media.player
 from .files_manager import FilesManager
+from .Sound_modif import Sound_modif
 
 from .globals import g
 
@@ -63,7 +64,7 @@ class AudioChannel:
 
     def play(
         self,
-        file: Union[str, sound.Sound],
+        file: Union[str, sound.Sound, Sound_modif],
         loop=False,
         speed=1.0,
         local_volume: Optional[float] = None,
@@ -89,7 +90,7 @@ class AudioChannel:
         if isinstance(file, (str, Path)):
             self.now_playing_path = str(file)
             file_sound = load_sound(str(file), streaming=streaming)
-        elif isinstance(file, Sound):
+        elif isinstance(file, (Sound, Sound_modif)):
             file_sound = file
             self.now_playing_path = str(file_sound.file_name)
         else:
@@ -267,7 +268,7 @@ class AudioManager:
 
         self.sound.play(path, loop=loop, local_volume=volume)
 
-    def play_voice(self, path: Union[str, sound.Sound], loop=False) -> None:
+    def play_voice(self, path: Union[str, sound.Sound, Sound_modif], loop=False) -> None:
 
         if path in self.fm.audios:
             path = self.fm.audios[path]

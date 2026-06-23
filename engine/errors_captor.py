@@ -61,7 +61,7 @@ class ErrorsCaptor:
 
         hawk_core.Hawk.get_near_filelines = staticmethod(_safe_get_near_filelines)
 
-        with open("./game/game_data.JSON", "r", encoding="UTF-8") as f:
+        with open("./game/game_data.json", "r", encoding="UTF-8") as f:
             f = json.load(f)
             key = f["hawk_integration_API"]
         hawk = Hawk(key)

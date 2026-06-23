@@ -12,7 +12,7 @@ import os
 import arcade
 import random
 import json
-from engine.main import Views
+from engine.main import Views, init_file
 from engine.errors_captor import ErrorsCaptor
 import warnings
 
@@ -46,6 +46,8 @@ def main():
         splash = splash.format(
             username=str(os.getenv("USERNAME") or os.getenv("USER"))
         )[1:]
+
+    init_file()
 
     window = Views.MainWindow(
         width=1024, height=786, title=f"{g.WINDOW_TITLE}: {splash}"

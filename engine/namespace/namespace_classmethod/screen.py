@@ -9,7 +9,7 @@ class Screen:
         def call():
             window = get_window()
             self.g.main.waiting_autoskip.off()
-            view = getattr(self.g.All_views, view_name)()
+            view = getattr(self.g.GameViews, view_name)()
             window.show_view(view)
             yield
 

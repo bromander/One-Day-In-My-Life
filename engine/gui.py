@@ -553,7 +553,7 @@ class Managers:
     class SettingsManager(agui.UIManager):
         def __init__(self):
             super().__init__()
-            self.Views = g.All_views
+            self.Views = g.All_main_views
 
             self.settings_scene = Scene()
 
@@ -573,7 +573,7 @@ class Managers:
             self.ui_anchor_layout.default_anchor_x = height * 0.05
 
         def _create_settings(self):
-            texture = load_texture("game/images/gui/in_game_settings.png")
+            texture = g.fm.get_texture("in_game_settings.png")
 
             sprite = Sprite(
                 texture,
@@ -1015,7 +1015,7 @@ class Managers:
                 font_name=FONT_NAME,
             )
             self.attributes = attributes
-            self.img = Image.open("./game/images/gui/name_window.png")
+            self.img = g.fm.get_texture("name_window.png").image.copy()
             self.last_text = attributes.character_name
 
         def update_text(self, text):

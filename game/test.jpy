@@ -346,7 +346,7 @@ label food_choice():
 
     Scene.show_character("shak usual", at="right", effect=SpriteEffects.Dissolve(0.5))
     <shak> "Не помогаешь."
-    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve6(0.5))
+    Scene.show_character("oz meet 2", at="left", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Ну значит, это моя неотразимая харизма!"
     Scene.show_character("shak usual 1")
     <shak> "..."

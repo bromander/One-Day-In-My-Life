@@ -8,3 +8,4 @@ nuitka-crash-report.xml
 .ruff_cache
 /.venv/
 *.jpyc
+/game/hash_assets/
