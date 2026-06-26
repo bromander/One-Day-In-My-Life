@@ -20,10 +20,10 @@ class Globals:
 
     @property
     def TOPICAL_SAVES_VERSION(self) -> int:
-        return 0
+        return 1
 
     @property
-    def EXCLUDE_LABELS_FOR_UNLOAD(self):
+    def EXCLUDE_LABELS_FOR_UNLOAD(self) -> frozenset[str]:
         return frozenset(["init_gui_sprites"])
 
     @property
@@ -38,12 +38,34 @@ class Globals:
         }
 
     @property
-    def MAX_SAVESFILE_SIZE_LIMIT(self):
+    def MAX_SAVESFILE_SIZE_LIMIT(self) -> int:
         """
         Максимальный порог веса файла в байтах.
         Если файл сохранения его переступит, то отныне будет сжиматься
         """
         return 20000
+
+    @property
+    def SAVES_COLOR_PALLETE(self) -> frozenset[tuple[int, int, int]]:
+        return frozenset(
+            [
+                (255, 138, 158),  # Розовый фламинго
+                (255, 179, 122),  # Персиковый закат
+                (252, 229, 112),  # Лимонный сорбет
+                (124, 219, 154),  # Мятный бриз
+                (155, 158, 255),  # Лавандовый туман
+                (255, 118, 200),  # Магнолия
+                (255, 210, 90),  # Янтарный мёд
+                (90, 230, 200),  # Бирюзовая волна
+                (200, 160, 255),  # Сиреневый крем
+                (255, 160, 100),  # Мандариновый щербет
+                (180, 230, 120),  # Лаймовый фреш
+                (120, 200, 255),  # Небесная лазурь
+                (255, 200, 180),  # Лососёвый мусс
+                (220, 180, 255),  # Глициния
+                (100, 255, 180)  # Аквамариновый лёд
+            ]
+        )
 
     @property
     def SHOULD_ZIP_SAVES_DATA(self) -> bool:
@@ -55,7 +77,7 @@ class Globals:
         return None
 
     @property
-    def DEFAULT_IN_GAME_WINDOW_SIZE(self) -> tuple[int]:
+    def DEFAULT_IN_GAME_WINDOW_SIZE(self) -> tuple[int,  int]:
         return (1920, 1080)
 
     @property

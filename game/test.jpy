@@ -326,9 +326,9 @@ label food_choice():
     else:
         Lore.jump("bad_ending_hrum_hrum")
 
-    choise = table[food_choice]
+    choose = table[food_choice]
 
-    <> "[choise]!"
+    <> "[choose]!"
     Audio.stop("music", "fade")
     Scene.start_cutscene("strashilka_net.gif")
 

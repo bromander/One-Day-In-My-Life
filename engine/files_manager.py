@@ -104,7 +104,16 @@ class FilesManager:
             "JE3000_logo-export.png",
             "name_window.png",
             "splash.png",
-            "what_are_you_so_afraid_of.png"
+            "what_are_you_so_afraid_of.png",
+            "sorry1.png",
+            "color_palette_chooser_button_frame.png",
+            "color_palette_chooser_button_color_plaseholder.png",
+            "buttercup by jack stauber (but kazoo).mp3",
+            "color_palette_chooser_button_random.png",
+            "ambience-reactor.mp3",
+            "color_palette_chooser_button_frame_pressed.png",
+            "color_palette_chooser_button_frame_hovered.png",
+            "ambience-reactor.mp3"
         ], "init_gui_sprites", True)
 
 
@@ -196,6 +205,8 @@ class FilesManager:
                 path = str(audio_paths[i])
 
                 audios[i] = self._load_asset(path, "audio")
+            else:
+                logger.error(f"Не найден ассет {i}!")
 
     def _load_fonts(self):
         for font_path in self.fonts_paths:
@@ -388,6 +399,14 @@ class FilesManager:
         default_texture_cache.flush(True, True, True)
 
         return texture
+
+    def get_audio(
+            self, filename: str
+    ) -> Optional[Union[Sound, Sound_modif]]:
+        audio_data = self.audios.get(filename, None)
+
+        return audio_data
+
 
     def get_original_filename(self, filename: str):
         if self.use_hashed_assets:

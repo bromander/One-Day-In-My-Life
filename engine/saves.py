@@ -2,6 +2,9 @@ import copy
 import pathlib
 import json
 import os
+import random
+from typing import Optional
+
 from .Exceptions import SaveDoesNotExistError
 from .zipper import encode, decode
 from arcade import TextureAnimationSprite, TextureKeyframe, TextureAnimation, Sprite, get_window
@@ -296,7 +299,7 @@ class Saves_manager:
                     return saves
 
 
-        def create_save(self, session_id: str) -> None:
+        def create_save(self, session_id: str, colour: Optional[tuple[int, int, int]] = None) -> None:
             """
             Создаёт сохранение
             """
@@ -382,6 +385,9 @@ class Saves_manager:
 
             saves = self._get_saves()
 
+            if colour is None:
+                colour = random.choice(list(g.SAVES_COLOR_PALLETE))
+
             saves[session_id] = {
                 "position": g.lm.pose - 1,
                 "label": g.lm.label,
@@ -389,11 +395,23 @@ class Saves_manager:
                 "scene": scene,
                 "files_manager": files_manager,
                 "session_data": g.main.session_data,
+                "color": colour
             }
 
             self._set_saves(saves)
 
-            self._save_data()
+        def double_save(self, orig_session_id: str, new_session_id: str):
+            saves = self._get_saves()
+
+            orig_save = saves[orig_session_id]
+            new_save = copy.deepcopy(orig_save)
+
+            name = new_save["session_data"]["name"]
+            new_save["session_data"]["name"] = f"[КОПИЯ]  {name}"
+
+            saves[new_session_id] = new_save
+
+            self._set_saves(saves)
 
         def get_save(self, session_id: str) -> dict:
             """
@@ -421,6 +439,12 @@ class Saves_manager:
 
             saves = self._get_saves()
             del saves[session_id]
+            self._set_saves(saves)
+
+        def set_save_color(self, session_id, color):
+
+            saves = self._get_saves()
+            saves[session_id]["color"] = color
             self._set_saves(saves)
 
         def load_save(self, session_id):

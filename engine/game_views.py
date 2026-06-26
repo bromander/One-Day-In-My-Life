@@ -186,21 +186,7 @@ class GameViews:
 
         def on_draw(self) -> None:
 
-            try:
-                if self.cursor_texture:
-                    arcade.draw_sprite(self.cursor_texture)
-            except (GLException, AttributeError):
-                logger.warning(
-                    "При попытке создать курсор, возникла ошибка OpenGL. Пересоздаём..."
-                )
-                try:
-                    self.cursor_texture = arcade.Sprite(
-                        "game/images/gui/cursor.png", 0.2
-                    )
-                    arcade.draw_sprite(self.cursor_texture)
-                except:
-                    logger.error("Курсор не был создан!")
-                    pass
+            arcade.draw_sprite(self.cursor_texture)
 
             if not g.sm:
                 return None

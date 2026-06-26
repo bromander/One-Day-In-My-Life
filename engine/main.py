@@ -1,3 +1,5 @@
+import copy
+
 import arcade
 from arcade import SpriteList, View
 from pyglet.event import EVENT_HANDLE_STATE
@@ -17,6 +19,7 @@ from .gui import (
     UISliderVertical,
     Managers,
     UISliderSavesUpdater,
+    ColorsPaletteButton,
 )
 from .scene import Scene
 from .lore_manager import LoreManager
@@ -743,7 +746,7 @@ class Views:
                     self.loading_screen_fade.alpha = 0
                     yield
                 self.is_loading = False
-                g.am.play_music("game/music/buttercup by jack stauber (but kazoo).mp3")
+                g.am.play_music(g.fm.get_audio("buttercup by jack stauber (but kazoo).mp3"))
                 self.background_color = (199, 100, 131)
 
             self.loading_screen.alpha = 255
@@ -784,7 +787,7 @@ class Views:
 
                         self.text = text
 
-                        file = "./game/images/scenes/sorry1.png"
+                        file = g.fm.get_texture("sorry1.png")
                         self.file = arcade.Sprite(file)
                         self.background_color = arcade.color.BLACK
                         self.lst = arcade.SpriteList()
@@ -940,7 +943,7 @@ class Views:
             self.window.on_deactivate = lambda: self.window.activate()
 
             def vslom():
-                g.am.play_music("game/music/ambience-reactor.mp3")
+                g.am.play_music(g.fm.get_audio("ambience-reactor.mp3"))
                 oth_manager = agui.UIManager()
                 oth_manager.add(self.main_lebel)
                 for i in range(10):
@@ -1221,16 +1224,26 @@ class Views:
 
             self.background_color = (199, 100, 131)
 
-            self.slider: Optional[UISliderVertical] = None
+            self.slider = UISliderVertical(
+                value=1,
+                min_value=1,
+                max_value=self.saves_len,
+                width=20,
+                height=self.window.height - 50,
+                step=1,
+            )
 
             self.manager = agui.UIManager()
             self.manager.enable()
 
-            self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
-            self.v_box.center_x = self.window.width / 2 - 300
-            self.manager.add(self.v_box)
+            self.colors_palette_choose = ColorsPaletteButton()
 
-            self.choise = 0
+            self.choose = 0
+
+            self.v_box_anchor = agui.UIAnchorLayout()
+            self.manager.add(self.v_box_anchor)
+
+            self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
             self.generate_buttons()
 
@@ -1242,6 +1255,22 @@ class Views:
                 self.v_box.clear()
             self.manager.disable()
 
+        def _get_button_style(self, color):
+            STYLE_SAVE_BUTTON = g.STYLE_DEFAULT_BUTTON.copy()
+            STYLE_SAVE_BUTTON["normal"]["bg"] = color
+            STYLE_SAVE_BUTTON["hover"]["bg"] = tuple(i + 25 if i + 25 < 256 else i for i in color)
+            STYLE_SAVE_BUTTON["press"]["bg"] = tuple(i - 25 if i - 25 > 0 else i for i in color)
+            _r, _g, _b = color
+            gray = int(0.299 * _r + 0.587 * _g + 0.114 * _b)
+            factor = 0.4
+            darkness = 0.65
+            STYLE_SAVE_BUTTON["disabled"]["bg"] = (
+                (_r + (gray - _r) * factor) * (1 - darkness),
+                (_g + (gray - _g) * factor) * (1 - darkness),
+                (_b + (gray - _b) * factor) * (1 - darkness)
+            )
+            return STYLE_SAVE_BUTTON
+
         def generate_buttons(self) -> None:
 
             self.manager.clear()
@@ -1250,43 +1279,17 @@ class Views:
             self.saves = saves + [[None]] * (20 - len(saves))
 
             self.v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
-            self.v_box.center_x = self.window.width / 2 - 300
-            self.manager.add(self.v_box)
 
-            FONT_NAME = g.FONT_NAME
+            self.v_box_anchor = agui.UIAnchorLayout()
 
-            _STYLE_DEFAULT_BUTTON = {
-                "normal": arcade.gui.UIFlatButton.UIStyle(
-                    font_size=20,
-                    font_name=(FONT_NAME,),
-                    font_color=arcade.color.BLACK,
-                    bg=(225, 184, 1, 255),
-                    border=(79, 67, 13, 255),
-                    border_width=5,
-                ),
-                "hover": arcade.gui.UIFlatButton.UIStyle(
-                    font_size=20,
-                    font_name=(FONT_NAME,),
-                    font_color=arcade.color.BLACK,
-                    bg=(163, 134, 5, 255),
-                    border=(79, 67, 13, 255),
-                    border_width=5,
-                ),
-                "press": arcade.gui.UIFlatButton.UIStyle(
-                    font_size=20,
-                    font_name=(FONT_NAME,),
-                    font_color=arcade.color.BLACK,
-                    bg=(191, 161, 25, 255),
-                    border=(79, 67, 13, 255),
-                    border_width=5,
-                ),
-                "disabled": arcade.gui.UIFlatButton.UIStyle(
-                    font_size=20,
-                    font_name=(FONT_NAME,),
-                    font_color=arcade.color.LIGHT_STEEL_BLUE,
-                    bg=(66, 71, 77),
-                ),
-            }
+            self.v_box_anchor.add(
+                self.v_box,
+                anchor_x="center",
+                anchor_y="center",
+                align_x=60
+            )
+
+            self.manager.add(self.v_box_anchor)
 
             def return_to_main_menu(event=None):
 
@@ -1306,10 +1309,30 @@ class Views:
                 self.window.show_view(game)
 
             def delete_save(event=None):
-                session_id = self.saves[self.choise][0]
+                session_id = self.saves[self.choose][0]
                 if session_id is None:
                     return None
                 g.sm.Save.del_save(session_id)
+                self.generate_buttons()
+
+            def change_save_colour(event=None):
+                self.colors_palette_choose.now_color = self.colors_palette_choose._get_color()
+
+                session_id = self.saves[self.choose][0]
+                if session_id is None:
+                    self.colors_palette_choose.now_color = None
+                    return None
+
+                self.colors_palette_choose.update()
+
+                g.sm.Save.set_save_color(session_id, self.colors_palette_choose.now_color)
+                self.generate_buttons()
+
+            def double_save(event=None):
+                session_id = self.saves[self.choose][0]
+                if session_id is None:
+                    return None
+                g.sm.Save.double_save(session_id, str(uuid.uuid4()))
                 self.generate_buttons()
 
             STYLE_DEFAULT_BUTTON = g.STYLE_DEFAULT_BUTTON
@@ -1322,10 +1345,17 @@ class Views:
                 x=self.window.width * 0.01,
                 y=self.window.height * 0.9,
             )
+            return_button_anchor = agui.UIAnchorLayout()
+            return_button_anchor.add(
+                return_button,
+                anchor_x="left",
+                anchor_y="top",
+                align_x=10, align_y=-10
+            )
             return_button.on_click = return_to_main_menu
-            self.manager.add(return_button)
+            self.manager.add(return_button_anchor)
 
-            return_button = agui.UIFlatButton(
+            del_save_button = agui.UIFlatButton(
                 text="Удалить сохранение",
                 width=150,
                 height=100,
@@ -1334,11 +1364,49 @@ class Views:
                 y=self.window.height * 0.5,
                 multiline=True,
             )
-            return_button.on_click = delete_save
-            self.manager.add(return_button)
+            del_save_button.on_click = delete_save
+
+            double_save_button = agui.UIFlatButton(
+                text="Дублировать сохранение",
+                width=170,
+                height=100,
+                style=STYLE_DEFAULT_BUTTON,
+                x=self.window.width * 0.01,
+                y=self.window.height * 0.5,
+                multiline=True,
+            )
+            double_save_button.on_click = double_save
+
+            del_save_button_anchor = agui.UIAnchorLayout()
+            del_save_button_anchor.add(
+                del_save_button,
+                anchor_x="left",
+                anchor_y="center",
+                align_x=10
+            )
+            del_save_button_anchor.add(
+                double_save_button,
+                anchor_x="left",
+                anchor_y="center",
+                align_x=10, align_y=-110
+            )
+            self.colors_palette_choose = ColorsPaletteButton()
+            session_id = self.saves[self.choose][0]
+            if session_id is not None:
+                color = g.sm.Save.get_save(session_id)["color"]
+                self.colors_palette_choose.set_color(color)
+            self.colors_palette_choose.on_click = change_save_colour
+            del_save_button_anchor.add(
+                self.colors_palette_choose,
+                anchor_x="left",
+                anchor_y="center",
+                align_x=10, align_y=100
+            )
+            self.manager.add(del_save_button_anchor)
 
             for i in self.saves:
                 text = "Пусто"
+                STYLE_SAVE_BUTTON = copy.deepcopy(g.STYLE_DEFAULT_BUTTON)
                 if i[0] is not None:
                     name = i[1]["session_data"]["name"]
                     description = i[1]["session_data"]["description"]
@@ -1346,14 +1414,16 @@ class Views:
                         i[1]["session_data"]["session_start"]
                     )
                     text = f"{name} : {description}                 {session_last_time}"
+                    color = i[1]["color"]
+                    STYLE_SAVE_BUTTON = self._get_button_style(color)
 
                 button = agui.UIFlatButton(
                     text=text,
                     width=700,
                     height=200,
-                    style=_STYLE_DEFAULT_BUTTON,
                     multiline=True,
                 )
+                button.style = STYLE_SAVE_BUTTON
 
                 if i[0] is not None:
                     button.on_click = lambda event, value=i[0]: open_save(value)
@@ -1361,18 +1431,17 @@ class Views:
                 self.v_box.add(button)
                 self.v_box.children[-1].disabled = True
 
-            self.slider = UISliderVertical(
-                value=1,
-                min_value=1,
-                max_value=self.saves_len,
-                width=20,
-                height=self.window.height - 50,
-                step=1,
-            )
             self.slider.center_x = self.window.width - 20
             self.slider.center_y = self.window.height / 2
 
-            self.manager.add(self.slider)
+            slider_anchor = agui.UIAnchorLayout()
+            slider_anchor.add(
+                self.slider,
+                anchor_x="right",
+                anchor_y="center",
+                align_x=-10
+            )
+            self.manager.add(slider_anchor)
 
         def on_draw(self) -> bool | None:
             self.clear()
@@ -1383,17 +1452,17 @@ class Views:
         def on_update(self, delta_time: float) -> bool | None:
             if self.window.current_view is self:
                 if self.slider:
-                    self.v_box.center_y = (
+                    self.v_box_anchor.center_y = (
                         self.center_y
-                        - ((self.saves_len - self.slider.value) * 220 + 100)
+                        - ((self.saves_len - self.choose-1) * 220 + 100)
                         + (220 * 10)
                     )
-                    self.choise = int(self.slider.value - 1)
+                    self.choose = int(self.slider.value - 1)
 
                 if self.v_box and self.v_box.children:
                     for i in range(self.saves_len):
                         self.v_box.children[i].disabled = (
-                            True if i != self.choise else False
+                            True if i != self.choose else False
                         )
                 super().on_update(delta_time)
 
