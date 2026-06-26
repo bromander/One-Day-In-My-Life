@@ -4,7 +4,7 @@ import json
 import os
 from .Exceptions import SaveDoesNotExistError
 from .zipper import encode, decode
-from arcade import TextureAnimationSprite
+from arcade import TextureAnimationSprite, TextureKeyframe, TextureAnimation, Sprite, get_window
 
 from .globals import g
 from .logger import get_logger
@@ -284,19 +284,19 @@ class Saves_manager:
                 if isinstance(saves, dict):
                     json_str = json.dumps(saves, ensure_ascii=True).encode('utf-8')
                     if len(json_str) > g.MAX_SAVESFILE_SIZE_LIMIT:
-                        logger.log(f"Файл сохранений стал весить больше {g.MAX_SAVESFILE_SIZE_LIMIT} байт! Применяем сжатие")
+                        logger.info(f"Файл сохранений стал весить больше {g.MAX_SAVESFILE_SIZE_LIMIT} байт! Применяем сжатие")
                         self._set_saves(encode(saves))
                     return saves
                 else:
                     saves = decode(saves)
                     json_str = json.dumps(saves, ensure_ascii=True).encode('utf-8')
                     if len(json_str) < g.MAX_SAVESFILE_SIZE_LIMIT:
-                        logger.log(f"Файл сохранений стал весить меньше {g.MAX_SAVESFILE_SIZE_LIMIT} байт! Сжатие не будет использовано")
+                        logger.info(f"Файл сохранений стал весить меньше {g.MAX_SAVESFILE_SIZE_LIMIT} байт! Сжатие не будет использовано")
                         self._set_saves(saves)
                     return saves
 
 
-        def create_save(self) -> None:
+        def create_save(self, session_id: str) -> None:
             """
             Создаёт сохранение
             """
@@ -382,7 +382,7 @@ class Saves_manager:
 
             saves = self._get_saves()
 
-            saves[g.main.session_id] = {
+            saves[session_id] = {
                 "position": g.lm.pose - 1,
                 "label": g.lm.label,
                 "defines": defines,
@@ -422,3 +422,122 @@ class Saves_manager:
             saves = self._get_saves()
             del saves[session_id]
             self._set_saves(saves)
+
+        def load_save(self, session_id):
+
+            logger.info("")
+            logger.info(f"Открываем сохранение {session_id}:")
+
+            window = get_window()
+
+            lm = g.lm
+            save = self.get_save(session_id)
+
+            defines_len = len(save["defines"])
+            logger.debug(f"- {defines_len} Define переменных")
+
+            for i, o in save["defines"].items():
+                g.main.NAMESPACE["Define"].__setattr__(i, o)
+
+            _files_manager = save["files_manager"]
+
+            assets = list(_files_manager["loaded_textures"].keys()) + list(
+                _files_manager["loaded_audios"].keys()
+            )
+
+            logger.debug(f"- {len(assets)} ассетов")
+
+            g.fm.load_assets(assets, "loading_ponn")
+
+            # while thread.is_alive():
+            #    continue
+
+            old_scene = save["scene"]
+            g.scene.characters_slice = old_scene["characters_slice"]
+            logger.debug(f"- characters_slice: {g.scene.characters_slice}")
+
+            bg_sprites_len  = len(old_scene["bg"])
+            logger.debug(f"- {bg_sprites_len} активных спрайтов слоя bg")
+            for i in old_scene["bg"]:
+                bg_sprite = Sprite(i["path"])
+                bg_sprite.size = tuple(i["size"])
+                bg_sprite.position = tuple(i["pos"])
+                g.scene.add_sprite("bg", i["layer"], bg_sprite)
+
+            sprites_sprites_len = len(old_scene["sprites"])
+            logger.debug(f"- {sprites_sprites_len} активных спрайтов слоя sprites")
+            for i in old_scene["sprites"]:
+                if isinstance(i["path"], str):
+                    sprite = Sprite(i["path"])
+                elif isinstance(i["path"], list):
+                    anim = TextureAnimation(
+                        [
+                            TextureKeyframe(g.scene.get_texture(i))
+                            for i in i["path"]
+                        ]
+                    )
+                    sprite = TextureAnimationSprite(animation=anim)
+
+                sprite.size = tuple(i["size"])
+                sprite.position = tuple(i["pos"])
+                g.scene.add_sprite("sprites", i["id"], sprite)
+
+            if old_scene["music"]["path"] is not None:
+                music_path = old_scene["music"]["path"]
+                logger.debug(f"- Активный трек: {music_path}")
+                g.am.play_music(
+                    music_path,
+                    volume=old_scene["music"]["volume"],
+                )
+            else:
+                g.am.stop_sound()
+                g.am.stop_music()
+
+            len_bg_parallax = len(old_scene["bg_parallax"])
+            logger.debug(f"- {len_bg_parallax} активных параллакс спрайтов")
+            for i in old_scene["bg_parallax"]:
+                while True:
+                    try:
+                        g.scene.add_parallax_bg(
+                            i["path"],
+                            i["speed"],
+                            i["original_x"],
+                            i["original_y"],
+                        )
+                    except AttributeError:
+                        continue
+                    else:
+                        break
+
+            len_animated_sprites = len(old_scene["animated_sprites"])
+            logger.debug(f"- {len_animated_sprites} активных анимированных спрайтов")
+            for i in old_scene["animated_sprites"]:
+                cutscene: TextureAnimationSprite = g.fm.get_texture(
+                    i["id"]
+                )
+                while cutscene is None:
+                    cutscene = g.fm.get_texture(i["id"])
+
+                cutscene.size = window.size
+                cutscene.center_x, cutscene.center_y = (
+                    window.width / 2,
+                    window.height / 2,
+                )
+                g.scene.clear_layer("bg")
+                g.scene.clear_layer("animated_sprites")
+                g.scene.add_sprite("animated_sprites", i["id"], cutscene)
+
+            label, pos = save["label"], save["position"]
+            logger.debug(f"- Лейбл, позиция: {label, pos}")
+            lm.jump(label, pos)
+
+            session_data = save["session_data"]
+            logger.debug(f"- Данные сессии: {session_data}")
+            g.main.session_data["name"] = session_data["name"]
+            g.main.session_data["description"] = session_data["description"]
+
+            if hasattr(g.main, "set_bg_by_scene_bg"):
+                g.main.set_bg_by_scene_bg()
+
+            logger.info("Сохранение было успешно открыто!")
+            logger.info("")

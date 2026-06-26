@@ -618,7 +618,7 @@ class Managers:
                 save_button = agui.UIFlatButton(
                     text="Сохранить", width=200, style=g.STYLE_DEFAULT_BUTTON
                 )
-                save_button.on_click = lambda action=None: g.sm.Save.create_save()
+                save_button.on_click = lambda action=None, session_id=g.main.session_id: g.sm.Save.create_save(session_id)
 
                 self.settings_v_box.add(save_button)
 

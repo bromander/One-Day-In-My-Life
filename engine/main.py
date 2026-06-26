@@ -384,7 +384,8 @@ class Views:
 
             self.start_trigger: bool = True
 
-            self.session_id = ""
+            self.loaded_session_id = session_id
+            self.session_id = session_id
 
             self.NAMESPACE = Namespace(g)
 
@@ -395,114 +396,10 @@ class Views:
             }
 
             self.loaded_from_save = False
-            def load_saves(session_id):
-                """
-                Загружает сохранение
-                """
-                if session_id is None:
-                    self.session_id = str(uuid.uuid4())
-                else:
-                    self.loaded_from_save = True
-                    logger.info(f"Открытие сохранения {session_id}...")
-
-                    lm = g.lm
-                    self.session_id = str(uuid.uuid4())
-                    save = g.sm.Save.get_save(session_id)
-
-                    print(save)
-
-                    for i, o in save["defines"].items():
-                        self.NAMESPACE["Define"].__setattr__(i, o)
-
-                    _files_manager = save["files_manager"]
-
-                    assets = list(_files_manager["loaded_textures"].keys()) + list(
-                        _files_manager["loaded_audios"].keys()
-                    )
-
-                    g.fm.load_assets(assets, "loading_ponn")
-
-                    # while thread.is_alive():
-                    #    continue
-
-                    old_scene = save["scene"]
-                    g.scene.characters_slice = old_scene["characters_slice"]
-
-                    for i in old_scene["bg"]:
-                        bg_sprite = arcade.Sprite(i["path"])
-                        bg_sprite.size = tuple(i["size"])
-                        bg_sprite.position = tuple(i["pos"])
-                        g.scene.add_sprite("bg", i["layer"], bg_sprite)
-
-                    for i in old_scene["sprites"]:
-                        if isinstance(i["path"], str):
-                            sprite = arcade.Sprite(i["path"])
-                        elif isinstance(i["path"], list):
-                            anim = arcade.TextureAnimation(
-                                [
-                                    arcade.TextureKeyframe(g.scene.get_texture(i))
-                                    for i in i["path"]
-                                ]
-                            )
-                            sprite = arcade.TextureAnimationSprite(animation=anim)
-
-                        sprite.size = tuple(i["size"])
-                        sprite.position = tuple(i["pos"])
-                        g.scene.add_sprite("sprites", i["id"], sprite)
-
-                    if old_scene["music"]["path"] is not None:
-                        g.am.play_music(
-                            old_scene["music"]["path"],
-                            volume=old_scene["music"]["volume"],
-                        )
-                    else:
-                        g.am.stop_sound()
-                        g.am.stop_music()
-
-                    for i in old_scene["bg_parallax"]:
-                        while True:
-                            try:
-                                g.scene.add_parallax_bg(
-                                    i["path"],
-                                    i["speed"],
-                                    i["original_x"],
-                                    i["original_y"],
-                                )
-                            except AttributeError:
-                                continue
-                            else:
-                                break
-
-                    for i in old_scene["animated_sprites"]:
-                        cutscene: arcade.TextureAnimationSprite = g.fm.get_texture(
-                            i["id"]
-                        )
-                        while cutscene is None:
-                            cutscene = g.fm.get_texture(i["id"])
-
-                        cutscene.size = self.window.size
-                        cutscene.center_x, cutscene.center_y = (
-                            self.width / 2,
-                            self.height / 2,
-                        )
-                        g.scene.clear_layer("bg")
-                        g.scene.clear_layer("animated_sprites")
-                        g.scene.add_sprite("animated_sprites", i["id"], cutscene)
-
-                    lm.jump(save["label"], save["position"])
-
-                    logger.info("Сохранение было успешно открыто!")
-
-                    self.session_data["name"] = save["session_data"]["name"]
-                    self.session_data["description"] = save["session_data"][
-                        "description"
-                    ]
-
-                    self.window.GameView = self
-
-                    self.set_bg_by_scene_bg()
-
-            load_saves(session_id)
+            if self.loaded_session_id:
+                self._load_save(session_id)
+                self.loaded_from_save = True
+            self.session_id = str(uuid.uuid4())
 
             self.settings_manager = Managers.SettingsManager()
             self.settings_manager.enable()
@@ -529,6 +426,10 @@ class Views:
             self.talk_manager(clicked=False)
 
             self.on_resize(int(self.width), int(self.height))
+
+        def _load_save(self, session_id):
+            g.sm.Save.load_save(session_id)
+            self.window.GameView = self
 
         def _update_dialog_window(self, width, height):
             self.dialog_window.width = width
