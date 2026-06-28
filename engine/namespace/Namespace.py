@@ -77,21 +77,8 @@ class Namespace:
         self.g.main.chanel()
 
     def talk(self, character: str, text: str):
-        def format_text(text: str) -> str:
-            pattern = r"((?<!\\)\[[^\]]*(?:(?<!\\)\][^\[]*)*?(?<!\\)\])"
-            text = re.split(pattern, str(text))
-            for e, i in enumerate(text):
-                if i.startswith("[") and i.endswith("]"):
-                    text[e] = str(self.get(i.strip("[]"), "NONE"))
-            text = (
-                "".join(text)
-                .replace("\\\\", "\\")
-                .replace(r"\[", r"[")
-                .replace(r"\]", r"]")
-            )
-            return text
 
-        gen = self.g.ListCharacters[character].talk(format_text(text))
+        gen = self.g.ListCharacters[character].talk(text)
 
         self.g.actions.active_generators.add_generator("consistently", gen, "talk")
         self.returning = "END_text"
