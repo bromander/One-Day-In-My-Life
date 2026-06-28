@@ -1,0 +1,17 @@
+
+label _NOT_FOUND_LABEL(): # Ну не просто же так я добавил специальный лейбл, куда нас перекидывает в случае, если лейбл был не найден
+    Scene.fade("fadeout", 0.01)
+    Audio.stop("music", stream="together")
+    Audio.stop("sound", stream="together")
+
+    Data.clear_gens()
+    Scene.set_scene("blackscreen.png")
+    wait(1.0)
+    Scene.set_scene("whitescreen.png")
+    wait(0.1)
+    Scene.set_scene("blackscreen.png")
+    Audio.play("music", "SmallHum - Agendaman.mp3", effect="fade")
+
+    <> "Ошибка! Лейбл не был найден!"
+
+    end()

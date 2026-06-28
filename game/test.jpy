@@ -1,6 +1,11 @@
 
 label main("Пролог", "А всё так хорошо начиналось!", show_splash = True, speed = 4):
 
+    if not hasattre(Persistent.sessions):
+        Persistent.sessions = 1
+    else:
+        Persistent.sessions += 1
+
     Scene.set_scene("blackscreen.png")
     Scene.add_sprite("perduni.png", "center")
     Scene.fade("fadeout", 3)
@@ -21,10 +26,22 @@ label main("Пролог", "А всё так хорошо начиналось!"
     weekday, day, month = Data.format_time_seconds()
 
     double_text = " "
-    if month != "апрель" and day != "1":
-        double_text = f"Ну, или это МОГЛО бы быть {weekday}, {day} {month}. Потому что сегодня абсолютно другой прекрасный день!"
+    word_ending = ""
 
-    <> "[weekday], [day] [month]. \n [double_text]"
+    endings = {
+        "понедельник" : "МОГ",
+        "вторник" : "МОГ",
+        "среда" : "МОГЛА",
+        "четверг" : "МОГ",
+        "пятница" : "МОГЛА",
+        "суббота" : "МОГЛА",
+        "воскресенье" : "МОГЛО"
+    }
+
+    if month != "апрель" and day != "1":
+        double_text = f"Ну, или это {endings[weekday]} бы быть {weekday}, {day} {month}. Потому что сегодня абсолютно другой прекрасный день!"
+
+    <> f"{weekday}, {day} {month}. \n {double_text}"
 
     <> "На улице весна."
 
@@ -86,7 +103,12 @@ label shop_box_office()
     Scene.set_scene_parallax([("box_office_0.png", 0.0), ("box_office_0.png", 0.2), ("box_office_1.png", 0.4),  ("box_office_2.png", 0.6),  ("box_office_3.png", 0.7)])
     Scene.character_slice = -2
     Scene.show_character(character="masorubka netural", at="center")
-    Scene.fade("fadeout", 2)
+
+    if Persistent.sessions == 1:
+        Scene.fade("fadeout", 25, effect=None) # хихи-хаха
+        wait(5)
+    else:
+        Scene.fade("fadeout", 2)
 
     <> "Мрачная физиономия кассира встречает не менее мрачную физиономию главного героя этой истории."
     <> "Слегка засаленные волосы позавчерашней помывки, стиль в одежде - офисный кэжуал в зелёной жилетке с перечёркнутой фамилией на бейджике. Парень молодой, но почему-то проглядывает пару седых локонов."
@@ -328,7 +350,7 @@ label food_choice():
 
     choose = table[food_choice]
 
-    <> "[choose]!"
+    <> f"{choose}!"
     Audio.stop("music", "fade")
     Scene.start_cutscene("strashilka_net.gif")
 

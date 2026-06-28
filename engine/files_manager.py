@@ -61,8 +61,6 @@ class FilesManager:
 
     def __init__(self, paths: Optional[dict] = None):
 
-        self.hashed_files_manager = HashedFilesManager()
-
         if paths is None:
             paths = {
                 "images": "./game/images",
@@ -71,7 +69,11 @@ class FilesManager:
                 "fonts": "./game/fonts"
             }
 
+        self.hashed_files_manager = None
+
         self._use_hashed_assets = self._get_assets_hashed_value()
+        if self._use_hashed_assets:
+            self.hashed_files_manager = HashedFilesManager()
 
         self.images_path = Path(paths["images"]).absolute()
         self.music_path = Path(paths["music"]).absolute()
@@ -113,7 +115,8 @@ class FilesManager:
             "ambience-reactor.mp3",
             "color_palette_chooser_button_frame_pressed.png",
             "color_palette_chooser_button_frame_hovered.png",
-            "ambience-reactor.mp3"
+            "ambience-reactor.mp3",
+            "SmallHum - Agendaman.mp3"
         ], "init_gui_sprites", True)
 
 
@@ -205,8 +208,6 @@ class FilesManager:
                 path = str(audio_paths[i])
 
                 audios[i] = self._load_asset(path, "audio")
-            else:
-                logger.error(f"Не найден ассет {i}!")
 
     def _load_fonts(self):
         for font_path in self.fonts_paths:
