@@ -1,11 +1,6 @@
 
 label main("Пролог", "А всё так хорошо начиналось!", show_splash = True, speed = 4):
 
-    if not hasattre(Persistent.sessions):
-        Persistent.sessions = 1
-    else:
-        Persistent.sessions += 1
-
     Scene.set_scene("blackscreen.png")
     Scene.add_sprite("perduni.png", "center")
     Scene.fade("fadeout", 3)
@@ -111,14 +106,37 @@ label shop_box_office()
         Scene.fade("fadeout", 2)
 
     <> "Мрачная физиономия кассира встречает не менее мрачную физиономию главного героя этой истории."
+
+    if Persistent.sessions == 1:
+        wait(3)
+
     <> "Слегка засаленные волосы позавчерашней помывки, стиль в одежде - офисный кэжуал в зелёной жилетке с перечёркнутой фамилией на бейджике. Парень молодой, но почему-то проглядывает пару седых локонов."
+
+    if Persistent.sessions == 1:
+        wait(3)
+
     <> "Порой жизнь не жалеет и таких индивидов."
 
+    if Persistent.sessions == 1:
+        wait(1)
+
     <shak> "Доброго дня,\n {w=0.5}Или типа того…"
+
+    if Persistent.sessions == 1:
+        wait(0.5)
+
     Scene.show_character(character="masorubka funny", at="center", effect=SpriteEffects.Dissolve(0.2))
     <masorubka> "С днём дурака… \n {w=0.5}Или типа того…"
     <shak> "Да, дурака… \n {w=0.5}Или типа того…"
+
+    if Persistent.sessions == 1:
+        wait(0.5)
+
     Scene.show_character(character="masorubka netural", at="center", effect=SpriteEffects.Dissolve(0.2))
+
+    if Persistent.sessions == 1:
+        wait(2)
+
     <> "Дабы не продолжать этот марафон неловких ответов, кассир преступил к пробиванию содержимого корзины"
 
     if len(Define.collected_items) == 1:

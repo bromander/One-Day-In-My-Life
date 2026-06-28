@@ -430,6 +430,11 @@ class Views:
 
             self.on_resize(int(self.width), int(self.height))
 
+            if not hasattr(self.NAMESPACE["Persistent"], "sessions"):
+                self.NAMESPACE["Persistent"].sessions = 1
+            else:
+                self.NAMESPACE["Persistent"].sessions += 1
+
         def _load_save(self, session_id):
             g.sm.Save.load_save(session_id)
             self.window.GameView = self
