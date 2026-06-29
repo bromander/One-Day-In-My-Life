@@ -302,6 +302,10 @@ class LoreManager:
         if scan_next:
             if label in self.graf:
                 for graf_label in self.graf[label]:
+                    if graf_label not in self.lore:
+                        logger.error(f"'{graf_label}' лейбл не найден при проверке на возможность выгрузки ассетов!")
+                        continue
+
                     if filename in self.lore[graf_label]["assets"]:
                         return False
 
@@ -366,6 +370,10 @@ class LoreManager:
             # ассеты следующих лейблов
             if label in self.graf:
                 for graf_label in self.graf[label]:
+                    if graf_label not in self.lore:
+                        logger.error(f"'{graf_label}' лейбл не найден при попытке парсинга ассетов!")
+                        continue
+
                     assets_pack[graf_label] = self.lore[graf_label]["assets"]
 
         return assets_pack
@@ -393,6 +401,10 @@ class LoreManager:
         self.label = label
         self.pose = pose
 
+        if self.label not in self.lore:
+            self.jump("_NOT_FOUND_LABEL", 0)
+            return None
+
         if self.lore[label]["caption"]:
             g.main.NAMESPACE.execute(f"Lore.set_part({self.lore[label]['caption']})")
 
@@ -404,6 +416,10 @@ class LoreManager:
         """
 
         self.pose += pos_offset
+
+        if self.label not in self.lore:
+            self.jump("_NOT_FOUND_LABEL", 0)
+            return self.get_thing()
 
         block = self.lore[self.label]["lore"][self.pose]
         lore = {"action": "EXECUTE", "data": block}
@@ -426,7 +442,8 @@ class Reorganize:
         # (?: ... )* – незахватывающая группа, повторяющаяся ноль или более раз
         # Всё вместе захватывается в группу ((?:[^"\\]|\\.)*)
         self.pattern = re.compile(
-            r'^(\s*)<([^>]+)>\s*"((?:[^"\\]|\\.)*)"', flags=re.MULTILINE
+            r'^(\s*)<([^>]+)>\s*([fF]?)(["\'])((?:(?<!\\)\4|\\\4|[^\4])*)\4',
+            flags=re.MULTILINE
         )
         self.quotation_pattern = re.compile(r'["\'](.*?)["\']')
 
@@ -462,12 +479,13 @@ class Reorganize:
         lines = text.splitlines()
 
         def transform_code(text: str) -> str:
-
             def repl(match):
                 indent = match.group(1)
                 tag = match.group(2)
-                content = match.group(3)
-                return f'{indent}talk("{tag}", "{content}")'
+                prefix = match.group(3)  # 'f', 'F' или ''
+                quote = match.group(4)  # тип кавычек
+                content = match.group(5)  # содержимое без изменений
+                return f'{indent}talk("{tag}", {prefix}{quote}{content}{quote})'
 
             return re.sub(self.pattern, repl, text)
 

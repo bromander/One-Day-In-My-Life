@@ -19,6 +19,14 @@ class Globals:
         return save_dir
 
     @property
+    def UNSEEN_TEXT_PLACEHOLDER(self):
+        """
+        Обозначает символ, который будет стоять вместо букв, что во время речи персонажа ещё не видны.
+        По умолчанию строит пустой символ Брайля (U+2800)
+        """
+        return "⠀"
+
+    @property
     def TOPICAL_SAVES_VERSION(self) -> int:
         return 1
 

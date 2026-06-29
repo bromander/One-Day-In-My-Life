@@ -85,6 +85,8 @@ class Character:
 
         self.char_id = char_id
 
+        self.pattern = re.compile(r"\\n |\{[^}]*\}|\S|\s")
+
         self.text_anchor = text_anchor
 
     def talk(self, text: str):
@@ -95,7 +97,7 @@ class Character:
         """
 
         def replace_char_by_index(text, index, new_char):
-            if index < 0 or index >= len(text):
+            if index < 0:
                 return text
             return text[:index] + new_char + text[index + 1 :]
 
@@ -104,26 +106,23 @@ class Character:
         dialog_text_text_alt = [" "]
         string_index_alt = 0
         _text_alt = []
-        for char in re.findall(r"\\n |\{[^}]*\}|\S|\s", repr(text).strip(r"'")):
-            char = str(char)
+        for char in re.findall(self.pattern, repr(text).strip(r"'")):
 
             if char == r"\n ":
                 string_index_alt += 1
                 _text_alt = []
                 continue
 
-            if not char.startswith("{") and not str(char).endswith("}"):
-                if char != r"\n ":
-                    if char != " ":
-                        _text_alt.append(" ")
-                    else:
-                        _text_alt.append(" ")
-                    if len(dialog_text_text_alt) - 1 != string_index_alt:
-                        dialog_text_text_alt.insert(
-                            string_index_alt, "".join(_text_alt)
-                        )
-                    else:
-                        dialog_text_text_alt[string_index_alt] = "".join(_text_alt)
+            if char != " ":
+                _text_alt.append(g.UNSEEN_TEXT_PLACEHOLDER)
+            else:
+                _text_alt.append(" ")
+            if len(dialog_text_text_alt) - 1 != string_index_alt:
+                dialog_text_text_alt.insert(
+                    string_index_alt, "".join(_text_alt)
+                )
+            else:
+                dialog_text_text_alt[string_index_alt] = "".join(_text_alt)
 
         self.attributes.text_anchor = self.text_anchor
 
@@ -143,18 +142,19 @@ class Character:
 
             self.action = "talk"
 
+            self.attributes.character_text = dialog_text_text_alt.copy()
+            self.attributes.text_anchor = self.text_anchor
+            self.attributes.character_name = self.c_name
+
             while True:
-                self.attributes.text_anchor = self.text_anchor
-                self.attributes.character_name = self.c_name
 
                 i = -1
                 self.last_text = text
 
                 _text = []
                 index = 0
-                for char in re.findall(r"\\n |\{[^}]*\}|\S|\s", repr(text).strip(r"'")):
+                for char in re.findall(self.pattern, repr(text).strip(r"'")):
                     i += 1
-                    char = str(char)
 
                     if char == r"\n ":
                         string_index += 1
@@ -162,9 +162,7 @@ class Character:
                         _text = []
                         continue
 
-                    self.attributes.character_name = self.c_name
-
-                    if not char.startswith("{") and not str(char).endswith("}"):
+                    if char not in ("{w}", "{f}"):
                         if char != r"\n ":
                             _text.append(char)
                             self.attributes.character_text[string_index] = (
@@ -174,6 +172,8 @@ class Character:
                                     char,
                                 )
                             )
+                            print(self.attributes.character_text)
+                            i += len(char)-1
 
                     index += 1
 
@@ -204,7 +204,7 @@ class Character:
                                     continue
                                 remaining_time -= dt
 
-                    elif char.startswith("{") and str(char).endswith("}"):
+                    elif str(char) in ("{w}", "{f}"):
                         char = char[1:][:-1]
 
                         if char.startswith("w"):

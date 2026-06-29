@@ -18,6 +18,7 @@ class Data:
         self.ListCharacters = g.ListCharacters
         self.lm = g.lm
         self.AudioManager = g.am
+        self.g = g
 
         self.mix = {
             "Сладкие блинчики": (
@@ -31,6 +32,11 @@ class Data:
             "Салат": (frozenset(["tomatoes.png"]), "cooking_salad"),  # Помедорчеки
             # "Пирог" : (frozenset(["milk.png", "eggs.png", "puki.png"]), "blinyyy") # Яица, молоко  и пуки
         }
+
+    def clear_gens(self):
+        for i in range(1000):
+            self.g.actions.update(1)
+        self.g.actions.active_generators.clear()
 
     def format_time_seconds(self):
         seconds = time.time()

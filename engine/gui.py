@@ -13,7 +13,7 @@ from arcade import (
     Sprite,
     color,
     draw_lrbt_rectangle_filled,
-    draw_circle_filled,
+    draw_circle_filled, draw_line,
     draw_circle_outline,
     Texture,
     get_sprites_at_point,
@@ -32,7 +32,45 @@ from arcade.gui import Surface, UIEvent, UIMouseDragEvent, UIWidget, UIOnClickEv
 from .waiter import Waiter
 
 from .globals import g
+from .text_converter import Parser
 
+
+class FashionUiLabel(agui.UILabel):
+    def __init__(self, *args, underline: bool = False, stroke: bool = False,  **kwargs):
+        super().__init__(*args, **kwargs)
+        self.underline = underline
+        self.stroke = stroke
+
+    def _get_real_width(self):
+        real_chars = self.text.replace(g.UNSEEN_TEXT_PLACEHOLDER, "")
+        if real_chars != self.text:
+            _text = agui.UILabel(real_chars, font_size=self.font_size, font_name=self.font_name, x=0, y=0)
+            return _text._label.content_width
+        else:
+            return self._label.content_width
+
+    def do_render(self, surface: Surface):
+        self.prepare_render(surface)
+
+        #self._label.draw()
+        self._label.draw_debug()
+
+        if self.underline:
+            line_y = 10
+            arcade.draw_line(
+                0, line_y,
+                self._get_real_width(), line_y,
+                self.font_color,
+                2
+            )
+        if self.stroke:
+            line_y = self._label.height/2
+            arcade.draw_line(
+                0, line_y,
+                self._get_real_width(), line_y,
+                self.font_color,
+                2
+            )
 
 class ColorsPaletteButton(agui.UITextureButton):
     def __init__(self, **kwargs):
@@ -828,6 +866,8 @@ class Managers:
         def __init__(self):
             super().__init__()
 
+            self.parser = Parser()
+
             self.attributes = g.attributes
             self.FONT_NAME = g.FONT_NAME
 
@@ -849,6 +889,45 @@ class Managers:
             self.cname_text.update_pos(width, height)
             self.update_character_text(width, height)
 
+        def _get_xpos(self, width):
+            if isinstance(self.attributes.text_anchor, str):
+                match self.attributes.text_anchor:
+                    case "left":
+                        x_pos = width * 0.18
+                    case "center":
+                        x_pos = width * 0
+                    case "right":
+                        x_pos = width * 0.82
+                    case _:
+                        x_pos = width * 0.18
+            elif isinstance(self.attributes.text_anchor, (int, float)):
+                x_pos = width * self.attributes.text_anchor
+            else:
+                x_pos = width * 0.18
+
+            return x_pos
+
+        def _get_kargs(self, text_piece):
+            kargs = {}
+
+            tag = text_piece["tag"]
+
+            if tag is None:
+                return kargs
+
+            tags = list(tag)
+
+            if "b" in tags:
+                kargs["bold"] = True
+            if "i" in tags:
+                kargs["italic"] = True
+            if "u" in tags:
+                kargs["underline"] = True
+            if "s" in tags:
+                kargs["stroke"] = True
+
+            return kargs
+
         def update_character_text(
             self, width: Optional[int] = None, height: Optional[int] = None
         ):
@@ -866,67 +945,78 @@ class Managers:
 
             line_counter = 0
 
-            if isinstance(self.attributes.text_anchor, str):
-                match self.attributes.text_anchor:
-                    case "left":
-                        x_pos = width * 0.18
-                    case "center":
-                        x_pos = width * 0
-                    case "right":
-                        x_pos = width * 0.82
-                    case _:
-                        x_pos = width * 0.18
-            elif isinstance(self.attributes.text_anchor, (int, float)):
-                x_pos = width * self.attributes.text_anchor
-            else:
-                x_pos = width * 0.18
+            x_pos = self._get_xpos(width)
 
-            for i, line in enumerate(self.attributes.character_text):
+            y_start = self.window.height * 0.2 - 15
+
+            for line in self.attributes.character_text:
                 split_lines = self._split_by_length(line, 60)
 
                 for sline in split_lines:
-                    y_pos = ((self.window.height * 0.2) - line_counter * 40) + 15
+                    formatted_sline = self.parser.parse(sline)
 
-                    t = agui.UILabel(
-                        text=sline,
+                    y_pos = y_start - line_counter * 40
+
+                    piece = agui.UIBoxLayout(
+                        align=self.attributes.text_anchor,
+                        justify=self.attributes.text_anchor,
+                        vertical=False,
+                        spacing=0,
                         x=x_pos,
                         y=y_pos,
-                        font_size=30,
-                        text_color=self.attributes.character_text_colour,
-                        font_name=self.FONT_NAME,
-                        width=width,
-                        align=self.attributes.text_anchor,
+                        width=self.window.width,
+                        height=100
                     )
+
+                    for text_piece in formatted_sline:
+                        args = self._get_kargs(text_piece)
+
+                        t = FashionUiLabel(
+                            text=text_piece["text"],
+                            font_size=30,
+                            text_color=self.attributes.character_text_colour,
+                            font_name=self.FONT_NAME,
+                            **args
+                        )
+
+                        piece.add(t)
+
                     line_counter += 1
 
-                    self.texts_widget.add(t)
+                    self.texts_widget.add(piece)
 
             self.add(self.texts_widget)
 
         def _split_by_length(self, text, max_length):
+            if max_length <= 0:
+                raise ValueError("max_length must be positive")
             if len(text) <= max_length:
                 return [text]
 
             parts = []
-            words = text.split(" ")
+            words = text.split()
             current_line = []
+            current_len = 0
 
             for word in words:
-                if len(word) > max_length:
+                word_len = len(word)
+                if word_len > max_length:
                     if current_line:
                         parts.append(" ".join(current_line))
                         current_line = []
+                        current_len = 0
+                    parts.extend(word[i:i + max_length] for i in range(0, word_len, max_length))
+                    continue
 
-                    for i in range(0, len(word), max_length):
-                        parts.append(word[i : i + max_length])
+                new_len = current_len + (1 if current_line else 0) + word_len
+                if new_len <= max_length:
+                    current_line.append(word)
+                    current_len = new_len
                 else:
-                    test_line = " ".join(current_line + [word])
-                    if len(test_line) <= max_length:
-                        current_line.append(word)
-                    else:
-                        if current_line:
-                            parts.append(" ".join(current_line))
-                        current_line = [word]
+                    if current_line:
+                        parts.append(" ".join(current_line))
+                    current_line = [word]
+                    current_len = word_len
 
             if current_line:
                 parts.append(" ".join(current_line))
