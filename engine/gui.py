@@ -1,3 +1,5 @@
+import re
+
 import arcade.cache
 import arcade.gui as agui
 import warnings
@@ -19,7 +21,7 @@ from arcade import (
     get_sprites_at_point,
     LBWH,
     Text,
-    get_window,
+    get_window
 )
 from arcade.gui.events import (
     UIMousePressEvent,
@@ -36,30 +38,38 @@ from .text_converter import Parser
 
 
 class FashionUiLabel(agui.UILabel):
-    def __init__(self, *args, underline: bool = False, stroke: bool = False,  **kwargs):
+    def __init__(self, *args, underline: bool = False, stroke: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
         self.underline = underline
         self.stroke = stroke
 
+        if g.UNSEEN_TEXT_PLACEHOLDER in self.text:
+            self._test_label = agui.UILabel(font_size=self.font_size, font_name=self.font_name, x=0, y=0)
+
     def _get_real_width(self):
-        real_chars = self.text.replace(g.UNSEEN_TEXT_PLACEHOLDER, "")
-        if real_chars != self.text:
-            _text = agui.UILabel(real_chars, font_size=self.font_size, font_name=self.font_name, x=0, y=0)
-            return _text._label.content_width
+        if g.UNSEEN_TEXT_PLACEHOLDER in self.text:
+            parts = self.text.split(g.UNSEEN_TEXT_PLACEHOLDER)
+            clean_text = ''.join(p.strip() for p in parts)
+
+            self._test_label.text = clean_text
+            return self._test_label.content_width
         else:
-            return self._label.content_width
+            return self.content_width
 
     def do_render(self, surface: Surface):
         self.prepare_render(surface)
 
-        #self._label.draw()
-        self._label.draw_debug()
+        self._label.draw()
+        #self._label.draw_debug()
+
+        if self.underline or self.stroke:
+            real_width = self._get_real_width()
 
         if self.underline:
             line_y = 10
             arcade.draw_line(
                 0, line_y,
-                self._get_real_width(), line_y,
+                real_width, line_y,
                 self.font_color,
                 2
             )
@@ -67,7 +77,7 @@ class FashionUiLabel(agui.UILabel):
             line_y = self.height/2
             arcade.draw_line(
                 0, line_y,
-                self._get_real_width(), line_y,
+                real_width, line_y,
                 self.font_color,
                 2
             )

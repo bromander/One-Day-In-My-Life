@@ -89,6 +89,34 @@ class Character:
 
         self.text_anchor = text_anchor
 
+    def _process_text(self, text, pattern, placeholder):
+        matches = re.findall(pattern, text)
+
+        result = []
+        current_parts = []
+        line_index = 0
+
+        for char in matches:
+            if char == "\n":
+                result.append("".join(current_parts))
+                current_parts = []
+                line_index += 1
+                continue
+
+            if char.startswith("{") and char.endswith("}"):
+                current_parts.append(char)
+                continue
+
+            if char != " ":
+                current_parts.append(placeholder)
+            else:
+                current_parts.append(" ")
+
+        if current_parts:
+            result.append("".join(current_parts))
+
+        return result
+
     def talk(self, text: str):
         """
         Форматирует текст и создаёт генератор, который проигрывает речь персонажа.
@@ -97,32 +125,11 @@ class Character:
         """
 
         def replace_char_by_index(text, index, new_char):
-            if index < 0:
-                return text
-            return text[:index] + new_char + text[index + 1 :]
+            return text if index < 0 else text[:index] + new_char + text[index + 1:]
 
         now_lps = self.lps * self.sm.Volume.lps
 
-        dialog_text_text_alt = [" "]
-        string_index_alt = 0
-        _text_alt = []
-        for char in re.findall(self.pattern, repr(text).strip(r"'")):
-
-            if char == r"\n ":
-                string_index_alt += 1
-                _text_alt = []
-                continue
-
-            if char != " ":
-                _text_alt.append(g.UNSEEN_TEXT_PLACEHOLDER)
-            else:
-                _text_alt.append(" ")
-            if len(dialog_text_text_alt) - 1 != string_index_alt:
-                dialog_text_text_alt.insert(
-                    string_index_alt, "".join(_text_alt)
-                )
-            else:
-                dialog_text_text_alt[string_index_alt] = "".join(_text_alt)
+        dialog_text_text_alt = self._process_text(text, self.pattern, g.UNSEEN_TEXT_PLACEHOLDER)
 
         self.attributes.text_anchor = self.text_anchor
 
@@ -162,7 +169,7 @@ class Character:
                         _text = []
                         continue
 
-                    if char not in ("{w}", "{f}"):
+                    if not char.startswith("{") and not char.endswith("}"):
                         if char != r"\n ":
                             _text.append(char)
                             self.attributes.character_text[string_index] = (
@@ -172,9 +179,9 @@ class Character:
                                     char,
                                 )
                             )
-                            print(self.attributes.character_text)
-                            i += len(char)-1
 
+                    elif char.startswith("{") and char.endswith("}") and char not in ("{w}", "{f}"):
+                        i += len(char)-1
                     index += 1
 
                     if (
@@ -204,7 +211,7 @@ class Character:
                                     continue
                                 remaining_time -= dt
 
-                    elif str(char) in ("{w}", "{f}"):
+                    elif char in ("{w}", "{f}"):
                         char = char[1:][:-1]
 
                         if char.startswith("w"):
