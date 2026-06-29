@@ -64,7 +64,7 @@ class FashionUiLabel(agui.UILabel):
                 2
             )
         if self.stroke:
-            line_y = self._label.height/2
+            line_y = self.height/2
             arcade.draw_line(
                 0, line_y,
                 self._get_real_width(), line_y,
@@ -887,7 +887,7 @@ class Managers:
 
         def update_pos(self, width, height):
             self.cname_text.update_pos(width, height)
-            self.update_character_text(width, height)
+            #self.update_character_text(width, height)
 
         def _get_xpos(self, width):
             if isinstance(self.attributes.text_anchor, str):
@@ -932,10 +932,9 @@ class Managers:
             self, width: Optional[int] = None, height: Optional[int] = None
         ):
 
-            if not (width and height):
-                window = get_window()
-                width = window.width
-                height = window.height
+            win_h = height if height is not None else self.window.height
+            width = width if width is not None else self.window.width
+            y_start = win_h * 0.2 - 15
 
             self.remove(self.texts_widget)
 
@@ -947,43 +946,37 @@ class Managers:
 
             x_pos = self._get_xpos(width)
 
-            y_start = self.window.height * 0.2 - 15
+            slines = (self.parser.parse(sline)
+                      for line in self.attributes.character_text
+                      for sline in self._split_by_length(line, 60))
 
-            for line in self.attributes.character_text:
-                split_lines = self._split_by_length(line, 60)
+            for formatted_sline in slines:
 
-                for sline in split_lines:
-                    formatted_sline = self.parser.parse(sline)
+                y_pos = y_start - line_counter * 40
 
-                    y_pos = y_start - line_counter * 40
+                last_t = None
 
-                    piece = agui.UIBoxLayout(
-                        align=self.attributes.text_anchor,
-                        justify=self.attributes.text_anchor,
-                        vertical=False,
-                        spacing=0,
+                for text_piece in formatted_sline:
+                    args = self._get_kargs(text_piece)
+
+                    t = FashionUiLabel(
+                        text=text_piece["text"],
                         x=x_pos,
                         y=y_pos,
-                        width=self.window.width,
-                        height=100
+                        align=self.attributes.text_anchor,
+                        font_size=30,
+                        text_color=self.attributes.character_text_colour,
+                        font_name=self.FONT_NAME,
+                        **args
                     )
+                    self.texts_widget.add(t)
+                    if last_t is None:
+                        last_t = t
+                    else:
+                        t.left = last_t.right
+                        last_t = t
 
-                    for text_piece in formatted_sline:
-                        args = self._get_kargs(text_piece)
-
-                        t = FashionUiLabel(
-                            text=text_piece["text"],
-                            font_size=30,
-                            text_color=self.attributes.character_text_colour,
-                            font_name=self.FONT_NAME,
-                            **args
-                        )
-
-                        piece.add(t)
-
-                    line_counter += 1
-
-                    self.texts_widget.add(piece)
+                line_counter += 1
 
             self.add(self.texts_widget)
 

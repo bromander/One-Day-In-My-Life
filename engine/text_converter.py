@@ -10,6 +10,7 @@ class Parser:
         self.NOT_SELF_CLOSING_TAGS = ("b", "i", "u", "s", "color", "size")
 
     def parse(self, text: Union[str, list[str]]) -> list[dict]:
+        parts = text
         if isinstance(text, str):
             parts = re.split(self.SPLIT_PATTERN, text)
 
