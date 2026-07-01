@@ -4,10 +4,12 @@ import arcade.cache
 import arcade.gui as agui
 import warnings
 import random
+
+import pyglet.text
 from PIL import Image
 from typing_extensions import override
 from arcade.gui.widgets.slider import UISliderStyle, UIBaseSlider
-from typing import Optional
+from typing import Optional, Generator
 from arcade import (
     uicolor,
     Scene,
@@ -43,18 +45,25 @@ class FashionUiLabel(agui.UILabel):
         self.underline = underline
         self.stroke = stroke
 
-        if g.UNSEEN_TEXT_PLACEHOLDER in self.text:
-            self._test_label = agui.UILabel(font_size=self.font_size, font_name=self.font_name, x=0, y=0)
+        self.pattern = re.compile(rf" *{re.escape(g.UNSEEN_TEXT_PLACEHOLDER)} *")
+
+    def _clean_text_width(self, clean_text):
+        old = self._label.text
+        self._label.text = clean_text
+        width = self._label.content_width
+        self._label.text = old
+        return width
 
     def _get_real_width(self):
-        if g.UNSEEN_TEXT_PLACEHOLDER in self.text:
-            parts = self.text.split(g.UNSEEN_TEXT_PLACEHOLDER)
-            clean_text = ''.join(p.strip() for p in parts)
 
-            self._test_label.text = clean_text
-            return self._test_label.content_width
+        if g.UNSEEN_TEXT_PLACEHOLDER in self.text:
+
+            clean_text = self.pattern.sub("", self.text)
+            real_width = self._clean_text_width(clean_text)
+
+            return real_width
         else:
-            return self.content_width
+            return self._label.content_width
 
     def do_render(self, surface: Surface):
         self.prepare_render(surface)
@@ -62,25 +71,26 @@ class FashionUiLabel(agui.UILabel):
         self._label.draw()
         #self._label.draw_debug()
 
-        if self.underline or self.stroke:
-            real_width = self._get_real_width()
+        if self.text.replace(g.UNSEEN_TEXT_PLACEHOLDER, "").strip():
+            if self.underline or self.stroke:
+                real_width = self._get_real_width()
 
-        if self.underline:
-            line_y = 10
-            arcade.draw_line(
-                0, line_y,
-                real_width, line_y,
-                self.font_color,
-                2
-            )
-        if self.stroke:
-            line_y = self.height/2
-            arcade.draw_line(
-                0, line_y,
-                real_width, line_y,
-                self.font_color,
-                2
-            )
+            if self.underline:
+                line_y = 10
+                arcade.draw_line(
+                    0, line_y,
+                    real_width, line_y,
+                    self.font_color,
+                    2
+                )
+            if self.stroke:
+                line_y = self.height/2
+                arcade.draw_line(
+                    0, line_y,
+                    real_width, line_y,
+                    self.font_color,
+                    2
+                )
 
 class ColorsPaletteButton(agui.UITextureButton):
     def __init__(self, **kwargs):
@@ -883,13 +893,18 @@ class Managers:
 
             self.cname_text: Optional[Managers.UiLabelCNameText] = None
 
-            self.texts_widget = UIWidget()
-            self.add(self.texts_widget)
+            self.strings_list: list[agui.UILabel] = []
+
+            self.texts_widget_manager = agui.UIManager()
 
             self.last_character_text = self.attributes.character_text.copy()
             self.last_character_name = str(self.attributes.character_name)
 
             self._create_texts()
+
+        def draw(self, **kwargs) -> None:
+            super().draw(**kwargs)
+            self.texts_widget_manager.draw(**kwargs)
 
         def _create_texts(self):
             self.cname_text = Managers.UiLabelCNameText(self.attributes, self.FONT_NAME)
@@ -905,7 +920,7 @@ class Managers:
                     case "left":
                         x_pos = width * 0.18
                     case "center":
-                        x_pos = width * 0
+                        x_pos = width * 0.5
                     case "right":
                         x_pos = width * 0.82
                     case _:
@@ -916,6 +931,16 @@ class Managers:
                 x_pos = width * 0.18
 
             return x_pos
+
+        def _get_x(self, x_pos, line_width):
+            match self.attributes.text_anchor:
+                case "center":
+                    x = x_pos - line_width / 2
+                case "right":
+                    x = x_pos - line_width
+                case _:
+                    x = x_pos
+            return x
 
         def _get_kargs(self, text_piece):
             kargs = {}
@@ -938,57 +963,72 @@ class Managers:
 
             return kargs
 
-        def update_character_text(
-            self, width: Optional[int] = None, height: Optional[int] = None
-        ):
+        def prepare(self, dialogue: list[str]):
 
-            win_h = height if height is not None else self.window.height
-            width = width if width is not None else self.window.width
-            y_start = win_h * 0.2 - 15
+            self._prepare_text(dialogue)
 
-            self.remove(self.texts_widget)
+        def _prepare_text(self, dialogue: list[str]):
 
-            self.texts_widget = UIWidget()
+            self.strings_list.clear()
+            self.texts_widget_manager.clear()
 
-            self.last_character_text = self.attributes.character_text.copy()
-
-            line_counter = 0
-
-            x_pos = self._get_xpos(width)
+            self.last_character_text = dialogue.copy()
 
             slines = (self.parser.parse(sline)
-                      for line in self.attributes.character_text
+                      for line in dialogue
                       for sline in self._split_by_length(line, 60))
 
             for formatted_sline in slines:
-
-                y_pos = y_start - line_counter * 40
-
-                last_t = None
 
                 for text_piece in formatted_sline:
                     args = self._get_kargs(text_piece)
 
                     t = FashionUiLabel(
-                        text=text_piece["text"],
-                        x=x_pos,
-                        y=y_pos,
                         align=self.attributes.text_anchor,
                         font_size=30,
                         text_color=self.attributes.character_text_colour,
                         font_name=self.FONT_NAME,
                         **args
                     )
-                    self.texts_widget.add(t)
-                    if last_t is None:
-                        last_t = t
-                    else:
-                        t.left = last_t.right
-                        last_t = t
+                    self.texts_widget_manager.add(t)
+                    self.strings_list.append(t)
 
-                line_counter += 1
+        def update_character_text(self):
 
-            self.add(self.texts_widget)
+            self.last_character_text = self.attributes.character_text.copy()
+
+            win_h = self.window.height
+            width = self.window.width
+            y_start = win_h * 0.2 - 15
+            x_pos = self._get_xpos(width)
+
+            slines = (self.parser.parse(sline)
+                      for line in self.attributes.character_text
+                      for sline in self._split_by_length(line, 60))
+
+            text_piece_counter = 0
+
+            for line_counter, formatted_sline in enumerate(slines):
+
+                y_pos = y_start - line_counter * 40 + 50
+
+                line_width = 0
+
+                for i, text_piece in enumerate(formatted_sline):
+                    label = self.strings_list[text_piece_counter + i]
+                    label.text = text_piece["text"]
+                    line_width += label._label.content_width
+
+                x = self._get_x(x_pos, line_width)
+
+                for text_piece in formatted_sline:
+                    label = self.strings_list[text_piece_counter]
+
+                    label.left = x
+                    label.bottom = y_pos
+
+                    x += label._label.content_width
+                    text_piece_counter += 1
 
         def _split_by_length(self, text, max_length):
             if max_length <= 0:
@@ -997,7 +1037,7 @@ class Managers:
                 return [text]
 
             parts = []
-            words = text.split()
+            words = text.split(" ")
             current_line = []
             current_len = 0
 
@@ -1043,7 +1083,7 @@ class Managers:
                 "",
                 "\t",
                 "\n",
-                " ",
+                g.UNSEEN_TEXT_PLACEHOLDER,
             ]:
                 self.cname_text.visible = None
             else:

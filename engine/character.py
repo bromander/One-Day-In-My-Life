@@ -153,6 +153,8 @@ class Character:
             self.attributes.text_anchor = self.text_anchor
             self.attributes.character_name = self.c_name
 
+            g.main.characters_texts_manager.prepare(self.attributes.character_text)
+
             while True:
 
                 i = -1
