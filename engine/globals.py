@@ -1,3 +1,5 @@
+from typing import Optional
+
 import arcade.gui
 import os
 
@@ -55,6 +57,10 @@ class Globals:
 
     @property
     def SAVES_COLOR_PALLETE(self) -> frozenset[tuple[int, int, int]]:
+        """
+        Палитра всех возможных цветов ячеек сохранений
+        :return:
+        """
         return frozenset(
             [
                 (255, 138, 158),  # Розовый фламинго
@@ -76,7 +82,7 @@ class Globals:
         )
 
     @property
-    def SHOULD_ZIP_SAVES_DATA(self) -> bool:
+    def SHOULD_ZIP_SAVES_DATA(self) -> Optional[bool]:
         """
         True - принудительное сжатие
         False - Принудительное игнорирование
@@ -140,6 +146,24 @@ class Globals:
         }
 
     @property
+    def DEFAULT_WAIT_TAG_DURAGTION(self) -> int:
+        """
+        Сколько секунд игра делает остановку при встрече тега {w} в миллисекундах
+        """
+        return 500
+
+    @property
+    def DEFAULT_WAITING_MAP(self) -> dict:
+        """
+        Сколько миллисекунд игра будет делать паузу в речи, при встрече X символа
+        {<символ> : <Кол-во миллисекунд>}
+        """
+        return {
+            "," : 50,
+            "." : 100
+        }
+
+    @property
     def DEFAULT_DATA_FILE_NAME(self) -> str:
         return "data.json"
 
@@ -165,7 +189,7 @@ class Globals:
 
     @property
     def SUPPORTED_FONT_FORMATS(self) -> frozenset:
-        return frozenset((".tff", ".otf"))
+        return frozenset((".ttf", ".otf"))
 
     fm = None  # Files manager
     sm = None  # Saves manager

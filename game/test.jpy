@@ -120,14 +120,14 @@ label shop_box_office()
     if Persistent.sessions == 1:
         wait(1)
 
-    <shak> "Доброго дня,\n {w=0.5}Или типа того…"
+    <shak> "Доброго дня,\n {w}Или типа того…"
 
     if Persistent.sessions == 1:
         wait(0.5)
 
     Scene.show_character(character="masorubka funny", at="center", effect=SpriteEffects.Dissolve(0.2))
-    <masorubka> "С днём дурака… \n {w=0.5}Или типа того…"
-    <shak> "Да, дурака… \n {w=0.5}Или типа того…"
+    <masorubka> "С днём дурака… \n {w}Или типа того…"
+    <shak> "Да, дурака… \n {w}Или типа того…"
 
     if Persistent.sessions == 1:
         wait(0.5)
@@ -169,7 +169,7 @@ label shop_box_money_continue():
     <masorubka> "Ну вроде всё… вам пакет нужен или нет?"
     <shak> "Я с шопперами, спасибо…"
     Scene.show_character(character="masorubka ugly", at="center", effect=SpriteEffects.Dissolve(0.2))
-    <masorubka> "ок… \n {w=0.1}ну тогда всего доброго и не возвращайтесь… \n {w=0.5}или типа того…"
+    <masorubka> "ок… \n {w}ну тогда всего доброго и не возвращайтесь… \n {w}или типа того…"
 
     Lore.jump("shop_box_office_end")
 
@@ -198,11 +198,11 @@ label shop_box_office_much_prod():
 label shop_box_office_one_prod():
 
     Scene.show_character(character="masorubka ugly", at="center", effect=SpriteEffects.Dissolve(0.2))
-    <masorubka> "Ну типа… {w=0.1}блин…"
+    <masorubka> "Ну типа… {w}блин…"
     <shak> "Что-то не так?"
     <masorubka> "Уйдите."
     <shak> "Что?..."
-    <masorubka> "У вас всего один продукт, мне лень заниматься такой мелочью… {w=0.1}Уйдите… \n {w=0.1}Продукт тоже заберите…"
+    <masorubka> "У вас всего один продукт, мне лень заниматься такой мелочью… \n{w}Уйдите… \n{w}Продукт тоже заберите…"
 
     Lore.jump("shop_box_office_end")
 
@@ -252,10 +252,10 @@ label road_to_home_continue():
     Scene.show_character("ed usual", at="left", effect=SpriteEffects.Dissolve(1.0))
     <ed> "Миссис Жаклин! \n Рад вас сегодня видеть! \n Как ваши дела? \n Надеюсь, детишки вам ещё не докучали, нынче этого избежать всё трудней."
     <shak> "Да, мистер… \n Настроение вполне… \n В пределах нормы…"
-    <ed> "Ну и чудесно, но, тем не менее, выскажу свои опасения, на районе я всё чаще начал слышать какие-то странные звуки, будто какой-то медведь или… \n {w=0.5}орёл… \n {w=0.2}трудно сказать…"
+    <ed> "Ну и чудесно, но, тем не менее, выскажу свои опасения, на районе я всё чаще начал слышать какие-то странные звуки, будто какой-то медведь или… \n{w}орёл… \n{w}трудно сказать…"
     <> "Странное высказывание даже для него, такое сравнение не только вгоняет в ступор, но и делает ситуацию всё более неловкой."
     Scene.show_character("shak usual", effect=SpriteEffects.Dissolve(0.2))
-    <shak> "Я возьму ваши опасения на заметку, а теперь мне нужно домой… {w=0.1}мистер…"
+    <shak> "Я возьму ваши опасения на заметку, а теперь мне нужно домой… {w}мистер…"
     <ed> "Хорошего дня, Мисс Жаклин!"
     Scene.fade("fadein", 1)
     <> "На этом разговор был окончен, и путь домой был продолжен."
@@ -299,7 +299,7 @@ label home_late():
     Scene.start_cutscene("strashilka.gif")
     Scene.fade("fadeout", 3)
 
-    <oz> "А- {w=0.5}О,{w=0.5} привет там!"
+    <oz> "А- {w}О, привет там!"
     <shak> "Что тут, чёрт побери, происходит?!"
     <oz> "Это Олежик))) скажи привет!"
     <shak> "УБЕРИ ЭТО НЕМЕДЛЕНО"
@@ -529,7 +529,7 @@ label home():
     Scene.show_character("shak usual", effect=SpriteEffects.Dissolve(0.2))
     <shak> "*вздох смирения* И где ты взяла это черничное море? Не дай боже снова заляпаешь комнату своими порталами, оттирать будешь сама."
     Scene.show_character("oz meet 4", effect=SpriteEffects.Dissolve(0.2))
-    <oz> "Да неееее, я не- \n {w=1.0} ОХ БЛИН СПАСИБО ЧТО НАПОМНИЛА ЗАКРЫТЬ-"
+    <oz> "Да неееее, я не- \n {w} ОХ БЛИН СПАСИБО ЧТО НАПОМНИЛА ЗАКРЫТЬ-"
     Scene.hide_sprite("oz", effect=SpriteEffects.Slide(0.5, side_from="right"))
     <shak> "Мгм, всегда пожалуйста"
     <oz> "Кто знает, какая дурь оттуда бы выползла, если б ты сейчас не сказала..."

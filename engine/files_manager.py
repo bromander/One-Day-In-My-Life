@@ -210,7 +210,7 @@ class FilesManager:
                 audios[i] = self._load_asset(path, "audio")
 
     def _load_fonts(self):
-        for font_path in self.fonts_paths:
+        for font_path in self.fonts_paths.values():
             load_font(font_path)
         logger.debug("Шрифты успешно загружены!")
 

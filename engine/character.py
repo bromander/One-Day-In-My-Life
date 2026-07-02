@@ -182,7 +182,7 @@ class Character:
                                 )
                             )
 
-                    elif char.startswith("{") and char.endswith("}") and char not in ("{w}", "{f}"):
+                    elif char.startswith("{") and char.endswith("}"):
                         i += len(char)-1
                     index += 1
 
@@ -193,9 +193,9 @@ class Character:
                         if os.path.isfile(f"./game/sounds/voice/{self.char_id}"):
                             self.am.play_voice(random.choice(self.talk_sounds))
 
-                    if char == ".":
+                    if char in g.DEFAULT_WAITING_MAP:
                         if not fast:
-                            remaining_time = 0.1
+                            remaining_time = int(g.DEFAULT_WAITING_MAP[char])
                             while remaining_time > 0:
                                 dt = yield
 
@@ -204,29 +204,19 @@ class Character:
 
                                 remaining_time -= dt
 
-                    elif char == ",":
-                        if not fast:
-                            remaining_time = 0.05
-                            while remaining_time > 0:
-                                dt = yield
-                                if dt is None or dt <= 0:
-                                    continue
-                                remaining_time -= dt
-
-                    elif char in ("{w}", "{f}"):
+                    if char in ("{w}", "{f}"):
                         char = char[1:][:-1]
 
                         if char.startswith("w"):
                             i -= 1
 
-                            remaining_time = float(char.split("=")[-1])
+                            remaining_time = int(g.DEFAULT_WAIT_TAG_DURAGTION)
                             while remaining_time > 0:
                                 dt = yield
                                 if dt is None or dt <= 0:
                                     continue
-                                remaining_time -= dt
+                                remaining_time -= dt * 1000
 
-                        dt = yield
                         if char.startswith("f"):
                             i -= 1
                             fast = True
