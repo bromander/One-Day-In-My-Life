@@ -912,7 +912,6 @@ class Managers:
 
         def update_pos(self, width, height):
             self.cname_text.update_pos(width, height)
-            #self.update_character_text(width, height)
 
         def _get_xpos(self, width):
             if isinstance(self.attributes.text_anchor, str):
@@ -963,9 +962,10 @@ class Managers:
 
             return kargs
 
-        def prepare(self, dialogue: list[str]):
+        def prepare(self):
 
-            self._prepare_text(dialogue)
+            if self.last_character_text != self.attributes.character_text:
+                self._prepare_text(self.attributes.character_text)
 
         def _prepare_text(self, dialogue: list[str]):
 
@@ -973,6 +973,9 @@ class Managers:
             self.texts_widget_manager.clear()
 
             self.last_character_text = dialogue.copy()
+
+            if not dialogue[0]:
+                return None
 
             slines = (self.parser.parse(sline)
                       for line in dialogue
@@ -995,7 +998,8 @@ class Managers:
 
         def update_character_text(self):
 
-            self.last_character_text = self.attributes.character_text.copy()
+            if not self.strings_list:
+                return None
 
             win_h = self.window.height
             width = self.window.width
@@ -1010,7 +1014,7 @@ class Managers:
 
             for line_counter, formatted_sline in enumerate(slines):
 
-                y_pos = y_start - line_counter * 40 + 50
+                y_pos = y_start - line_counter * 40 + 35
 
                 line_width = 0
 
@@ -1071,12 +1075,11 @@ class Managers:
 
             if self.attributes.character_text != self.last_character_text:
                 self.update_character_text()
+                self.last_character_text = self.attributes.character_text.copy()
 
             if self.attributes.character_name != self.last_character_name:
-                self.cname_text.update_text(self.attributes.character_name)
-                self.cname_text.update_font(
-                    font_color=self.attributes.character_name_colour
-                )
+                self.cname_text.update_text()
+                self.last_character_name = self.attributes.character_name
 
             if repr(self.attributes.character_name).strip("'") in [
                 " ",
@@ -1213,9 +1216,12 @@ class Managers:
             self.img = g.fm.get_texture("name_window.png").image.copy()
             self.last_text = attributes.character_name
 
-        def update_text(self, text):
+        def update_text(self):
             self.update_pos()
-            self.text = text
+            self.text = self.attributes.character_name
+            self.update_font(
+                font_color=self.attributes.character_name_colour
+            )
 
         def update_pos(self, height: Optional[int] = None, width: Optional[int] = None):
             if not (height and width):

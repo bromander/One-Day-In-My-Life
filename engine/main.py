@@ -477,33 +477,33 @@ class Views:
             """
 
             gens = g.actions.active_generators
-            if gens.active_generators_consistently:
+            if gens.active_generators_consistently and clicked:
+
+                if time.time() - self.last_text_skip < 0.1:
+                    return None
+                else:
+                    self.last_text_skip = time.time()
+
                 if gens.active_generators_consistently[0][0].startswith("talk"):
                     while gens.active_generators_consistently[0][0].startswith("talk"):
-                        gens._update_consistently(1 / 1000)
+                        gens._update_consistently(1000.0)
                         if not gens.active_generators_consistently:
                             break
-                    return
-
-            gen = g.actions.active_generators.active_generators_consistently
-            if gen:
-                if clicked:
-                    self.cursor_texture.alpha = 255
-                    if gen[0][0] != "talk":
-                        g.attributes.reset()
-                        return
-                    else:
-                        if time.time() - self.last_text_skip < 0.3:
-                            return
-                        else:
-                            self.last_text_skip = time.time()
+                    return None
+                else:
+                    g.attributes.reset()
+                    g.main.characters_texts_manager.prepare()
+                    return None
+            else:
+                g.attributes.reset()
+                g.main.characters_texts_manager.prepare()
 
             if (
                 g.actions.active_generators.active_generators_consistently
                 and not clicked
             ):
                 self.waiting_talk.on()
-                return
+                return None
 
             g.attributes.reset()
             now = g.lm.get_thing(pos_offset)

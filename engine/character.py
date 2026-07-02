@@ -13,8 +13,8 @@ class Attributes:
         self.character_name = ""
         self.character_text = [""]
 
-        self.character_name_colour = color.BLACK
-        self.character_text_colour = color.BLACK
+        self.character_name_colour = (255, 0, 255) # Используем такие цвета, чтобы ну мало ли баг. Такие цвета очень хорошо видны на фоне других
+        self.character_text_colour = (255, 0, 255)
 
         self.text_anchor = "left"
 
@@ -22,8 +22,8 @@ class Attributes:
         self.character_name = ""
         self.character_text = [""]
 
-        self.character_name_colour = color.BLACK
-        self.character_text_colour = color.BLACK
+        self.character_name_colour = (255, 0, 255)
+        self.character_text_colour = (255, 0, 255)
 
         self.text_anchor = "left"
 
@@ -153,7 +153,7 @@ class Character:
             self.attributes.text_anchor = self.text_anchor
             self.attributes.character_name = self.c_name
 
-            g.main.characters_texts_manager.prepare(self.attributes.character_text)
+            g.main.characters_texts_manager.prepare()
 
             while True:
 
