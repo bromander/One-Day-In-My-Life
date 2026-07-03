@@ -27,7 +27,6 @@ class Attributes:
 
         self.text_anchor = "left"
 
-
 class Character:
     def __init__(
         self,
@@ -124,9 +123,6 @@ class Character:
         :return: Генератор
         """
 
-        def replace_char_by_index(text, index, new_char):
-            return text if index < 0 else text[:index] + new_char + text[index + 1:]
-
         now_lps = self.lps * self.sm.Volume.lps
 
         dialog_text_text_alt = self._process_text(text, self.pattern, g.UNSEEN_TEXT_PLACEHOLDER)
@@ -143,96 +139,7 @@ class Character:
         self.attributes.character_text = dialog_text_text_alt.copy()
         self.attributes.character_name = ""
 
-        def _talk(now_lps):
-            string_index = 0
-            fast = False
-
-            self.action = "talk"
-
-            self.attributes.character_text = dialog_text_text_alt.copy()
-            self.attributes.text_anchor = self.text_anchor
-            self.attributes.character_name = self.c_name
-
-            g.main.characters_texts_manager.prepare()
-
-            while True:
-
-                i = -1
-                self.last_text = text
-
-                _text = []
-                index = 0
-                for char in re.findall(self.pattern, repr(text).strip(r"'")):
-                    i += 1
-
-                    if char == r"\n ":
-                        string_index += 1
-                        i = -1
-                        _text = []
-                        continue
-
-                    if not char.startswith("{") and not char.endswith("}"):
-                        if char != r"\n ":
-                            _text.append(char)
-                            self.attributes.character_text[string_index] = (
-                                replace_char_by_index(
-                                    self.attributes.character_text[string_index],
-                                    i,
-                                    char,
-                                )
-                            )
-
-                    elif char.startswith("{") and char.endswith("}"):
-                        i += len(char)-1
-                    index += 1
-
-                    if (
-                        (index % 4 == 0 and char not in (",", ".", "!", "&", "?"))
-                        or index == 1
-                    ) and self.char_id is not None:
-                        if os.path.isfile(f"./game/sounds/voice/{self.char_id}"):
-                            self.am.play_voice(random.choice(self.talk_sounds))
-
-                    if char in g.DEFAULT_WAITING_MAP:
-                        if not fast:
-                            remaining_time = int(g.DEFAULT_WAITING_MAP[char])
-                            while remaining_time > 0:
-                                dt = yield
-
-                                if dt is None or dt <= 0:
-                                    continue
-
-                                remaining_time -= dt
-
-                    if char in ("{w}", "{f}"):
-                        char = char[1:][:-1]
-
-                        if char.startswith("w"):
-                            i -= 1
-
-                            remaining_time = int(g.DEFAULT_WAIT_TAG_DURAGTION)
-                            while remaining_time > 0:
-                                dt = yield
-                                if dt is None or dt <= 0:
-                                    continue
-                                remaining_time -= dt * 1000
-
-                        if char.startswith("f"):
-                            i -= 1
-                            fast = True
-
-                    if not fast:
-                        remaining_time = 1 / now_lps
-                        while remaining_time > 0:
-                            dt = yield
-                            if dt is None or dt <= 0:
-                                continue
-                            remaining_time -= dt
-
-                self.action = None
-                return None
-
-        return _talk(now_lps)
+        return talk_gen(self, text, dialog_text_text_alt, now_lps)
 
     def show(self, sprite: str) -> Sprite:
         """
@@ -252,7 +159,6 @@ class Character:
         sprite.scale = self.c_scale
 
         return sprite
-
 
 class ListCharacters:
     def __init__(self) -> None:
@@ -293,3 +199,97 @@ class ListCharacters:
         }
 
         return characters_data
+
+
+
+def replace_char_by_index(text, index, new_char):
+    return text if index < 0 else text[:index] + new_char + text[index + 1:]
+
+def talk_gen(self, text, dialog_text_text_alt, now_lps):
+    string_index = 0
+    fast = False
+
+    self.action = "talk"
+
+    self.attributes.character_text = dialog_text_text_alt.copy()
+    self.attributes.text_anchor = self.text_anchor
+    self.attributes.character_name = self.c_name
+
+    g.main.characters_texts_manager.prepare()
+
+    while True:
+
+        i = -1
+        self.last_text = text
+
+        _text = []
+        index = 0
+        for char in re.findall(self.pattern, repr(text).strip(r"'")):
+            i += 1
+
+            if char == r"\n ":
+                string_index += 1
+                i = -1
+                _text = []
+                continue
+
+            if not char.startswith("{") and not char.endswith("}"):
+                if char != r"\n ":
+                    _text.append(char)
+                    self.attributes.character_text[string_index] = (
+                        replace_char_by_index(
+                            self.attributes.character_text[string_index],
+                            i,
+                            char,
+                        )
+                    )
+
+            elif char.startswith("{") and char.endswith("}"):
+                i += len(char) - 1
+            index += 1
+
+            if (
+                    (index % 4 == 0 and char not in (",", ".", "!", "&", "?"))
+                    or index == 1
+            ) and self.char_id is not None:
+                if os.path.isfile(f"./game/sounds/voice/{self.char_id}"):
+                    self.am.play_voice(random.choice(self.talk_sounds))
+
+            if char in g.DEFAULT_WAITING_MAP:
+                if not fast:
+                    remaining_time = int(g.DEFAULT_WAITING_MAP[char])
+                    while remaining_time > 0:
+                        dt = yield
+
+                        if dt is None or dt <= 0:
+                            continue
+
+                        remaining_time -= dt * 1000
+
+            if char in ("{w}", "{f}"):
+                char = char[1:][:-1]
+
+                if char.startswith("w"):
+                    i -= 1
+
+                    remaining_time = int(g.DEFAULT_WAIT_TAG_DURAGTION)
+                    while remaining_time > 0:
+                        dt = yield
+                        if dt is None or dt <= 0:
+                            continue
+                        remaining_time -= dt * 1000
+
+                if char.startswith("f"):
+                    i -= 1
+                    fast = True
+
+            if not fast:
+                remaining_time = 1 / now_lps
+                while remaining_time > 0:
+                    dt = yield
+                    if dt is None or dt <= 0:
+                        continue
+                    remaining_time -= dt
+
+        self.action = None
+        return None

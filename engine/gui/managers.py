@@ -1,5 +1,5 @@
 import arcade.gui as agui
-from arcade import cache, Sprite, Texture, color, get_window, LBWH
+from arcade import cache, Sprite, Texture, color, get_window, LBWH, Scene
 from arcade.gui import Surface
 from typing import Optional
 from PIL import Image
@@ -8,7 +8,7 @@ from .fashion_label import FashionUiLabel
 from .sliders import UISliderSavesUpdater
 from ..globals import g
 from ..text_converter import Parser
-from ..scene import Scene
+#from ..scene import Scene
 from ..waiter import Waiter
 
 class SettingsManager(agui.UIManager):
