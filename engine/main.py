@@ -1,7 +1,7 @@
 import copy
 
 import arcade
-from arcade import SpriteList, View
+from arcade import View
 from pyglet.event import EVENT_HANDLE_STATE
 import arcade.gui as agui
 import arcade.gui.widgets.layout
@@ -17,7 +17,9 @@ from pyglet.gl.lib import GLException
 
 from .gui import (
     UISliderVertical,
-    Managers,
+    InGameManager,
+    CharactersTextManager,
+    SettingsManager,
     UISliderSavesUpdater,
     ColorsPaletteButton,
 )
@@ -402,15 +404,15 @@ class Views:
                 self.loaded_from_save = True
             self.session_id = str(uuid.uuid4())
 
-            self.settings_manager = Managers.SettingsManager()
+            self.settings_manager = SettingsManager()
             self.settings_manager.enable()
 
-            self.characters_texts_manager = Managers.CharactersTextManager()
+            self.characters_texts_manager = CharactersTextManager()
             self.characters_texts_manager.enable()
 
             self.LoreLogger = LoreLogger()
 
-            self.in_game_manager = Managers.InGameManager()
+            self.in_game_manager = InGameManager()
             self.in_game_manager.settings_button.on_click = (
                 self.settings_manager.turn_visibl
             )

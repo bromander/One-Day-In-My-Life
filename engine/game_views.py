@@ -7,7 +7,7 @@ import random
 
 from .globals import g
 from .logger import get_logger
-from .gui import Managers
+from .gui import SettingsManager, CharactersTextManager
 from .gui import MovableBlockFalling, MovableBlock, ItemsNotifText, ClickableSprite
 from .character import Attributes
 
@@ -235,14 +235,14 @@ class GameViews:
             self.menu_manager = agui.UIManager()
             self.lore = self._lore()
 
-            self.settings_manager = Managers.SettingsManager()
+            self.settings_manager = SettingsManager()
             self.settings_manager.enable()
 
             self.attributes = Attributes()
             self.attributes.character_text_colour = arcade.color.WHITE
             self.attributes.text_anchor = "center"
 
-            self.characters_texts_manager = Managers.CharactersTextManager()
+            self.characters_texts_manager = CharactersTextManager()
             self.characters_texts_manager.enable()
 
             self.correct_ans = 0
@@ -357,14 +357,14 @@ class GameViews:
             self.menu_manager = agui.UIManager()
             self.lore = self._lore()
 
-            self.settings_manager = Managers.SettingsManager()
+            self.settings_manager = SettingsManager()
             self.settings_manager.enable()
 
             self.attributes = Attributes()
             self.attributes.character_text_colour = arcade.color.WHITE
             self.attributes.text_anchor = "center"
 
-            self.characters_texts_manager = Managers.CharactersTextManager()
+            self.characters_texts_manager = CharactersTextManager()
             self.characters_texts_manager.enable()
 
             if not hasattr(self.NAMESPACE["Persistent"], "collected_foods"):
@@ -525,7 +525,7 @@ class GameViews:
                 }
             )
 
-            self.settings_manager = Managers.SettingsManager()
+            self.settings_manager = SettingsManager()
             self.settings_manager.enable()
 
             width = self.width
@@ -858,7 +858,7 @@ class GameViews:
             self.NAMESPACE = g.main.NAMESPACE
             self.fm = g.fm
 
-            self.settings_manager = Managers.SettingsManager()
+            self.settings_manager = SettingsManager()
             self.settings_manager.enable()
 
             self.sprites = [
@@ -1006,7 +1006,7 @@ class GameViews:
                 }
             )
 
-            self.settings_manager = Managers.SettingsManager()
+            self.settings_manager = SettingsManager()
             self.settings_manager.enable()
 
             self.collecting_zone = (
