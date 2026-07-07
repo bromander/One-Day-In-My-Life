@@ -18,7 +18,7 @@ class AssetsHasher:
 
     def _create_manifest(self):
         manifest = {"images" : {}, "sounds" : {}, "music" : {}, "fonts" : {}}
-        all_extensions = list(g.SUPPORTED_FONT_FORMATS) + list(g.SUPPORTED_AUDIO_FORMATS) + list(g.SUPPORTED_IMAGE_FORMATS)
+        all_extensions = list(g.SUPPORTED_FONT_FORMATS) + list(g.SUPPORTED_AUDIO_FORMATS) + list(g.SUPPORTED_IMAGE_FORMATS) + list([".aseprite"])
 
         for dir in manifest.keys():
             assets = self._find_files(all_extensions,f"./game/{dir}")

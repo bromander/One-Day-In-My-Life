@@ -6,6 +6,8 @@ pyglet.options["audio"] = (
     "silent",
 )  # устанавливаем менее потокозависимые драйвера
 
+# C:\Users\roma\PycharmProjects\JopaJam5SecretGame\.venv\Scripts\python.exe -m nuitka --mode=standalone --windows-console-mode=attach --show-progress --assume-yes-for-downloads --jobs=8 --noinclude-unittest-mode=nofollow --noinclude-pytest-mode=nofollow --nofollow-import-to=scipy --nofollow-import-to=numpy --nofollow-import-to=engine.tests --windows-icon-from-ico=Setuper/pineapple.ico --output-filename=OneDay.exe --noinclude-data-files=game/*.jpyc --include-data-dir=./game/=game --enable-plugins=tk-inter start.py
+
 import time
 import platform
 import os

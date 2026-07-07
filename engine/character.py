@@ -102,7 +102,7 @@ class Character:
                 line_index += 1
                 continue
 
-            if char.startswith("{") and char.endswith("}"):
+            if char.startswith("{") and char.endswith("}") and char not in ("{w}", "{r}"):
                 current_parts.append(char)
                 continue
 

@@ -318,9 +318,9 @@ class CharactersTextManager(agui.UIManager):
         if not dialogue[0]:
             return None
 
-        slines = (self.parser.parse(sline)
+        slines = [self.parser.parse(sline)
                   for line in dialogue
-                  for sline in self._split_by_length(line, 60))
+                  for sline in self._split_by_length(line, 60)]
 
         for formatted_sline in slines:
 
@@ -347,9 +347,9 @@ class CharactersTextManager(agui.UIManager):
         y_start = win_h * 0.2 - 15
         x_pos = self._get_xpos(width)
 
-        slines = (self.parser.parse(sline)
+        slines = [self.parser.parse(sline)
                   for line in self.attributes.character_text
-                  for sline in self._split_by_length(line, 60))
+                  for sline in self._split_by_length(line, 60)]
 
         text_piece_counter = 0
 
@@ -409,6 +409,8 @@ class CharactersTextManager(agui.UIManager):
         if current_line:
             parts.append(" ".join(current_line))
 
+
+        #print(parts)
         return parts
 
     def update(self, time_delta):

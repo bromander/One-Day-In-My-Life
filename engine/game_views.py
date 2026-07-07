@@ -1587,7 +1587,7 @@ class GameViews:
             ad_bullets = 0
             added_ad_bullets = []
 
-            if self.hard > 1:
+            if self.hard > 9:
                 if random.random() > 0.7:
                     logger.info("Гангстер!!!")
 
