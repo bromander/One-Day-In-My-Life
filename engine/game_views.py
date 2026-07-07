@@ -1,14 +1,14 @@
 import time
 from typing import Optional
 import arcade
+from arcade import View
 from arcade import gui as agui
-from pyglet.gl import GLException
 import random
+random.seed(time.time_ns() ^ hash(random.random()))
 
 from .globals import g
 from .logger import get_logger
-from .gui import SettingsManager, CharactersTextManager
-from .gui import MovableBlockFalling, MovableBlock, ItemsNotifText, ClickableSprite
+from .gui import MovableBlockFalling, MovableBlock, ItemsNotifText, ClickableSprite, SettingsManager, CharactersTextManager, DefaultBullet, Player, SmartWall, AdBullet, VeryInterestingBullet
 from .character import Attributes
 
 logger = get_logger(__name__)
@@ -17,7 +17,7 @@ get_real_filename = g.fm.get_original_filename
 
 class GameViews:
 
-    class GameViewTemplate(arcade.View):
+    class GameViewTemplate(View):
         def __init__(self, using_sprites: Optional[list] = None) -> None:
             """
             Является "Шаблоном".
@@ -1374,3 +1374,448 @@ class GameViews:
 
                 else:
                     self._move_parallax(layer, x, y)
+
+
+    class GD_super_duper_game(View):
+
+        def __init__(self, first: bool = True):
+            super().__init__()
+
+            self.first = first
+
+            if first:
+                g.fm._load_assets_pack(
+                    [
+                        "atomic_cursor.png",
+                        "gangster_attack.png",
+                        "gangster_god_plz_save_us.png",
+                        "gangster_normis.png",
+                        "golden_nugget.png",
+                        "kruglaya_hernya.png",
+                        "potassium.png",
+                        "spike.png",
+                        "spike_with_block.png",
+                        "stamen.png",
+                        "instruction_for_stupid_humans_like_you.png",
+                        "geometrymasher.mp3",
+                        "geometry-dash-death-sound-effect.mp3",
+                        "smart_wall.png",
+                        "deltarune-explosion.mp3",
+                        "nuclear-bomb.mp3",
+                        "gaster-vanish.mp3",
+
+                        "behind_you.png",
+                        "best_discount_ever.png",
+                        "epstein.png",
+                        "i_hate_this_cathode_screens_and_your_cathode_screams.png",
+                        "i_love_him.png",
+                        "lonely_1.png",
+                        "lonely_2.png",
+                        "Thats_not_the_ThornRing_is_it.png",
+                        "THEY_ATE_THEM.png",
+                        "your_best_friend.png",
+
+                        "breaking_1.png",
+                        "breaking_2.png",
+                        "breaking_3.png",
+                        "breaking_4.png"
+                    ]
+                )
+
+            self.cursor = arcade.Sprite(g.fm.get_texture("atomic_cursor.png"), 0.9)
+
+            self.instruction_for_stupid_humans_like_you = arcade.Sprite(
+                g.fm.get_texture("instruction_for_stupid_humans_like_you.png"),
+                center_x=self.center_x, center_y=self.center_y,
+            )
+
+            self.instruction_for_stupid_humans_like_you.alpha = 0 if not first else 255
+
+            self.background_color = arcade.color.BLACK
+
+            self.game_start_time = time.time()
+
+            self.window_mode = g.sm.Volume.window_mode
+            if self.window_mode == "full-screen":
+                self.window.set_fullscreen(True)
+            elif self.window_mode == "window":
+                self.window.set_fullscreen(False)
+                self.window.maximize()
+
+
+            self.move_points = [(self.window.width*0.1, self.window.center_y)]
+
+
+            self.default_bullets_names = [
+                    "golden_nugget.png",
+                    "kruglaya_hernya.png",
+                    "potassium.png",
+                    "spike.png",
+                    "spike_with_block.png"
+                ]
+
+            self.default_ad_bullet_names = [
+                "behind_you.png",
+                "best_discount_ever.png",
+                "epstein.png",
+                "i_hate_this_cathode_screens_and_your_cathode_screams.png",
+                "i_love_him.png",
+                "lonely_1.png",
+                "Thats_not_the_ThornRing_is_it.png",
+                "THEY_ATE_THEM.png",
+                "your_best_friend.png"
+            ]
+
+            self.bullets_spritelist = arcade.SpriteList()
+            self.gaster_bullets_spritelist = arcade.SpriteList()
+
+            self.hard_schedule = { # Секунд с начала игры : сложность до этого времени
+                5 : 0,
+                10 : 1,
+                20 : 2,
+                30 : 3,
+                35 : 4,
+                40 : 5,
+                80 : 6,
+                120 : 7,
+                150 : 8,
+                200 : 9,
+                245 : 11,
+                300 : 14,
+                350 : 16,
+                400 : 25,
+                9999999999999999999999999999 : 100
+            }
+
+            self.colors = [
+                (0, 255, 187),
+                (227, 69, 255),
+                (255, 69, 159),
+                (79, 255, 66),
+                (255, 179, 66),
+                (201, 255, 66),
+                (135, 66, 255),
+                (66, 255, 170)
+            ]
+
+            self.now_hard = 1
+            self.waiting_death = 0
+
+            self.death_flag = False
+
+            self.player = Player()
+
+            self.walls = SmartWall()
+            self.walls.set_color((0, 0, 0))
+
+            self.last_hard = self.hard
+
+            self.fader = self.create_fader((0, 0, 0), self.colors[0], 50)
+
+
+            self.text = arcade.Text(
+                f"Время: {self.game_start_time - time.time()}с, Сложность: {self.hard}",
+                0, 0,
+                color=arcade.color.BLACK,
+                font_size=42,
+                align="right",
+                font_name=g.FONT_NAME
+            )
+
+            self.wait = False
+
+
+            g.am.play_music("geometrymasher.mp3", True)
+
+        @property
+        def playtime(self):
+            return time.time() - self.game_start_time
+
+        @property
+        def hard(self):
+            return self.hard_schedule[min(i for i in self.hard_schedule if self.playtime < i)]
+
+        def on_show_view(self) -> None:
+            self.window.set_vsync(True)
+
+        def on_hide_view(self) -> None:
+            self.window.set_vsync(False)
+
+        def set_bg_color(self):
+            if self.last_hard != self.hard:
+                self.last_hard = self.hard
+                new_color = random.choice(self.colors)
+                self.fader = self.create_fader(self.walls.wall_sprite_1.color, new_color, random.randint(50, 100))
+
+
+        def _color_transition(self, start_color, end_color, steps=100, current_step=0):
+            if current_step >= steps:
+                return end_color
+            if current_step <= 0:
+                return start_color
+
+            progress = current_step / steps
+            r = int(start_color[0] + (end_color[0] - start_color[0]) * progress)
+            g = int(start_color[1] + (end_color[1] - start_color[1]) * progress)
+            b = int(start_color[2] + (end_color[2] - start_color[2]) * progress)
+
+            return (r, g, b)
+
+        def create_fader(self, start_color, end_color, steps=100):
+            current = 0
+
+            def next_color():
+                nonlocal current
+                if current > steps:
+                    return end_color
+
+                result = self._color_transition(start_color, end_color, steps, current)
+                current += 1
+                return result
+
+            return next_color
+
+        def _gen_bullets(self):
+
+            logger.info("Генерируем пули...")
+
+            if random.random() < 0.3 / (1 + self.hard * 0.1):
+                return None
+
+            previous_y = 0
+
+            ad_bullets = 0
+            added_ad_bullets = []
+
+            if self.hard > 1:
+                if random.random() > 0.7:
+                    logger.info("Гангстер!!!")
+
+                    start_y = random.choice([int(self.height*0.2), int(self.height*0.2)])
+
+                    base_speed = 300 + (self.hard ** 1.5) * 8
+                    speed = base_speed + random.randint(-100, 100)
+
+                    start_x_modif = random.randint(600, 1000)
+
+                    bullet = VeryInterestingBullet(start_y, speed, start_x_modif)
+
+                    self.gaster_bullets_spritelist.append(bullet)
+
+            for i in range(round(self.hard ** 1.2 + 5)):
+                if (random.random() < 0.9 or not self.hard >= 3 or ad_bullets >= self.hard-1):
+                    if random.random() < 0.8:
+                        start_y = random.randint(int(self.height * 0.2), int(self.height * 0.8))
+                    else:
+                        start_y = random.choice([
+                            random.randint(0, int(self.height * 0.1)),
+                            random.randint(int(self.height * 0.9), int(self.height))
+                        ])
+
+                    start_x_modif = random.randint(0, 2000)
+
+                    if i > 0 and random.random() < 0.3:
+                        start_y = previous_y + random.randint(-50, 50)
+                        start_y = max(0, min(int(self.height), start_y))
+
+                    random.shuffle(self.default_bullets_names)
+                    bullet_sprite_name = random.choice(self.default_bullets_names)
+                    rotation = random.randint(100, 500) * random.randint(-1, 1) if bullet_sprite_name == "kruglaya_hernya.png" else 0
+
+                    base_speed = 450 + (self.hard ** 1.2) * 8
+                    speed = base_speed + random.randint(-50, 50)
+
+                    if len(self.bullets_spritelist) > 30:
+                        speed *= 0.8
+
+                    speed = min(speed, 1500)
+
+                    pattern = random.choice(["default", "sine", "wave", "circle", "spiral", "random"])
+
+                    bullet = DefaultBullet(bullet_sprite_name, start_y, speed, start_x_modif, rotation, pattern)
+                    self.bullets_spritelist.append(bullet)
+                    previous_y = start_y
+
+                else:
+
+                    ad_bullets += 1
+
+                    random.shuffle(self.default_ad_bullet_names)
+                    sprite_name = random.choice(self.default_ad_bullet_names)
+
+                    if added_ad_bullets == self.default_ad_bullet_names:
+                        added_ad_bullets.clear()
+
+                    while sprite_name in added_ad_bullets:
+                        random.shuffle(self.default_ad_bullet_names)
+                        sprite_name = random.choice(self.default_ad_bullet_names)
+
+                    added_ad_bullets.append(sprite_name)
+
+
+                    start_y = random.randint(int(self.height * 0.1), int(self.height * 0.9))
+
+                    base_speed = 300 + (self.hard ** 1.2) * 8  # снизил множитель для баланса
+                    speed = base_speed + random.randint(-50, 50)
+
+                    start_x_modif = random.randint(0, 2000)
+
+                    bullet = AdBullet(sprite_name, start_y, speed, start_x_modif)
+
+                    self.bullets_spritelist.append(bullet)
+
+            logger.info("Сгенерированно!")
+
+
+        def on_update(self, delta_time: float) -> bool | None:
+
+            if "x" in self.window.mouse.data and "y" in self.window.mouse.data:
+                mouse_x, mouse_y = (
+                    self.window.mouse.data["x"],
+                    self.window.mouse.data["y"],
+                )
+                self.cursor.position = (mouse_x, mouse_y)
+
+            self.text.text = f"Время: {round(time.time() - self.game_start_time)}с, Сложность: {self.hard}"
+            self.text.x = self.width - self.text._label.content_width * 1.1
+            self.text.y = self.height - self.text._label.content_height
+
+            if not self.death_flag:
+
+                color = self.fader()
+                self.walls.set_color(color)
+
+                if self.hard == 9 and not self.wait:
+                    g.am.play_music("nuclear-bomb.mp3", True)
+                    self.gaster_bullets_spritelist.clear()
+                    self.bullets_spritelist.clear()
+                    self.fader = self.create_fader(self.walls.wall_sprite_1.color, (66, 66, 66), 10)
+                    self.wait = True
+
+                    self.walls.speed = 50
+
+                    bullet = VeryInterestingBullet(int(self.width * 0.1), 80, 500)
+                    self.gaster_bullets_spritelist.append(bullet)
+
+                    print(self.gaster_bullets_spritelist[0].center_x)
+
+                elif self.wait:
+                        if not self.gaster_bullets_spritelist:
+                            self.set_bg_color()
+                            self.wait = False
+                            g.am.play_music("geometrymasher.mp3", True)
+                            self.walls.speed = 100
+
+                if self.hard > 0 or not self.first:
+
+                    if not self.wait:
+                        self.set_bg_color()
+
+                    self.walls.update(delta_time)
+
+                    self.bullets_spritelist.update(delta_time)
+                    self.gaster_bullets_spritelist.update(delta_time, player_pos=self.player.position)
+
+                    self.move_points = [(i[0] - 500 * delta_time, i[1]) for i in self.move_points]
+
+                    if self.player.move_up is None:
+                        self.player.move_up = False
+
+                    if not self.bullets_spritelist:
+                        if not self.wait:
+                            self._gen_bullets()
+
+                if self.player.center_y < 0 or self.player.center_y > self.height:
+                    g.am.stop_music()
+                    g.am.play_sound("geometry-dash-death-sound-effect.mp3")
+                    self.death_flag = True
+                    self.player.texture = g.fm.get_texture("gangster_god_plz_save_us.png")
+                    self.waiting_death = time.time()
+
+                self.player.update(delta_time)
+
+                if arcade.check_for_collision_with_list(self.player, self.bullets_spritelist) or arcade.check_for_collision_with_list(self.player, self.gaster_bullets_spritelist):
+                    g.am.stop_music()
+                    g.am.play_sound("geometry-dash-death-sound-effect.mp3")
+                    self.death_flag = True
+                    self.waiting_death  = time.time()
+
+            else:
+
+                if time.time() - self.waiting_death < 1.0:
+                    return None
+
+                self.window.hide_view()
+                game = g.GameViews.GD_super_duper_game(False)
+                self.window.GameView = game
+                self.window.show_view(game)
+
+        def on_draw(self) -> bool | None:
+            self.clear()
+
+            self.walls.draw(pixelated=True)
+
+            if self.move_points:
+                arcade.draw_lines(self.move_points + [(self.player.center_x, self.player.center_y),], arcade.color.WHITE, 10)
+            arcade.draw_sprite(self.player)
+
+            self.gaster_bullets_spritelist.draw()
+            self.bullets_spritelist.draw()
+
+            if self.death_flag:
+                self.bullets_spritelist.draw_hit_boxes(color=arcade.color.RED)
+                self.player.draw_hit_box(color=arcade.color.RED)
+
+            if self.hard <= 0:
+                arcade.draw_sprite(self.instruction_for_stupid_humans_like_you)
+
+            self.text.draw()
+
+            arcade.draw_sprite(self.cursor)
+
+        def death(self):
+            self.background_color = arcade.color.DARK_RED
+
+        def return_to_main_menu(self):
+
+            self.window.set_fullscreen(True)
+            g.actions.active_generators.clear()
+            g.am.stop_music()
+            g.am.stop_sound()
+
+            self.window.set_fullscreen(False)
+            self.window.size = (1024, 786)
+            self.window.center_window()
+            game = g.All_main_views.GameMenu(show_lc=True)
+            self.window.show_view(game)
+
+        def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> bool | None:
+            if button == 1 and not self.death_flag:
+                sprites = arcade.check_for_collision_with_list(self.cursor, self.bullets_spritelist)
+                for sprite in sprites:
+                    sprite.self_destroy()
+
+        def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
+            if symbol in (arcade.key.ENTER, arcade.key.SPACE, arcade.key.W, arcade.key.UP):
+                if self.player.move_up is not None:
+                    self.player.move_up = True
+                    self.move_points.append(
+                        (self.player.center_x, self.player.center_y)
+                    )
+                    self.move_points.append(
+                        (self.player.center_x, self.player.center_y)
+                    )
+
+            if symbol == arcade.key.ESCAPE:
+                self.return_to_main_menu()
+
+        def on_key_release(self, symbol: int, modifiers: int) -> bool | None:
+            if symbol in (arcade.key.ENTER, arcade.key.SPACE, arcade.key.W, arcade.key.UP):
+                if self.player.move_up is not None:
+                    self.player.move_up = False
+                    self.move_points.append(
+                        (self.player.center_x, self.player.center_y)
+                    )
+                    self.move_points.append(
+                        (self.player.center_x, self.player.center_y)
+                    )

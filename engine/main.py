@@ -257,21 +257,8 @@ class Views:
 
         def on_draw(self) -> None:
 
-            try:
-                if self.cursor_texture:
-                    arcade.draw_sprite(self.cursor_texture)
-            except (GLException, AttributeError):
-                logger.warning(
-                    "При попытке создать курсор, возникла ошибка OpenGL. Пересоздаём..."
-                )
-                try:
-                    self.cursor_texture = arcade.Sprite(
-                        "game/images/gui/cursor.png", 0.2
-                    )
-                    arcade.draw_sprite(self.cursor_texture)
-                except:
-                    logger.error("Курсор не был создан!")
-                    pass
+            if self.cursor_texture:
+                arcade.draw_sprite(self.cursor_texture)
 
             if not g.sm:
                 return None
@@ -1121,6 +1108,18 @@ class Views:
                     self.window.GameView = game
                     self.window.show_view(game)
 
+                def start_vopros_game(event=None):
+
+                    self.window.center_window()
+                    self.cleanup_ui()
+                    self.window.set_fullscreen(False)
+                    self.window.size = g.DEFAULT_IN_GAME_WINDOW_SIZE
+                    # self.window.set_fullscreen(True)
+                    self.manager.disable()
+                    game = g.GameViews.GD_super_duper_game()
+                    self.window.GameView = game
+                    self.window.show_view(game)
+
                 def open_saves(event=None):
                     self.cleanup_ui()
                     settings = Views.SaveMenu()
@@ -1153,6 +1152,15 @@ class Views:
                 start_button.on_click = start_game
                 self.v_box.add(start_button)
 
+                vopros_button_style = copy.deepcopy(STYLE_DEFAULT_BUTTON)
+                vopros_button_style["normal"]["bg"] = (3, 152, 252)
+                vopros_button_style["hover"]["bg"] = (8, 101, 163)
+                vopros_button = agui.UIFlatButton(
+                    text="???", width=200, style=vopros_button_style
+                )
+                vopros_button.on_click = start_vopros_game
+                self.v_box.add(vopros_button)
+
                 settings_button = agui.UIFlatButton(
                     text="Загрузить", width=200, style=STYLE_DEFAULT_BUTTON
                 )
@@ -1173,7 +1181,7 @@ class Views:
 
                 ui_anchor_layout = arcade.gui.UIAnchorLayout()
                 ui_anchor_layout.add(child=self.v_box)
-                ui_anchor_layout.center_y = self.window.height * -0.3
+                ui_anchor_layout.center_y = self.window.height * -0.27
 
                 self.manager.add(ui_anchor_layout)
 

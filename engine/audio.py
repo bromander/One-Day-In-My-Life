@@ -11,7 +11,7 @@ from .globals import g
 
 
 class AudioChannel:
-    def __init__(self, default_volume: float = 1.0, volume_type: Optional[str] = None):
+    def __init__(self, default_volume: float = 1.0, volume_type: Optional[str] = None, super: bool = False):
         """
         Отвечает за отдельный канал аудио
         :param default_volume: Громкость по умолчанию
@@ -32,6 +32,8 @@ class AudioChannel:
         self._local_modifier: float = 1.0  # Модификатор громкости. Предназначен для управления громкостью текущего трека. Сбрасывается при запуске нового трека
 
         self.paused = False
+
+        self.super = super
 
         self.sm = g.sm
 
@@ -80,7 +82,8 @@ class AudioChannel:
             load it all into memory. Set to ``True`` for long sounds to
             save memory, ``False`` for short sounds to speed playback.
         """
-        self.stop()
+        if not self.super:
+            self.stop()
 
         if local_volume:
             self._local_modifier = local_volume

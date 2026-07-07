@@ -4,3 +4,5 @@ from .managers import SettingsManager, CharactersTextManager, InGameManager, UiL
 from .sliders import UISliderSavesUpdater, UISliderVertical
 
 from .minigames import MovableBlock, MovableBlockFalling, ItemsNotifText, ClickableSprite
+
+from .GD_super_duper_game import DefaultBullet, Player, SmartWall, AdBullet, VeryInterestingBullet
