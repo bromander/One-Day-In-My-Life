@@ -129,7 +129,9 @@ class Scene:
         at=None,
         size=None,
         angle: int = 0.0,
-        effect=None,
+        flip_x: bool = False,
+        flip_y: bool = False,
+        effect = None,
         stream: Literal[
             "consistently", "consistently_async", "together"
         ] = "consistently",
@@ -140,6 +142,8 @@ class Scene:
         :param filename_or_sprite: Название спрайта или сам спрайт
         :param at: Позиция
         :param size: Размер спрайта
+        :param flip_x: Отражает персонажа по горизонтали
+        :param flip_y: Отражает персонажа по вертикали
         :param angle: поворот спрайта
         :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
         :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
@@ -154,6 +158,12 @@ class Scene:
             sprite = self.g.scene.get_sprite(filename_or_sprite)
             if sprite is None:
                 raise FileNotFoundError(f"File {filename_or_sprite} not found!")
+
+        if flip_x:
+            sprite.texture = sprite.texture.flip_horizontally()
+
+        if flip_y:
+            sprite.texture = sprite.texture.flip_horizontally()
 
         sprite.size = self._get_size(size, sprite.size)
 
@@ -216,6 +226,9 @@ class Scene:
         character: str,
         at=None,
         size=None,
+        angle: Optional[int] = None,
+        flip_x: Optional[bool] = None,
+        flip_y: Optional[bool] = None,
         effect=None,
         stream: Literal[
             "consistently", "consistently_async", "together"
@@ -226,6 +239,9 @@ class Scene:
         :param character: Айди персонажа
         :param at: Положение персонажа
         :param size: Размер спрайта
+        :param angle: поворот спрайта
+        :param flip_x: Отражает персонажа по горизонтали
+        :param flip_y: Отражает персонажа по вертикали
         :param effect: Вложенный класс класса SpriteEffects. Обозначает эффект, который будет примениться к спрайту при появлении
         :param stream: Метод обновления. Together: Обновление всех генераторов разом, Сonsistently: Обновляет только первый генератор в списке, пока он не завершится, consistently_async: Обновляет только первый генератор в списке, но игра не ждёт его окончания
         """
@@ -233,9 +249,25 @@ class Scene:
         window = get_window()
 
         char_id = character.split(" ")[0]
-        sprite = self.lc[char_id].show(character)
+        sprite: Sprite = self.lc[char_id].show(character)
 
-        sprite.size = self._get_size(size, sprite.size)
+        if flip_x:
+            sprite.texture = sprite.texture.flip_horizontally()
+
+        if flip_y:
+            sprite.texture = sprite.texture.flip_vertically()
+
+        if angle:
+            sprite.angle = angle
+        elif angle is None:
+            if char_id in self.g.scene["sprites"]:
+                sprite.angle = self.g.scene["sprites"][char_id].angle
+
+        if size is not None:
+            sprite.size = self._get_size(size, sprite.size)
+        else:
+            if char_id in self.g.scene["sprites"]:
+                sprite.size = self.g.scene["sprites"][char_id].size
 
         if at is not None:
             x_norm, y_norm = self._get_norm(at, char_id)
@@ -246,7 +278,6 @@ class Scene:
         else:
             if char_id in self.g.scene["sprites"]:
                 sprite.position = self.g.scene["sprites"][char_id].position
-                sprite.scale = self.g.scene["sprites"][char_id].scale
             else:
                 sprite.center_x = window.width // 2
                 sprite.center_y = window.height * 0.2

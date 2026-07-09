@@ -116,7 +116,11 @@ class FilesManager:
             "color_palette_chooser_button_frame_pressed.png",
             "color_palette_chooser_button_frame_hovered.png",
             "ambience-reactor.mp3",
-            "SmallHum - Agendaman.mp3"
+            "SmallHum - Agendaman.mp3",
+            "Lucid Blocks OST： Corner.mp3",
+            "strashilka.mp3",
+            "Never gonna give you up (a very bad kazoo cover).mp3",
+            "perdezh_YQ5l54B.mp3"
         ], "init_gui_sprites", True)
 
 

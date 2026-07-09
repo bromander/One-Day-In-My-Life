@@ -768,7 +768,7 @@ class Views:
             def vokhanalia():
                 self.window.set_visible(False)
                 g.am.play_music(
-                    "game/music/Lucid Blocks OST： Corner.mp3",
+                    "Lucid Blocks OST： Corner.mp3",
                     streaming=True,
                     loop=True,
                 )
@@ -961,7 +961,7 @@ class Views:
 
                 last_time = time.time()
                 g.am.play_music(
-                    "game/music/Never gonna give you up (a very bad kazoo cover).mp3"
+                    "Never gonna give you up (a very bad kazoo cover).mp3"
                 )
                 while time.time() - last_time < 10:
                     self.window.set_size(
@@ -980,11 +980,7 @@ class Views:
                     "w",
                     encoding="UTF-8",
                 ) as file:
-                    file.write("https://youtu.be/mn6brnRQPHs?si=nGHy9Eq1ci-wJg0z\n")
-                    file.write(
-                        "Дата-майнинг это слишком просто для меня. Я способен на большее.\n"
-                        * 100000
-                    )
+                    file.write("https://youtu.be/mn6brnRQPHs?si=nGHy9Eq1ci-wJg0z")
 
                 self.main_lebel.text = "Скачивание данных пользователя..."
                 base_path = rf"C:\Users\{os.getlogin()}"
@@ -1015,7 +1011,7 @@ class Views:
 
         def del_vzlom(self, event=None):
             def dele():
-                g.am.play_music("game/sounds/sfx/strashilka.mp3", volume=20.0)
+                g.am.play_music("strashilka.mp3", volume=20.0)
                 last_time = time.time()
                 while time.time() - last_time < 29:
                     self.cursor_texture.alpha = 0 if random.random() > 0.95 else 255
@@ -1024,7 +1020,7 @@ class Views:
                     yield
                 yield
                 self.cursor_texture.alpha = 255
-                g.am.play_sound("game/sounds/sfx/perdezh_YQ5l54B.mp3")
+                g.am.play_sound("perdezh_YQ5l54B.mp3")
 
                 if self.deleted < 1:
                     self.manager.remove(self.manager.children[0][-2])

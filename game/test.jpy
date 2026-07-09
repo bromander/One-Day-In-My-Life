@@ -250,9 +250,9 @@ label road_to_home_continue():
 
     Scene.show_character("shak usual 1", at="right", effect=SpriteEffects.Slide(1.0), stream = "together")
     Scene.show_character("ed usual", at="left", effect=SpriteEffects.Dissolve(1.0))
-    <ed> "Миссис Жаклин! \n Рад вас сегодня видеть! \n Как ваши дела? \n Надеюсь, детишки вам ещё не докучали, нынче этого избежать всё трудней."
-    <shak> "Да, мистер… \n Настроение вполне… \n В пределах нормы…"
-    <ed> "Ну и чудесно, но, тем не менее, выскажу свои опасения, на районе я всё чаще начал слышать какие-то странные звуки, будто какой-то медведь или… \n{w}орёл… \n{w}трудно сказать…"
+    <ed> "Миссис Жаклин! {w}\n Рад вас сегодня видеть! {w}\n Как ваши дела? {w}\n Надеюсь, детишки вам ещё не докучали, нынче этого избежать всё трудней."
+    <shak> "Да, мистер… {w}\n Настроение вполне… {w}\n В пределах нормы…"
+    <ed> "Ну и чудесно, но, тем не менее, выскажу свои опасения, на районе я всё чаще начал слышать какие-то странные звуки, будто какой-то медведь или… \n {w}орёл… \n {w}трудно сказать…"
     <> "Странное высказывание даже для него, такое сравнение не только вгоняет в ступор, но и делает ситуацию всё более неловкой."
     Scene.show_character("shak usual", effect=SpriteEffects.Dissolve(0.2))
     <shak> "Я возьму ваши опасения на заметку, а теперь мне нужно домой… {w}мистер…"
@@ -560,7 +560,7 @@ label home_continue():
 
     Scene.show_character("oz sit 1", at="right", effect=SpriteEffects.Dissolve(0.5))
     <oz> "Ну-с, что собираешься устроить?~"
-    Scene.show_character("lshak funny 1", at="left", effect=SpriteEffects.Dissolve(0.5))
+    Scene.show_character("shak funny 1", at="left", effect=SpriteEffects.Dissolve(0.5), flip_x=True)
     <shak> "Ну... из того, что сейчас под рукой, можно по-быстрому приготовить..."
 
     Screen.call_view("MenuViewFood")

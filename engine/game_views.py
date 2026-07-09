@@ -1478,7 +1478,7 @@ class GameViews:
                 40 : 5,
                 80 : 6,
                 120 : 7,
-                150 : 8,
+                160 : 8,
                 200 : 9,
                 245 : 11,
                 300 : 14,
@@ -1587,7 +1587,7 @@ class GameViews:
             ad_bullets = 0
             added_ad_bullets = []
 
-            if self.hard > 9:
+            if self.hard > 7:
                 if random.random() > 0.7:
                     logger.info("Гангстер!!!")
 
@@ -1685,7 +1685,7 @@ class GameViews:
                 color = self.fader()
                 self.walls.set_color(color)
 
-                if self.hard == 9 and not self.wait:
+                if self.hard == 7 and not self.wait:
                     g.am.play_music("nuclear-bomb.mp3", True)
                     self.gaster_bullets_spritelist.clear()
                     self.bullets_spritelist.clear()
@@ -1696,8 +1696,6 @@ class GameViews:
 
                     bullet = VeryInterestingBullet(int(self.width * 0.1), 80, 500)
                     self.gaster_bullets_spritelist.append(bullet)
-
-                    print(self.gaster_bullets_spritelist[0].center_x)
 
                 elif self.wait:
                         if not self.gaster_bullets_spritelist:

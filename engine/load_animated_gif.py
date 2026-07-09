@@ -1,10 +1,13 @@
 from pathlib import Path
+from typing import Optional
+
 from arcade import Texture, TextureAnimationSprite, TextureKeyframe, TextureAnimation
 from PIL import Image
 
 
 def load_animated_gif(
-    resource_name: str | Path
+    resource_name: str | Path,
+    vertex_order: Optional[tuple] = None
 ) -> TextureAnimationSprite:
 
     file_name = Path(resource_name)
@@ -24,6 +27,11 @@ def load_animated_gif(
 
         texture = Texture(image)
         texture.file_path = file_name
+
+        if vertex_order:
+            texture._vertex_order = vertex_order
+            texture._update_cache_names()
+
         # sprite.textures.append(texture)
         keyframes.append(TextureKeyframe(texture, frame_duration))
 

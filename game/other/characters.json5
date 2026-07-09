@@ -18,7 +18,6 @@
   "unk1" : {"name" : "???"},
   "unk2" : {"name" : "???"},
   "shak" : {"name" : "Жаклин", "char_id" : "shak", "colour" : "#f5a889", "name_colour" : "#f0855b"},
-  "lshak" : {"name" : "Жаклин", "char_id" : "lshak", "colour" : "#f5a889", "name_colour" : "#f0855b"},
   "masorubka" : {"name" : "Кассир", "char_id" : "masorubka", "colour" : "#E0FFFF", "name_colour" : "#7FFFD4"},
   "ed" : {"name" : "Сосед", "char_id" : "ed", "colour" : "#FFDEAD", "name_colour" : "#FFDEAD"},
   "oz" : {"name" : "Ms. Ф. ОЗИНАД", "char_id" : "oz", "colour" : "#12d3da", "name_colour" : "#a44aff", "c_scale" : 1.5},

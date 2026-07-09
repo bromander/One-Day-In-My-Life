@@ -2,7 +2,7 @@ import copy
 from pathlib import Path
 import types
 
-from arcade import Sprite
+from arcade import Sprite, Texture
 
 from .namespace import Namespace
 from .load_animated_gif import load_animated_gif
@@ -117,6 +117,7 @@ class LoreLogger:
                                 "speed": item["speed"],
                                 "original_x": item["original_x"],
                                 "original_y": item["original_y"],
+                                "vertex": item["sprite"].texture._vertex_order
                             },
                         }
                     )
@@ -133,9 +134,9 @@ class LoreLogger:
                                 "center_y": sprite.center_y,
                                 "width": sprite.width,
                                 "height": sprite.height,
-                                "angle": sprite.angle,
                                 "alpha": sprite.alpha,
                                 "visible": sprite.visible,
+                                "vertex": sprite.texture._vertex_order
                             },
                         }
                     )
@@ -152,10 +153,10 @@ class LoreLogger:
                                 "center_y": sprite.center_y,
                                 "width": sprite.width,
                                 "height": sprite.height,
-                                "angle": sprite.angle,
                                 "alpha": 255,  # при возврате назад, если к спрайтам применялся эффект растворения, то их 'растворяющиеся' версии остаются на сцене.
                                 # Пока оставлю значение 255 как заглушку, но это надо в будущем пофиксить
                                 "visible": sprite.visible,
+                                "vertex": sprite.texture._vertex_order
                             },
                         }
                     )
@@ -189,9 +190,9 @@ class LoreLogger:
                         same_old_sprite.width == sprite_data["width"]
                         and same_old_sprite.height == sprite_data["height"]
                     )
-                    and (same_old_sprite.angle == sprite_data["angle"])
                     and (same_old_sprite.alpha == sprite_data["alpha"])
                     and (same_old_sprite.visible == sprite_data["visible"])
+                    and (same_old_sprite.texture._vertex_order == sprite_data["vertex"])
                 ):
                     return same_old_sprite
 
@@ -216,7 +217,11 @@ class LoreLogger:
                     new_scene.add_sprite(entry["layer"], entry["name"], same_old_sprite)
                     continue
 
-                sprite = Sprite(d["texture"])
+
+                texture = Sprite(d["texture"])
+                texture._vertex_order = d["vertex"]
+                texture._update_cache_names()
+                sprite = Sprite(texture)
                 sprite.center_x = d["center_x"]
                 sprite.center_y = d["center_y"]
                 sprite.width = d["width"]
@@ -235,7 +240,7 @@ class LoreLogger:
                     new_scene.add_sprite(entry["layer"], entry["name"], same_old_sprite)
                     continue
 
-                sprite = load_animated_gif(d["texture"])
+                sprite = load_animated_gif(d["texture"], d["vertex"])
                 sprite.center_x, sprite.center_y = d["center_x"], d["center_y"]
                 sprite.width, sprite.height = d["width"], d["height"]
                 sprite.angle = d["angle"]
@@ -246,6 +251,7 @@ class LoreLogger:
 
             elif t == "parallax":
                 d = entry["data"]
+
                 new_scene.add_parallax_bg(
                     d["texture"], d["speed"], d["original_x"], d["original_y"]
                 )
