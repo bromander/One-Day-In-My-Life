@@ -482,8 +482,8 @@ class Views:
                     g.main.characters_texts_manager.prepare()
                     return None
             else:
-                g.attributes.reset()
                 g.main.characters_texts_manager.prepare()
+                g.attributes.reset()
 
             if (
                 g.actions.active_generators.active_generators_consistently

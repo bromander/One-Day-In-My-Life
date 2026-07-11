@@ -4,7 +4,7 @@ start.dist/
 nuitka-crash-report.xml
 /Setuper/*/
 *.log
-/.idea/
+.idea/
 .ruff_cache
 /.venv/
 *.jpyc

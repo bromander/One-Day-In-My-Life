@@ -7,9 +7,12 @@ from PIL import Image
 from .fashion_label import FashionUiLabel
 from .sliders import UISliderSavesUpdater
 from ..globals import g
+from ..logger import get_logger
 from ..text_converter import Parser
 #from ..scene import Scene
 from ..waiter import Waiter
+
+logger = get_logger(__name__)
 
 class SettingsManager(agui.UIManager):
     def __init__(self):
@@ -306,6 +309,7 @@ class CharactersTextManager(agui.UIManager):
     def prepare(self):
 
         if self.last_character_text != self.attributes.character_text:
+            logger.debug("preparing text")
             self._prepare_text(self.attributes.character_text)
 
     def _prepare_text(self, dialogue: list[str]):
@@ -360,6 +364,11 @@ class CharactersTextManager(agui.UIManager):
             line_width = 0
 
             for i, text_piece in enumerate(formatted_sline):
+
+                if len(self.strings_list) - 1 < text_piece_counter + i:
+                    self.prepare()
+                    return None
+
                 label = self.strings_list[text_piece_counter + i]
                 label.text = text_piece["text"]
                 line_width += label._label.content_width
@@ -416,8 +425,9 @@ class CharactersTextManager(agui.UIManager):
     def update(self, time_delta):
         super().on_update(time_delta)
 
+        self.update_character_text()
+
         if self.attributes.character_text != self.last_character_text:
-            self.update_character_text()
             self.last_character_text = self.attributes.character_text.copy()
 
         if self.attributes.character_name != self.last_character_name:

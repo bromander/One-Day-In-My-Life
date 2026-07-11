@@ -1414,6 +1414,7 @@ class GameViews:
                         "Thats_not_the_ThornRing_is_it.png",
                         "THEY_ATE_THEM.png",
                         "your_best_friend.png",
+                        "idk_how_to_name_it.png",
 
                         "breaking_1.png",
                         "breaking_2.png",
@@ -1463,7 +1464,8 @@ class GameViews:
                 "lonely_1.png",
                 "Thats_not_the_ThornRing_is_it.png",
                 "THEY_ATE_THEM.png",
-                "your_best_friend.png"
+                "your_best_friend.png",
+                "idk_how_to_name_it.png"
             ]
 
             self.bullets_spritelist = arcade.SpriteList()

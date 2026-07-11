@@ -218,15 +218,13 @@ class LoreLogger:
                     continue
 
 
-                texture = Sprite(d["texture"])
-                texture._vertex_order = d["vertex"]
-                texture._update_cache_names()
-                sprite = Sprite(texture)
+                sprite = Sprite(d["texture"])
+                sprite.texture._vertex_order = d["vertex"]
+                sprite.texture._update_cache_names()
                 sprite.center_x = d["center_x"]
                 sprite.center_y = d["center_y"]
                 sprite.width = d["width"]
                 sprite.height = d["height"]
-                sprite.angle = d["angle"]
                 sprite.alpha = d["alpha"]
                 sprite.visible = d["visible"]
 
@@ -243,7 +241,6 @@ class LoreLogger:
                 sprite = load_animated_gif(d["texture"], d["vertex"])
                 sprite.center_x, sprite.center_y = d["center_x"], d["center_y"]
                 sprite.width, sprite.height = d["width"], d["height"]
-                sprite.angle = d["angle"]
                 sprite.alpha = d["alpha"]
                 sprite.visible = d["visible"]
 
