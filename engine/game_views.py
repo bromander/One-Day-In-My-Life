@@ -54,7 +54,7 @@ class GameViews:
             }
 
         def _load_using_sprites(self, sprite_name_list: list):
-            g.fm.load_assets(sprite_name_list)
+            g.fm._load_assets_pack(sprite_name_list)
 
         def cleanup_ui(self):
             if hasattr(self, "manager"):

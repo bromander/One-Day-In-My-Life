@@ -265,9 +265,10 @@ class Scene:
 
         if size is not None:
             sprite.size = self._get_size(size, sprite.size)
-        else:
-            if char_id in self.g.scene["sprites"]:
-                sprite.size = self.g.scene["sprites"][char_id].size
+        # else:
+        #     if char_id in self.g.scene["sprites"]:
+        #         sprite.size = self.g.scene["sprites"][char_id].size
+        # Прикол в том, что спрайты могут  отличатся по размерам и тогда они могут искажатся. Надо что-то с этим придумать
 
         if at is not None:
             x_norm, y_norm = self._get_norm(at, char_id)
